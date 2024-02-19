@@ -3,7 +3,7 @@
     "mlflow_config": {
         "base_model_version": 0
     },
-    "random_seed": 69,
+    "random_seed": 70,
     "model_name": "onnx emotion model",
     "experiment_name": "ONNX Emotion Recognition",
     "use_talos_automl": true,
@@ -26,7 +26,7 @@
     "calibration_data_train_ratio": 0.5,
     "calibration_data_validation_ratio": 1.0,
     "calibration_data_test_ratio": 1.0,
-    "epochs": 200,
+    "epochs": 10,
     "early_stopping": {
         "metric": "val_loss",
         "mode": "min",
