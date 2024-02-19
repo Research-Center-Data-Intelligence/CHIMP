@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Socket IO Camera Snapshots</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+
+	<link rel="stylesheet" href="static/css/main.css">
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+	<script src="static/js/main.js" defer></script>
+</head>
+<body onload="init()">
+    <div class="container">
+		<div class="header">
+			<image class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg"></image>
+			<span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is build to demonstrate its functionalities.">
+				Emotion Detection using CHIMP
+			</span>
+		</div>
+		<div class="banner"></div>
+		<div class="camera">
+			<div class="title">Camera Feed</div>
+			<hr />
+			<div class="video-container">
+				<div class="canvas-border">
+					<canvas id="preview" width="640" height="480"></canvas>
+				</div>
+			</div>
+		</div>
+		<div class="info">
+			<div class="title">Predictions</div>
+			<hr class="info-divider" />
+			<div class="data-container">
+				<table class="data-table">
+					<tr>
+						<td class="data-index">Angry:</td>
+						<td id="data_angry">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Disgust:</td>
+						<td id="data_disgust">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Fear:</td>
+						<td id="data_fear">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Happy</td>
+						<td id="data_happy">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Neutral:</td>
+						<td id="data_neutral">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Sad:</td>
+						<td id="data_sad">100%</td>
+					</tr>
+					<tr>
+						<td class="data-index">Surprised:</td>
+						<td id="data_surprise">100%</td>
+					</tr>
+				</table>
+			</div>
+			<div class="model-update">
+				<button id="btn_model_calibrate" class="model-update-button" onclick="calibrateModel()">Calibrate Current Model</button>
+				<input id="input_data_upload" class="model-update-input" type="file" name="zipfile" accept="application/zip" />
+				<br />
+				<button id="btn_model_training" class="model-update-button" onclick="trainModel()">Train New Model</button>
+			</div>
+		</div>
+		<div class="footer">
+			<!-- Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion
+			 		recognition model and the frontend upon which CHIMP is build to demonstrate its functionalities. -->
+			<div class="footer-by">By Bryan Kroon</div>
+			<div class="footer-owner">Lectoraat Data Intellligence Zuyd™</div>
+		</div>
+    </div>
+</body>
+</html>

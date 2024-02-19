@@ -1,0 +1,126 @@
+version: "3.9"
+
+services:
+    # application
+    # : sandbox application that enables emotion recognition from facial features
+    application-frontend:
+        restart: unless-stopped
+        build: ./ml-frontend
+        image: chimp-frontend-app:demonstrator-v1.0.0
+        container_name: frontend-app
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5252:8000"
+        environment:
+            - UID=1000
+            - GID=1000
+            - MODEL_INFERENCE_URL=${MODEL_INFERENCE_URL}
+        volumes:
+            - ./docker-data/webapp/html:/usr/src/app/templates
+            - ./docker-data/webapp/images:/usr/src/app/static/images
+            - ./docker-data/webapp/css:/usr/src/app/static/css
+            - ./docker-data/webapp/js:/usr/src/app/static/js
+        entrypoint: ["gunicorn", "--worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--bind=0.0.0.0:8000", "--workers=1", "--threads=8", "main:get_app()"]
+        depends_on:
+            - monitoring-server
+
+    # experimentation
+    # : trains and calibrates models while being publicly available for training calls
+    experimentation-server:
+        restart: unless-stopped
+        build: 
+            context: ./experimentation
+            dockerfile: Dockerfile
+        image: chimp-experimentation:demonstrator-v1.0.0
+        container_name: experimentation-server
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        -   driver: nvidia
+                            count: 1
+                            capabilities: [gpu]
+        healthcheck:
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
+            start_period: 15s
+            interval: 30s
+            retries: 5
+            timeout: 15s
+        networks:
+            - public-network
+        ports:
+            - "5253:8000"
+        environment:
+            - UID=1000
+            - GID=1000
+            - MODEL_NAME=${MODEL_NAME}
+            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+        volumes:
+            - ./docker-data/experimentation/config.json:/usr/src/app/config.json
+            - ./docker-data/experimentation/data:/usr/src/app/data
+        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=128", "--timeout=0", "main:get_app()"]
+        depends_on:
+            - monitoring-server
+
+    # serving
+    # : serves models from the artifact store to the frontend application
+    serving-server:
+        restart: unless-stopped
+        build:
+            context: ./serving
+            dockerfile: Dockerfile
+        image: chimp-serving:demonstrator-v1.0.0
+        container_name: serving-server
+        healthcheck:
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
+            start_period: 15s
+            interval: 30s
+            retries: 5
+            timeout: 15s
+        networks:
+            - backend-network
+        expose:
+            - "8000"
+        environment:
+            - UID=1000
+            - GID=1000
+            - MODEL_NAME=${MODEL_NAME}
+            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "main:get_app()"]
+        depends_on:
+            - monitoring-server
+
+    # monitoring
+    # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local files (artifact-/object store) for ease of deployment with persistent storage
+    monitoring-server:
+        restart: unless-stopped
+        build:
+            context: ./mlflow-tracking
+            dockerfile: Dockerfile
+        image: chimp-mlflow:demonstrator-v1.0.0
+        container_name: mlflow-tracking-server
+        healthcheck:
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:5000/health' || exit 1"]
+            start_period: 30s
+            interval: 1m30s
+            retries: 5
+            timeout: 30s
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "8999:5000"
+        environment:
+            - UID=1000
+            - GID=1000
+        volumes:
+            - ./docker-data/monitoring:/data
+        command: mlflow server --backend-store-uri sqlite:///data/mlflow.db --artifacts-destination /data/mlruns --host 0.0.0.0 --serve-artifacts
+
+networks:
+    public-network:
+        name: 'chimp-public-network'
+    backend-network:
+        name: 'chimp-backend-network'
