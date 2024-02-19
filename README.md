@@ -1,6 +1,12 @@
 # CHIMP
 CHIMP (Continuous Hypothesis and Information Mending Pipeline) is a project that aims to give a reference for operating a continual AI pipeline. It was originally part of a bachelor thesis project.
 
+## Components
+- **serving:** Responsible for serving the model for inference. This is done using a REST API.
+- **experimentation:** Responsible for training the model and logging the results. The resulting model and logs are stored into MLFlow.
+- **ml-frontend:** A web-application that is responsible for managing the interaction with the user (note: while it is called "front-end", it also contains a back-end component in the form of a Flask API that communicates with the rest of the CHIMP system).
+- **mlflow-tracking:** MLFlow is used to track the different models and log metrics for these models.
+
 ## Development setup
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose.
