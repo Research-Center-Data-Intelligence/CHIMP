@@ -7,7 +7,7 @@ CHIMP (Continuous Hypothesis and Information Mending Pipeline) is a project that
 3. Run `docker-compose up` in the root of the repository.
 4. Open your browser and navigate to `http://localhost:5252`.
 5. Allow the CHIMP front-end to use your webcam.
-6. Click on browse and select the calibration-data.zip (which can be downloaded HERE).
+6. Click on browse and select the calibration-data.zip (which can be downloaded on Teams).
 7. Click on "Train New Model" and wait for the training to finish.
    - You can monitor the training progress in the terminal by running `docker logs -f experimentation-server`.
 8. Once the training is finished, navigate to `http://localhost:8999` (MLFlow).
