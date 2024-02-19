@@ -35,13 +35,13 @@ services:
             dockerfile: Dockerfile
         image: chimp-experimentation:demonstrator-v1.0.0
         container_name: experimentation-server
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        -   driver: nvidia
-                            count: 1
-                            capabilities: [gpu]
+        # deploy:
+        #     resources:
+        #         reservations:
+        #             devices:
+        #                 -   driver: nvidia
+        #                     count: 1
+        #                     capabilities: [gpu]
         healthcheck:
             test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
             start_period: 15s
