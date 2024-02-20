@@ -7,6 +7,21 @@ CHIMP (Continuous Hypothesis and Information Mending Pipeline) is a project that
 - **ml-frontend:** A web-application that is responsible for managing the interaction with the user (note: while it is called "front-end", it also contains a back-end component in the form of a Flask API that communicates with the rest of the CHIMP system).
 - **mlflow-tracking:** MLFlow is used to track the different models and log metrics for these models.
 
+```mermaid
+graph RL;
+   subgraph Application
+      afe[Emotion recognition front-end]-->abe[Emotion recognition back-end];
+   end
+      abe-->exp[Experimentation service];
+      abe-->srv[Serving service];
+   subgraph Services
+      exp-->mlf[Monitorong / MLFlow];
+      srv-->mlf;
+      mlf-->db[SQLite database];
+      mlf-->fs[Filesystem];
+   end
+```
+
 ## Development setup
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose.
