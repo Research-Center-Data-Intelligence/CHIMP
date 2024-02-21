@@ -10,15 +10,15 @@ CHIMP (Continuous Hypothesis and Information Mending Pipeline) is a project that
 ```mermaid
 graph RL;
    subgraph Application
-      afe[Emotion recognition front-end]-->abe[Emotion recognition back-end];
+      afe[Emotion recognition front-end<br/>- HTML/CSS/JS]-->abe[Emotion recognition back-end<br/>- Python/Flask];
    end
-      abe-->exp[Experimentation service];
-      abe-->srv[Serving service];
+      abe-->exp[Experimentation service<br/>- Python/Flask<br/>- TalosML/Tensorflow];
+      abe-->srv[Serving service<br/>- Python/Flask];
    subgraph Services
-      exp-->mlf[Monitorong / MLFlow];
+      exp-->mlf[Monitorong<br/>- MLFlow];
       srv-->mlf;
-      mlf-->db[SQLite database];
-      mlf-->fs[Filesystem];
+      mlf-->db[Database<br/>- SQLite];
+      mlf-->fs[File storage<br/>- Filesystem];
    end
 ```
 
