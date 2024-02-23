@@ -15,7 +15,7 @@ graph RL;
       abe-->exp[Experimentation service<br/>- Python/Flask<br/>- TalosML/Tensorflow];
       abe-->srv[Serving service<br/>- Python/Flask];
    subgraph Services
-      exp-->mlf[Monitorong<br/>- MLFlow];
+      exp-->mlf[Tracking<br/>- MLFlow];
       srv-->mlf;
       mlf-->db[Database<br/>- SQLite];
       mlf-->fs[File storage<br/>- Filesystem];
