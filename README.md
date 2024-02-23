@@ -36,3 +36,5 @@ graph RL;
 10. Click on the last model.
 11. Set the model to "Production" by changing the "stage" setting at the top of the screen.
 12. Refresh the CHIMP front-end. You should now see percentages of the detected emotions.
+
+To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docker-compose --profile gpu up -d`. To only run MLFlow (e.g. when running the Python code directly on the host), use the "mlflow" profile as follows: `docker-compose --profile mlflow up -d`. Please not that the `--profile <PROFILE_NAME>` should come before any further commands, such as `up -d`.
