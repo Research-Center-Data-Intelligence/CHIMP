@@ -13,12 +13,12 @@ CORS(app)
 app = health_handler.add_as_route_handler(app)
 app = experimentation_handler.add_as_route_handler(app)
 
-logging.getLogger('werkzeug').setLevel(logging.INFO)
-logging.getLogger('socketio').setLevel(logging.INFO)
-logging.getLogger('engineio').setLevel(logging.INFO)
+logging.getLogger("werkzeug").setLevel(logging.INFO)
+logging.getLogger("socketio").setLevel(logging.INFO)
+logging.getLogger("engineio").setLevel(logging.INFO)
 
 
-@app.route('/')
+@app.route("/")
 def index():
     return abort(418)
 
@@ -33,9 +33,9 @@ def main():
     # Currently functioning as a webapi to build models, or to update existing models upon request. Endpoint variables
     #   for MLFlow are defined by environment variable.
     #   endpoint defined in environment variables.
-    app.run(host='0.0.0.0', port=7500)
+    app.run(host="0.0.0.0", port=5253)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     load_dotenv()
     main()
