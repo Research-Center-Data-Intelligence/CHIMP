@@ -25,23 +25,27 @@ services:
         entrypoint: ["gunicorn", "--worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--bind=0.0.0.0:8000", "--workers=1", "--threads=8", "main:get_app()"]
         depends_on:
             - monitoring-server
+        profiles:
+            - ''
+            - 'gpu'
 
     # experimentation
-    # : trains and calibrates models while being publicly available for training calls
-    experimentation-server:
+    # : trains and calibrates models while being publicly available for training calls. This includes a mount
+    #   for the GPU.
+    experimentation-server-gpu:
         restart: unless-stopped
         build: 
             context: ./experimentation
             dockerfile: Dockerfile
         image: chimp-experimentation:demonstrator-v1.0.0
         container_name: experimentation-server
-        # deploy:
-        #     resources:
-        #         reservations:
-        #             devices:
-        #                 -   driver: nvidia
-        #                     count: 1
-        #                     capabilities: [gpu]
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: 1
+                          capabilities: [gpu]
         healthcheck:
             test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
             start_period: 15s
@@ -63,6 +67,42 @@ services:
         entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=128", "--timeout=0", "main:get_app()"]
         depends_on:
             - monitoring-server
+        profiles:
+            - 'gpu'
+
+    # experimentation
+    # : trains and calibrates models while being publicly available for training calls. This includes a mount
+    #   for the GPU.
+    experimentation-server:
+        restart: unless-stopped
+        build:
+            context: ./experimentation
+            dockerfile: Dockerfile
+        image: chimp-experimentation:demonstrator-v1.0.0
+        container_name: experimentation-server
+        healthcheck:
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
+            start_period: 15s
+            interval: 30s
+            retries: 5
+            timeout: 15s
+        networks:
+            - public-network
+        ports:
+            - "5253:8000"
+        environment:
+            - UID=1000
+            - GID=1000
+            - MODEL_NAME=${MODEL_NAME}
+            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+        volumes:
+            - ./docker-data/experimentation/config.json:/usr/src/app/config.json
+            - ./docker-data/experimentation/data:/usr/src/app/data
+        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=128", "--timeout=0", "main:get_app()"]
+        depends_on:
+            - monitoring-server
+        profiles:
+            - ''
 
     # serving
     # : serves models from the artifact store to the frontend application
@@ -91,6 +131,9 @@ services:
         entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "main:get_app()"]
         depends_on:
             - monitoring-server
+        profiles:
+            - ''
+            - 'gpu'
 
     # monitoring
     # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local files (artifact-/object store) for ease of deployment with persistent storage
@@ -118,6 +161,10 @@ services:
         volumes:
             - ./docker-data/monitoring:/data
         command: mlflow server --backend-store-uri sqlite:///data/mlflow.db --artifacts-destination /data/mlruns --host 0.0.0.0 --serve-artifacts
+        profiles:
+            - ''
+            - 'gpu'
+            - 'mlflow'
 
 networks:
     public-network:
