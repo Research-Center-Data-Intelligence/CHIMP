@@ -58,3 +58,21 @@ To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docke
 run MLFlow (e.g. when running the Python code directly on the host), use the "mlflow" profile as
 follows: `docker-compose --profile mlflow up -d`. Please note that the `--profile <PROFILE_NAME>` should come before any
 further commands, such as `up -d`.
+
+### Local development setup (on host outside of Docker)
+To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
+- Run the MLFlow service in Docker using `docker-compose --profile mlflow up -d`
+- Create a virtual environment for each component with the required Python versions 
+  - Experimentation (Python 3.9) `python3.9 -m venv experimentation/env`
+  - Serving (Python 3.9) `python3.9 -m venv serving/env`
+  - ML-frontend (Python 3.11) `python3.11 -m venv ml-frontend/env`
+- Activate the virtual environment for each component
+  - Experimentation `source experimentation/env/bin/activate`
+  - Serving `source serving/env/bin/activate`
+  - ML-frontend `source ml-frontend/env/bin/activate`
+- Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
+  - Experimentation `pip install -r experimentation/requirements.txt`
+  - Serving `pip install -r serving/requirements.txt`
+  - ML-frontend `pip install -r ml-frontend/requirements.txt`
+- Each component can now be ran as usual
+  - In PyCharm, a "Compound" run configuration can be used to run all the configurations for each components at once (including debugging)
