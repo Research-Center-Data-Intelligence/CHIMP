@@ -122,7 +122,7 @@ services:
         networks:
             - backend-network
         expose:
-            - "8000"
+            - "5254:8000"
         environment:
             - UID=1000
             - GID=1000
@@ -145,7 +145,7 @@ services:
         image: chimp-mlflow:demonstrator-v1.0.0
         container_name: mlflow-tracking-server
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:5000/health' || exit 1"]
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8999/health' || exit 1"]
             start_period: 30s
             interval: 1m30s
             retries: 5
@@ -154,13 +154,13 @@ services:
             - public-network
             - backend-network
         ports:
-            - "8999:5000"
+            - "8999:8999"
         environment:
             - UID=1000
             - GID=1000
         volumes:
             - ./docker-data/monitoring:/data
-        command: mlflow server --backend-store-uri sqlite:///data/mlflow.db --artifacts-destination /data/mlruns --host 0.0.0.0 --serve-artifacts
+        command: mlflow server --backend-store-uri sqlite:///data/mlflow.db --artifacts-destination /data/mlruns --host 0.0.0.0 --port 8999 --serve-artifacts
         profiles:
             - ''
             - 'gpu'
