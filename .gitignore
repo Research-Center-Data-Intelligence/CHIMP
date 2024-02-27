@@ -2,6 +2,8 @@
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 experimentation/ONNX Emotion Recognition/
+ml-frontend/logs
+serving/mlruns
 
 # IDE
 .idea/
