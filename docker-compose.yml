@@ -121,7 +121,7 @@ services:
             timeout: 15s
         networks:
             - backend-network
-        expose:
+        ports:
             - "5254:8000"
         environment:
             - UID=1000
