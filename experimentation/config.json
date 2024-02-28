@@ -1,0 +1,60 @@
+{
+    "use_mlflow": true,
+    "mlflow_config": {
+        "base_model_version": 0
+    },
+    "random_seed": 70,
+    "model_name": "onnx emotion model",
+    "experiment_name": "ONNX Emotion Recognition",
+    "use_talos_automl": true,
+    "random_method": "latin_sudoku",
+    "random_method_fraction": 0.0042,
+    "categories": [
+        "angry",
+        "disgust",
+        "fear",
+        "happy",
+        "neutral",
+        "sad",
+        "surprise"
+    ],
+    "data_directory": "data/train/",
+    "image_height": 48,
+    "image_width": 48,
+    "train_validation_fraction": 0.75,
+    "train_test_fraction": 0.8,
+    "calibration_data_train_ratio": 0.5,
+    "calibration_data_validation_ratio": 1.0,
+    "calibration_data_test_ratio": 1.0,
+    "epochs": 10,
+    "early_stopping": {
+        "metric": "val_loss",
+        "mode": "min",
+        "min_delta": 0.001,
+        "patience": 10
+    },
+    "model_parameter_optimisation": {
+        "learning_rate": [0.05, 0.005, 0.0005],
+        "optimiser": ["Adam", "SGD"],
+        "convolutional_layer_count": [3, 4, 5],
+        "conv_filter": [64, 128, 256, 512],
+        "conv_kernel_size": [
+            [3, 3],
+            [5, 5],
+            [7, 7]
+        ],
+        "conv_padding": ["same"],
+        "conv_max_pooling": [[2, 2]],
+        "conv_activation": ["relu"],
+        "conv_dropout": [0.25],
+        "dense_layer_count": [1, 2, 3],
+        "dense_nodes": [128, 256, 512, 768],
+        "dense_activation": ["relu", "elu"],
+        "dense_dropout": [0.25]
+    },
+    "best_model_test_count": 5,
+    "best_model_test_metric": "accuracy",
+    "best_model_publish_count": 1,
+    "best_model_publish_metric": "accuracy",
+    "publish_directory": "published_models"
+}
