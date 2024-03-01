@@ -18,7 +18,7 @@
         "sad",
         "surprise"
     ],
-    "data_directory": "data/train/",
+    "data_directory": "../docker-data/experimentation/data/train/",
     "image_height": 48,
     "image_width": 48,
     "train_validation_fraction": 0.75,
