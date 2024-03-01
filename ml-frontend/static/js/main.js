@@ -112,6 +112,7 @@ const capture = () => {
     canvas_origin.getContext('2d').drawImage(video_origin, 0, 0, canvas_origin.width, canvas_origin.height);
     canvas_origin.toBlob((blob) => {
         current_frame = blob;
+        console.log("emitting process-image signal");
 
         sock.emit('process-image', {user_id: id_calibrated_model, image_blob: blob}, (data) => {
             let imgData = new Blob([data], {type: 'image/jpg'});
