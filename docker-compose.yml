@@ -16,7 +16,7 @@ services:
         environment:
             - UID=1000
             - GID=1000
-            - MODEL_INFERENCE_URL=${MODEL_INFERENCE_URL}
+            - MODEL_INFERENCE_URL=http://serving-server:8000/invocations
         volumes:
             - ./docker-data/webapp/html:/usr/src/app/templates
             - ./docker-data/webapp/images:/usr/src/app/static/images
@@ -59,8 +59,8 @@ services:
         environment:
             - UID=1000
             - GID=1000
-            - MODEL_NAME=${MODEL_NAME}
-            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+            - MODEL_NAME=onnx emotion model
+            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
         volumes:
             - ./docker-data/experimentation/config.json:/usr/src/app/config.json
             - ./docker-data/experimentation/data:/usr/src/app/data
@@ -93,8 +93,8 @@ services:
         environment:
             - UID=1000
             - GID=1000
-            - MODEL_NAME=${MODEL_NAME}
-            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+            - MODEL_NAME=onnx emotion model
+            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
         volumes:
             - ./docker-data/experimentation/config.json:/usr/src/app/config.json
             - ./docker-data/experimentation/data:/usr/src/app/data
@@ -126,8 +126,8 @@ services:
         environment:
             - UID=1000
             - GID=1000
-            - MODEL_NAME=${MODEL_NAME}
-            - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+            - MODEL_NAME=onnx emotion model
+            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
         entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "main:get_app()"]
         depends_on:
             - monitoring-server
