@@ -14,7 +14,6 @@ import cv2
 import numpy as np
 from numpy.random import RandomState
 
-from mlflow import MlflowClient
 from mlflow.models import get_model_info
 from mlflow.artifacts import download_artifacts
 
@@ -211,9 +210,6 @@ class EmotionCalibrationDataProcessor(DataProcessorABC):
 
         # Save how many records are in the training
         self._config['calibration_data_entries'] = len(data['image_data'])
-
-        # Get the data used for the model currently in production
-        client = MlflowClient()
 
         production_model_info = get_model_info(f'models:/{self._config["model_name"]}/Production')
         artifacts_path = download_artifacts(run_id=production_model_info.run_id,
