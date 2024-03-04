@@ -16,7 +16,7 @@ class FacialEmotionInference:
 
     def __init__(self):
         # Simulate blue-green test; proper implementation would have validation for blue-green test
-        self.stage = 'production' if random() < .9 else 'staging'
+        self.stage = 'production'
 
     def predict(self, image: np.ndarray, model_id: str = ''):
         # Reshape input, and preprocess pixel to value between 0 and 1
