@@ -7,12 +7,14 @@ pipeline components:
 
 # region Imports
 from __future__ import annotations
+from flask import current_app
 from typing import Type, Union, Any
 from os import environ
 
 from logic.data import DataProcessorABC
 from logic.model import ModelGeneratorABC
 from logic.publisher import ModelPublisherABC
+from messaging import messaging_manager
 
 import pandas as pd
 
@@ -60,14 +62,17 @@ class BasicPipeline:
         :return: the models that are published according to the model publisher component.
         """
 
+        messaging_manager.send("Started data processing", "training")
         data_processor = self._data_processor_factory(config=self._config, data=data_in)\
                              .process_data()\
                              .process_features()
 
+        messaging_manager.send("Started training model", "training")
         model_generator = self._model_processor_factory(config=self._config, data=data_processor.features)\
                               .generate()\
                               .validate()
 
+        messaging_manager.send("Publishing model", "training")
         model_publisher = self._model_publisher_factory(config=self._config,
                                                         models=model_generator.models, data=data_processor.features)\
                               .test()\

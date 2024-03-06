@@ -6,6 +6,8 @@ import numpy as np
 from mlflow import pyfunc as mlflow_pyfunc, search_runs as mlflow_search_runs, MlflowException
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument, NoSuchFile
 
+from serving.messaging import messaging_manager
+
 
 class InferenceManager:
     do_keep_updating: bool = True   # No way to stop updating except for exiting the application. Can be implemented tho
@@ -65,11 +67,24 @@ class InferenceManager:
         return {k: v.tolist() for k, v in result.items()}
 
     def _update_global_models(self):
+        messaging_manager.send("Checking for updated inference model", "inference")
         while self.do_keep_updating:
             try:
+                staging_model_uuid = None
+                if "staging" in self._models:
+                    staging_model_uuid = self._models["staging"].metadata.model_uuid
                 self._models['staging'] = mlflow_pyfunc.load_model(f'models:/{os.getenv("MODEL_NAME")}/Staging')
+                if staging_model_uuid != self._models['staging'].metadata.model_uuid:
+                    messaging_manager.send("Staging inference model updated", "inference")
+
+                production_model_uuid = None
+                if "production" in self._models:
+                    production_model_uuid = self._models['production'].metadata.model_uuid
                 self._models['production'] = mlflow_pyfunc.load_model(f'models:/{os.getenv("MODEL_NAME")}/Production')
-            except Exception:  # If no model is available, do not update any further, wait and try again later.
+                if production_model_uuid != self._models['production'].metadata.model_uuid:
+                    messaging_manager.send("Production inference model updated", "inference")
+            except MlflowException:  # If no model is available, do not update any further, wait and try again later.
+                messaging_manager.send("No model found", "inference")
                 pass
 
             time.sleep(self._update_interval)
