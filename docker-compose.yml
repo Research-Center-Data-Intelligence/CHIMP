@@ -164,7 +164,30 @@ services:
         profiles:
             - ''
             - 'gpu'
-            - 'mlflow'
+            - 'services'
+
+    # message queue
+    # : serves as a message broker for the CHIMP system.
+    message-queue:
+        restart: unless-stopped
+        image: rabbitmq:3.13-management
+        container_name: message-queue
+        healthcheck:
+            test: rabbitmq-diagnosis check_port_connectivity
+            start_period: 30s
+            interval: 1m
+            timeout: 30s
+            retries: 5
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        profiles:
+            - ''
+            - 'gpu'
+            - 'services'
 
 networks:
     public-network:
