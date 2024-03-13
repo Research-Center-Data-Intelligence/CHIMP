@@ -1,4 +1,5 @@
 # This module should probably be moved into a library that can be reused for all services.
+import logging
 import pika
 
 
@@ -26,3 +27,12 @@ class MessagingManager:
 
 
 messaging_manager = MessagingManager()
+
+
+class MessagingLoggingHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        messaging_manager.send(log_entry, "serving.log")
