@@ -3,15 +3,27 @@ from os import environ, path, getcwd, makedirs
 
 import logging
 
+from .messaging import MessagingLoggingHandler
+
 
 def configure_logging(app):
+    messaging_handler = MessagingLoggingHandler()
+
     module_logger = _create_module_logger()
     module_logger.setLevel(environ.get('logging-level', logging.DEBUG))
+    module_logger.addHandler(messaging_handler)
 
     app.logger.setLevel(environ.get('logging-level', logging.DEBUG))
-    logging.getLogger('werkzeug').setLevel(environ.get('logging-level', logging.DEBUG))
-    logging.getLogger('socketio').setLevel(environ.get('logging-level', logging.DEBUG))
-    logging.getLogger('engineio').setLevel(environ.get('logging-level', logging.DEBUG))
+    app.logger.addHandler(module_logger)
+    werkzeug_logger = logging.getLogger("werkzeug")
+    werkzeug_logger.setLevel(logging.INFO)
+    werkzeug_logger.addHandler(messaging_handler)
+    socketio_logger = logging.getLogger("socketio")
+    socketio_logger.setLevel(logging.INFO)
+    socketio_logger.addHandler(messaging_handler)
+    engineio_logger = logging.getLogger("engineio")
+    engineio_logger.setLevel(logging.INFO)
+    engineio_logger.addHandler(messaging_handler)
 
 
 def _create_module_logger():
