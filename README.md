@@ -50,8 +50,8 @@ graph RL
     - You can monitor the training progress in the terminal by running `docker logs -f experimentation-server`.
 8. Once the training is finished, navigate to `http://localhost:8999` (MLFlow).
 9. Click on "Models" and select "onnx emotion model".
-10. Click on the last model.
-11. Set the model to "Production" by changing the "stage" setting at the top of the screen.
+10. Click on the last model and set the model to "Production" by changing the "stage" setting at the top of the screen.
+11. Click on the second to last model and sit the model to "Staging" by changing the "stage" setting at the top of the screen.
 12. Refresh the CHIMP front-end. You should now see percentages of the detected emotions.
 
 To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docker-compose --profile gpu up -d`. To only
