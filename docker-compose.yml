@@ -38,7 +38,7 @@ services:
             context: ./experimentation
             dockerfile: Dockerfile
         image: chimp-experimentation:demonstrator-v1.0.0
-        container_name: experimentation-server
+        container_name: experimentation-server-gpu
         deploy:
             resources:
                 reservations:
