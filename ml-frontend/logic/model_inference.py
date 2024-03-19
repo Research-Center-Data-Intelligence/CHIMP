@@ -1,7 +1,6 @@
 from os import environ
 import logging
 
-from random import random
 import numpy as np
 import requests
 from requests.exceptions import ConnectionError
@@ -15,7 +14,6 @@ class FacialEmotionInference:
     EMOTIONS = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
     def __init__(self):
-        # Simulate blue-green test; proper implementation would have validation for blue-green test
         self.stage = 'production'
 
     def predict(self, image: np.ndarray, model_id: str = ''):
@@ -40,9 +38,12 @@ class FacialEmotionInference:
                 _logger.debug(f"Response: {text_response}...")
                 predictions = list(text_response['predictions'].values())[0][0]  # Unpack response into list of predictions
                 class_responses = zip(self.EMOTIONS, predictions)
-                return sorted(class_responses, key=lambda item: item[1], reverse=True)
+                sorted_predictions = sorted(class_responses, key=lambda item: item[1], reverse=True)
+                _logger.debug(f"Returning sorted predictions: {sorted_predictions}")
+                return sorted_predictions
             else:
                 _logger.debug(f"Failed to get inference with status code {response.status_code}: {response.text}")
+                pass
         except ConnectionError:
             # Not possible to connect to inference server
             _logger.debug("Could not get inference...")

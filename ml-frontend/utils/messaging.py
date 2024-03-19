@@ -10,7 +10,7 @@ class MessagingService:
         self._channel.exchange_declare(exchange='chimp', exchange_type='topic')
 
     def send(self, message: str, topic: str):
-        routing_key = "serving." + topic
+        routing_key = "frontend." + topic
         self._channel.basic_publish(exchange='chimp', routing_key=routing_key, body=message)
 
 
@@ -35,4 +35,4 @@ class MessagingLoggingHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
-        messaging_manager.send(log_entry, "serving.log")
+        messaging_manager.send(log_entry, "frontend.log")

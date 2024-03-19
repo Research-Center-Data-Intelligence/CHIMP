@@ -56,7 +56,7 @@ function init() {
 
     sock.on('update-data', (data) =>
         {
-            // console.log(data);
+            // console.log(`Updated data: ${data}`);
 
             if (!has_recently_updated_data) {
                 has_recently_updated_data = true;

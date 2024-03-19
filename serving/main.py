@@ -4,13 +4,22 @@ from flask import Flask, abort
 from request_handlers import health_handler, inference_handler
 import logging
 
+from messaging import MessagingLoggingHandler
+
 app = Flask(__name__)
 app = health_handler.add_as_route_handler(app)
 app = inference_handler.add_as_route_handler(app)
 
-logging.getLogger("werkzeug").setLevel(logging.INFO)
-logging.getLogger("socketio").setLevel(logging.INFO)
-logging.getLogger("engineio").setLevel(logging.INFO)
+messaging_handler = MessagingLoggingHandler()
+werkzeug_logger = logging.getLogger("werkzeug")
+werkzeug_logger.setLevel(logging.INFO)
+werkzeug_logger.addHandler(messaging_handler)
+socketio_logger = logging.getLogger("socketio")
+socketio_logger.setLevel(logging.INFO)
+socketio_logger.addHandler(messaging_handler)
+engineio_logger = logging.getLogger("engineio")
+engineio_logger.setLevel(logging.INFO)
+engineio_logger.addHandler(messaging_handler)
 
 
 @app.route("/")
