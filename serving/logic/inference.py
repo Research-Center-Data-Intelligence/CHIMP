@@ -29,6 +29,7 @@ class InferenceManager:
 
     def infer_from_global_model(self, data: dict, model_stage: str = 'production'):
         if not ('staging' in self._models and 'production' in self._models):
+            messaging_manager.send("no models available, returning default response", "inference")
             return self._DEFAULT_RESPONSE
 
         # If specified model stage for the model to load is staging, keep it staging. If not, default to production.
@@ -41,6 +42,7 @@ class InferenceManager:
         if model_id not in self._models:
             # Invoke model update on separate thread if not already invoked
             if model_id not in self._calibrated_model_retrieval_list:
+                messaging_manager.send(f"No calibrated model with {model_id} found, start checking for calibrated model", "inference")
                 self._calibrated_model_retrieval_list.append(model_id)
                 calibrated_model_retrieval = Thread(target=self._get_calibrated_model, args=[model_id], daemon=True)
                 calibrated_model_retrieval.start()
@@ -91,6 +93,7 @@ class InferenceManager:
 
     def _get_calibrated_model(self, model_id: str):
         # Search for calibrated model in mlflow runs
+        messaging_manager.send("Loading calibrated model", "inference")
         calibrated_model = mlflow_search_runs(experiment_names=['ONNX Emotion Recognition'],
                                               filter_string=f'run_name = "{model_id}"')
 
@@ -99,11 +102,11 @@ class InferenceManager:
             model_run_id = calibrated_model.iloc[0].loc['run_id']
             try:
                 self._models[model_id] = mlflow_pyfunc.load_model(f'runs:/{model_run_id}/model')
-                print('Calibrated model has been loaded.')
+                messaging_manager.send("Calibrated model has been loaded", "inference")
             except MlflowException:     # Occurs when calibrated model is still under development
-                print('Model run exists, but the model does not exist.')
+                messaging_manager.send("Calibrated model run exists, but the model itself does not exist", "inference")
             except NoSuchFile:          # Occurs when the model has just been uploaded and is still processing
-                print(f'No onnx model found in temporary directory.')
+                messaging_manager.send("No calibrated model found", "inference")
 
         # Mark model retrieval as being finished
         self._calibrated_model_retrieval_list.remove(model_id)
