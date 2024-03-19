@@ -1,9 +1,11 @@
+import cv2
+import gevent
+from gevent import Greenlet
+import numpy as np
 from os import path, getcwd
 from time import time
-from threading import Thread
+from typing import Optional
 
-import cv2
-import numpy as np
 
 from logic.model_inference import FacialEmotionInference
 
@@ -22,7 +24,7 @@ class ImageProcessor:
         self.is_processed = True
         self.inference_interval = inference_interval
         self._previous_inference_call = 0
-        self._inference_thread: Thread = Thread()
+        self._inference_thread: Optional[Greenlet] = None
 
         # Load facial recognition haar cascade
         cascade_file = path.join(getcwd(), 'static', 'cascades', 'frontalface_default_haarcascade.xml')
@@ -43,8 +45,12 @@ class ImageProcessor:
         faces = self.face_cascade.detectMultiScale(grey_frame, 1.3, 5)
 
         # Flag for a new inference call if no inference call is active and the inference time-out interval has expired
-        do_new_inference_call = (time() - self._previous_inference_call > self.inference_interval) \
-                                and not self._inference_thread.is_alive()
+        current_time = time()
+        time_diff_over = current_time - self._previous_inference_call > self.inference_interval
+        thread_alive = False
+        if self._inference_thread:
+            thread_alive = self._inference_thread.ready()
+        do_new_inference_call = time_diff_over and not thread_alive
 
         for index, (x, y, width, height) in enumerate(faces):
             # Execute inference call if inference call has passed, else use previous results
@@ -56,9 +62,9 @@ class ImageProcessor:
 
                     # Set inference call time to current time
                     self._previous_inference_call = time()
+                    return
 
-                self._inference_thread = Thread(target=execute_inference, daemon=True)
-                self._inference_thread.start()
+                self._inference_thread = gevent.spawn(execute_inference)
 
             if index not in self._predictions:
                 continue
