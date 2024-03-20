@@ -1,14 +1,16 @@
-from dotenv import load_dotenv
-
-from flask import Flask, abort
-from request_handlers import health_handler, inference_handler
-import logging
 import sys
 import os
 
+# This is required to make imports work consistently across different
+# machines. This needs to be executed before other imports
 basedir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(basedir, "..")))
 
+import logging
+from dotenv import load_dotenv
+from flask import Flask, abort
+
+from request_handlers import health_handler, inference_handler
 from messaging import MessagingLoggingHandler
 
 app = Flask(__name__)
