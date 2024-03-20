@@ -35,4 +35,4 @@ class MessagingLoggingHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
-        messaging_manager.send(log_entry, "frontend.log")
+        messaging_manager.send(log_entry, "log")
