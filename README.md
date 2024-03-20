@@ -55,8 +55,8 @@ graph RL
 12. Refresh the CHIMP front-end. You should now see percentages of the detected emotions.
 
 To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docker-compose --profile gpu up -d`. To only
-run MLFlow (e.g. when running the Python code directly on the host), use the "mlflow" profile as
-follows: `docker-compose --profile mlflow up -d`. Please note that the `--profile <PROFILE_NAME>` should come before any
+run the external services, such as MLFlow and RabbitMQ (e.g. when running the Python code directly on the host), use the "services" profile as
+follows: `docker-compose --profile services up -d`. Please note that the `--profile <PROFILE_NAME>` should come before any
 further commands, such as `up -d`. On some setups, to use the default profile (denoted by an empty string, or ''), it should be explicitly included in the call, for example: `docker-compose --profile '' up -d`.
 
 ### Local development setup (on host outside of Docker)

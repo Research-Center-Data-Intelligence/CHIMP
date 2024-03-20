@@ -6,7 +6,13 @@ from flask import Flask, abort
 from request_handlers import health_handler, experimentation_handler
 import logging
 
+import sys
+import os
+
 from messaging import MessagingLoggingHandler
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(basedir, "..")))
 
 app = Flask(__name__)
 CORS(app)

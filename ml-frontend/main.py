@@ -1,4 +1,6 @@
 from dotenv import load_dotenv
+import os
+import sys
 
 from flask_socketio import SocketIO
 from flask import Flask, render_template
@@ -7,6 +9,8 @@ from utils.logging_config import configure_logging
 
 from request_handlers import inference_handler
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(basedir, "..")))
 
 app = Flask(__name__)
 socket_io = SocketIO(app, always_connect=True, logger=False, engineio_logger=False)
