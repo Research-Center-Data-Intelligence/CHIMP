@@ -3,6 +3,11 @@ from dotenv import load_dotenv
 from flask import Flask, abort
 from request_handlers import health_handler, inference_handler
 import logging
+import sys
+import os
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(basedir, "..")))
 
 from messaging import MessagingLoggingHandler
 
