@@ -5,6 +5,18 @@ experimentation/ONNX Emotion Recognition/
 ml-frontend/logs
 serving/mlruns
 
+### Custom venv
+experimentation_venv
+experimentation_env
+mlfrontend_venv
+mlfrontend_env
+frontend_venv
+frontend_env
+serving_venv
+serving_env
+serving_api_venv
+serving_api_env
+
 # IDE
 .idea/
 .vscode/
