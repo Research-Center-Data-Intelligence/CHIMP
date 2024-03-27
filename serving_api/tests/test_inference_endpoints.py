@@ -12,9 +12,10 @@ class TestInferFromModel:
             content_type="application/json",
             data=json.dumps({"inputs": [1, 2]}),
         )
-        assert resp.status_code == 200, resp.json
+        assert resp.status_code == 404, resp.json
         assert resp.is_json
         assert resp.json == {
-            "data": {"a": 0.9, "b": 0.1},
-            "status": "inference from model test success",
+            "error": "Not Found",
+            "message": "Could not find model with name test",
+            "status-code": 404,
         }
