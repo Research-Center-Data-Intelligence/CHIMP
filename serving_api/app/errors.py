@@ -27,3 +27,21 @@ def error_response(
 @bp.app_errorhandler(HTTPException)
 def handle_exception(error) -> Tuple[Response, int]:
     return error_response(error.code, error.description)
+
+
+###########################
+# Start custom exceptions #
+###########################
+
+
+class ModelNotFoundError(Exception):
+    """Custom exception for when a given model is not available."""
+
+    pass
+
+
+class InvalidDataFormatError(Exception):
+    """Custom exception for when the data passed for inference is in an invalid format."""
+
+    def __init__(self, msg="Invalid data format", *args, **kwargs):
+        super().__init__(msg, *args, **kwargs)

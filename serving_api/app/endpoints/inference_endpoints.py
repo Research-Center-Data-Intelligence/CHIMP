@@ -1,6 +1,8 @@
 import warnings
 from flask import Blueprint, current_app, jsonify, Response, request
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, NotFound
+
+from app.errors import ModelNotFoundError, InvalidDataFormatError
 
 bp = Blueprint("inference", __name__)
 
@@ -32,22 +34,32 @@ def infer_from_model(model_name: str) -> Response:
     Examples
     --------
     curl
-        ```curl -X POST http://localhost:5254/model/example/infer -H 'Content-Type: application/json`\
+        ```curl -X POST http://localhost:5254/model/example/infer -H 'Content-Type: application/json'\
          -d '{"inputs": ENCODED_DATA}'```
+    curl with model name containing spaces (these are encoded as "+" characters
+        ```curl -X POST http://localhost:5254/model/some+model/infer -H 'Content-Type: application/json'\
+        -d '{"inputs": ENCODED_DATA}'```
     """
+    model_name = model_name.replace(
+        "+", " "
+    )  # Replace URL encoded spaces with actual spaces
     session_id = request.args.get("id", default="", type=str)
     stage = request.args.get("stage", default="production", type=str)
 
     if not request.is_json:
         raise BadRequest("The request data must be a json object.")
-    elif not request.json.get("inputs"):
+    elif not type(request.json) is dict or not request.json.get("inputs"):
         raise BadRequest(
             f"The json requests must contain an 'inputs' field with an array of input data. Got '{request.json}'"
         )
-
-    predictions = current_app.extensions["inference_manager"].infer(
-        model_name, request.json, stage, session_id
-    )
+    try:
+        predictions = current_app.extensions["inference_manager"].infer(
+            model_name, request.json.get("inputs"), stage, session_id
+        )
+    except ModelNotFoundError:
+        raise NotFound(f"Could not find model with name {model_name}")
+    except InvalidDataFormatError as ex:
+        raise BadRequest(str(ex))
 
     return jsonify(
         {"status": f"inference from model {model_name} success", "data": predictions}

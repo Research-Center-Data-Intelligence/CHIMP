@@ -1,3 +1,5 @@
 flask
 flask-cors
 python-dotenv
+mlflow
+onnxruntime

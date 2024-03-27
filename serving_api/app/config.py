@@ -13,3 +13,4 @@ DEVELOPMENT = os.environ.get("DEVELOPMENT") or False
 DEV = DEVELOPMENT
 
 LEGACY_MODEL_NAME = os.environ.get("LEGACY_MODEL_NAME") or "onnx emotion model"
+MODEL_UPDATE_INTERVAL_SECONDS = os.environ.get("MODEL_UPDATE_INTERVAL_SECONDS") or 300
