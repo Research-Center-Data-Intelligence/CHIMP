@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import Flask
 from mlflow import pyfunc as mlflow_pyfunc, MlflowException
-from typing import Union
+from onnxruntime.capi.onnxruntime_pybind11_state import NoSuchFile as MlflowNoSuchFile
+from typing import Union, Optional
 
 from app.model import BaseModel, OnnxModel
 
@@ -17,7 +18,7 @@ class BaseConnector(ABC):
     """
 
     @abstractmethod
-    def get_model(self, model_name: str) -> Union[BaseModel, None]:
+    def get_model(self, model_name: str) -> Optional[BaseModel]:
         """Retrieves a model based on a given name.
 
         Parameters
@@ -64,19 +65,36 @@ class BaseConnector(ABC):
 
 class MLFlowConnector(BaseConnector):
 
-    def get_model(self, model_name: str) -> Union[BaseModel, None]:
+    def get_model(self, model_name: str, model_id: Optional[str] = "") -> Union[BaseModel, None]:
         try:
-            staging_model = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
-            production_model = mlflow_pyfunc.load_model(
-                f"models:/{model_name}/production"
-            )
-            return OnnxModel(
-                model_name, {"staging": staging_model, "production": production_model}
-            )
-        except MlflowException as ex:
+            if model_id:
+                model = mlflow_pyfunc.load_model(f"runs:/{model_id}/model")
+                # TODO: check the type of model, then return an object of the proper Model subclass.
+                return OnnxModel(model_id, {"staging": model, "production": model})
+            else:
+                staging_model = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
+                production_model = mlflow_pyfunc.load_model(
+                    f"models:/{model_name}/production"
+                )
+                # TODO: check the type of model, then return an object of the proper Model subclass.
+                return OnnxModel(
+                    model_name, {"staging": staging_model, "production": production_model}
+                )
+        except MlflowException:
             return None
 
     def update_model(self, model: BaseModel) -> None:
         model.updated = datetime.utcnow()
-        for model_name in model.get_model_tags():
-            pass
+        for model_tag in model.get_model_tags():
+            try:
+                if model_tag in ("production", "staging"):
+                    new_model = mlflow_pyfunc.load_model(f"models:/{model.name}/{model_tag}")
+                else:
+                    new_model = mlflow_pyfunc.load_model(f"runs:/{model.name}/model")
+                model.update_model(model_tag, new_model)
+            except MlflowException:
+                # TODO: Add log message that model can not be updated.
+                pass
+            except MlflowNoSuchFile:
+                # TODO: Add log message that model can not be updated.
+                pass

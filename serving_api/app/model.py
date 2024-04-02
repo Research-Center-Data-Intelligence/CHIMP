@@ -1,7 +1,8 @@
+from __future__ import annotations
 import numpy as np
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List
 from onnxruntime.capi.onnxruntime_pybind11_state import (
     InvalidArgument as OnnxInvalidArgument,
 )
@@ -56,6 +57,7 @@ class BaseModel(ABC):
             New model to store for the given tag.
         """
         self._models[tag] = updated_model
+        self.updated = datetime.utcnow()
 
     def get_model_tags(self) -> List[str]:
         """Get a list of available tags.
@@ -66,7 +68,7 @@ class BaseModel(ABC):
         """
         return list(self._models.keys())
 
-    def get_model_by_tag(self, tag: str) -> Union[Any, None]:
+    def get_model_by_tag(self, tag: str) -> Optional[Any]:
         """Get a model based on a given tag.
 
         Parameters
@@ -82,7 +84,7 @@ class BaseModel(ABC):
 
 
 class OnnxModel(BaseModel):
-    """Implementation of BaseModel voor ONNX models."""
+    """Implementation of BaseModel for ONNX models."""
 
     def predict(
         self,
