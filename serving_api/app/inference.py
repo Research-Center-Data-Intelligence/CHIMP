@@ -8,7 +8,7 @@ from app.errors import ModelNotFoundError
 
 
 class InferenceManager:
-    """Integrates the connection with MLFlow for inference with Flask. The implementation
+    """Integrates the connection with the model back-end for inference with Flask. The implementation
     of this class is inspired by the Flask-SQLAlchemy plugin, specifically the
     SQLAlchemy class.
     """
@@ -77,6 +77,7 @@ class InferenceManager:
                 raise ModelNotFoundError()
 
         # Check if the model should check for updates
+        # TODO: Implement a per sub-model update mechanism to avoid unnecessary updates
         if datetime.utcnow() - self._models[model_name].updated > timedelta(
             seconds=self._app.config["MODEL_UPDATE_INTERVAL_SECONDS"]
         ):
@@ -100,7 +101,7 @@ class InferenceManager:
         -------
         True when a model with the given name is found, False if not.
         """
-        model = self._connector.get_model(model_name)
+        model = self._connector.get_model(model_name, model_id)
         if not model:
             return False
         self._models[model_name] = model
