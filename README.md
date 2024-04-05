@@ -67,9 +67,9 @@ To run the Python/Flask based CHIMP components outside of Docker (for example, w
   - Serving (Python 3.9) `python3.9 -m venv serving/env`
   - ML-frontend (Python 3.11) `python3.11 -m venv ml-frontend/env`
 - Activate the virtual environment for each component
-  - Experimentation `source experimentation/env/bin/activate`
-  - Serving `source serving/env/bin/activate`
-  - ML-frontend `source ml-frontend/env/bin/activate`
+  - Experimentation `source experimentation/env/bin/activate` on Linux or `experimentation\env\Scripts\activate` on Windows
+  - Serving `source serving/env/bin/activate` or `serving\env\Scripts\activate` on Windows
+  - ML-frontend `source ml-frontend/env/bin/activate` or `ml-frontend\env\Scripts\activate` on Windows
 - Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
   - Experimentation `pip install -r experimentation/requirements.txt`
   - Serving `pip install -r serving/requirements.txt`
