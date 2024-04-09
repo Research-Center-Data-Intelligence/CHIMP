@@ -65,23 +65,30 @@ class BaseConnector(ABC):
 
 class MLFlowConnector(BaseConnector):
 
+    @staticmethod
+    def _get_calibrated_model(model_id: str) -> any:
+        model = mlflow_pyfunc.load_model(f"runs:/{model_id}/model")
+        # TODO: check the type of model, then return an object of the proper Model subclass.
+        return OnnxModel(model_id, {"staging": model, "production": model})
+
+    @staticmethod
+    def _get_global_model(model_name: str) -> any:
+        staging = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
+        production = mlflow_pyfunc.load_model(f"models:/{model_name}/production")
+        # TODO: check the type of model, then return an object of the proper Model subclass.
+        return OnnxModel(model_name, {"staging": staging, "production": production})
+
     def get_model(self, model_name: str, model_id: Optional[str] = "") -> Union[BaseModel, None]:
         try:
             if model_id:
-                model = mlflow_pyfunc.load_model(f"runs:/{model_id}/model")
-                # TODO: check the type of model, then return an object of the proper Model subclass.
-                return OnnxModel(model_id, {"staging": model, "production": model})
+                return self._get_calibrated_model(model_id)
             else:
-                staging_model = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
-                production_model = mlflow_pyfunc.load_model(
-                    f"models:/{model_name}/production"
-                )
-                # TODO: check the type of model, then return an object of the proper Model subclass.
-                return OnnxModel(
-                    model_name, {"staging": staging_model, "production": production_model}
-                )
+                return self._get_global_model(model_name)
         except MlflowException:
-            return None
+            try:
+                return self._get_global_model(model_name)
+            except MlflowException:
+                return None
 
     def update_model(self, model: BaseModel) -> None:
         model.updated = datetime.utcnow()
