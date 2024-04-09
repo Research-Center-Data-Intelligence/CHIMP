@@ -71,10 +71,13 @@ class InferenceManager:
         -------
         The prediction results for the given data provided by the given model.
         """
+        # Check if calibrated model is available
+        if model_id and model_id not in self._models:
+            self._get_model(model_name, model_id)
+
         # Check if model is already available
         if model_name not in self._models:
-            if not self._get_model(model_name, model_id):
-                raise ModelNotFoundError()
+            self._get_model(model_name, model_id)
 
         # Check if the model should check for updates
         # TODO: Implement a per sub-model update mechanism to avoid unnecessary updates
@@ -83,8 +86,16 @@ class InferenceManager:
         ):
             self._connector.update_model(self._models[model_name])
 
+        # Select the correct model
+        if model_id and model_id in self._models:
+            selected_model = self._models[model_id]
+        elif model_name in self._models:
+            selected_model = self._models[model_name]
+        else:
+            raise ModelNotFoundError()
+
         # Return inference based on the data
-        return self._models[model_name].predict(data, stage, model_id)
+        return selected_model.predict(data, stage, model_id)
 
     def _get_model(self, model_name: str, model_id: Optional[str] = "") -> bool:
         """Helper method to see if a model with a given name is available an to retrieve
