@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 from flask import Flask
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 
 from app.connector import BaseConnector
 from app.errors import ModelNotFoundError
@@ -15,10 +15,9 @@ class InferenceManager:
 
     _app: Flask = None
     _models = {}
+    _available_models: Set = set()  # Set is used here instead of List so that time complexity of lookups is O(1).
     _connector: BaseConnector
-
-    def __init__(self):
-        pass
+    _last_update: datetime
 
     def init_app(self, app: Flask, connector: BaseConnector) -> None:
         """Initialize a Flask application for use with this extension instance.
@@ -42,6 +41,8 @@ class InferenceManager:
         app.extensions["inference_manager"] = self
         self._app = app
         self._connector = connector
+        self._last_update = datetime.utcnow()
+        self.update_models(force=True)
 
     def infer(
         self,
@@ -71,31 +72,55 @@ class InferenceManager:
         -------
         The prediction results for the given data provided by the given model.
         """
-        # Check if calibrated model is available
-        if model_id and model_id not in self._models:
-            self._get_model(model_name, model_id)
-
-        # Check if model is already available
-        if model_name not in self._models:
-            self._get_model(model_name, model_id)
-
         # Check if the model should check for updates
-        # TODO: Implement a per sub-model update mechanism to avoid unnecessary updates
-        if datetime.utcnow() - self._models[model_name].updated > timedelta(
-            seconds=self._app.config["MODEL_UPDATE_INTERVAL_SECONDS"]
-        ):
-            self._connector.update_model(self._models[model_name])
+        self.update_models()
 
-        # Select the correct model
-        if model_id and model_id in self._models:
-            selected_model = self._models[model_id]
-        elif model_name in self._models:
-            selected_model = self._models[model_name]
-        else:
+        # Select correct model if available, or raise an error if the model is not available.
+        selected_model = None
+        if model_id:                                            # Calibrated model selection
+            if model_id in self._models:
+                selected_model = self._models[model_id]
+            elif model_id in self._available_models:
+                if self._get_model(model_name, model_id):
+                    selected_model = self._models[model_id]
+
+        if not selected_model:                                  # Global model selection
+            if model_name in self._models:
+                selected_model = self._models[model_name]
+            elif model_name in self._available_models:
+                if self._get_model(model_name):
+                    selected_model = self._models[model_name]
+
+        if not selected_model:                                  # No model found
             raise ModelNotFoundError()
 
         # Return inference based on the data
         return selected_model.predict(data, stage, model_id)
+
+    def update_models(self, force: Optional[bool] = False, load_models: Optional[bool] = False) -> None:
+        """Update the available models.
+
+        A method for updating the models used. By default, it only updates the models if the
+        time since the last update is greater than the configured interval, unless the
+        force option is used. Additionally, by default, it only checks whether the models
+        are available, but does not actually load them, unless load_models is used.
+
+        Parameters
+        ----------
+        force : Optional[bool]
+            Optional parameters specifying whether to force updates or not.
+        load_models : Optional[bool]
+            Optional parameter specifying whether to actually load the models,
+            or only check if they are available.
+        """
+        time_threshold = timedelta(seconds=self._app.config["MODEL_UPDATE_INTERVAL_SECONDS"])
+        if force or datetime.utcnow() - self._last_update > time_threshold:
+            self._available_models = self._connector.get_available_models()
+
+            if load_models:
+                for model in self._models.values():
+                    if force or model.updated > time_threshold:
+                        self._connector.update_model(model)
 
     def _get_model(self, model_name: str, model_id: Optional[str] = "") -> bool:
         """Helper method to see if a model with a given name is available an to retrieve

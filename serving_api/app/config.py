@@ -14,3 +14,4 @@ DEV = DEVELOPMENT
 
 LEGACY_MODEL_NAME = os.environ.get("LEGACY_MODEL_NAME") or "onnx emotion model"
 MODEL_UPDATE_INTERVAL_SECONDS = os.environ.get("MODEL_UPDATE_INTERVAL_SECONDS") or 300
+TRACKING_URI = os.environ.get("TRACKING_URI") or "http://localhost:8999"

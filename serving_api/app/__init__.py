@@ -21,7 +21,7 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
 
     # Initialize extensions
     cors.init_app(app)
-    connector.init_app(app)
+    connector.init_app(app, app.config["TRACKING_URI"])
     inference_manager.init_app(app, connector)
 
     return app
