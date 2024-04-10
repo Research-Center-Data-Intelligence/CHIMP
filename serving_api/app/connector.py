@@ -1,9 +1,10 @@
+import mlflow
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import Flask
-from mlflow import pyfunc as mlflow_pyfunc, MlflowException
+from mlflow import pyfunc as mlflow_pyfunc, MlflowException, MlflowClient
 from onnxruntime.capi.onnxruntime_pybind11_state import NoSuchFile as MlflowNoSuchFile
-from typing import Union, Optional
+from typing import Union, Optional, Set
 
 from app.model import BaseModel, OnnxModel
 
@@ -16,6 +17,7 @@ class BaseConnector(ABC):
     these models in Model (app.model.Model) objects that can be used
     in the rest of the application.
     """
+    _tracking_uri: str
 
     @abstractmethod
     def get_model(self, model_name: str) -> Optional[BaseModel]:
@@ -43,13 +45,23 @@ class BaseConnector(ABC):
         """
         pass
 
-    def init_app(self, app: Flask) -> None:
+    @abstractmethod
+    def get_available_models(self) -> Set:
+        pass
+
+    def _init_connector(self):
+        """Helper method for any connector specific initialization."""
+        pass
+
+    def init_app(self, app: Flask, tracking_uri: str) -> None:
         """Initialize a Flask application for use with this extension instance.
 
         Parameters
         ----------
         app : Flask
             The Flask application to initialize with this extension instance.
+        tracking_uri : str
+            The connection URI for the tracking server
 
         Raises
         ------
@@ -60,10 +72,17 @@ class BaseConnector(ABC):
             raise RuntimeError(
                 "A 'Connector' instance has already been registered on this Flask app."
             )
+        self._tracking_uri = tracking_uri
+        self._init_connector()
         app.extensions["connector"] = self
 
 
 class MLFlowConnector(BaseConnector):
+    _client: MlflowClient
+
+    def _init_connector(self):
+        mlflow.set_tracking_uri(self._tracking_uri)
+        self._client = MlflowClient()
 
     @staticmethod
     def _get_calibrated_model(model_id: str) -> any:
@@ -105,3 +124,13 @@ class MLFlowConnector(BaseConnector):
             except MlflowNoSuchFile:
                 # TODO: Add log message that model can not be updated.
                 pass
+
+    def get_available_models(self) -> Set:
+        available_models = set()
+
+        models = self._client.search_model_versions("")
+        for model in models:
+            available_models.add(model.name)
+            available_models.add(model.run_id)
+
+        return available_models
