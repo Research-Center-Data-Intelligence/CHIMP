@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 from flask import Flask
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, List
 
 from app.connector import BaseConnector
 from app.errors import ModelNotFoundError
@@ -145,3 +145,16 @@ class InferenceManager:
         else:
             self._models[model_name] = model
         return True
+
+    def get_models_list(self) -> Dict[str, List[str]]:
+        """Get a list of loaded and available models.
+
+        Returns
+        -------
+        A dictionary containing two lists, one of the loaded models, another one of the
+        available models.
+        """
+        return {
+            "loaded_models": [model.name for model in self._models.values()],
+            "available_models": list(self._available_models)
+        }

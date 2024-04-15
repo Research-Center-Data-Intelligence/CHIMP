@@ -7,6 +7,37 @@ from app.errors import ModelNotFoundError, InvalidDataFormatError
 bp = Blueprint("inference", __name__)
 
 
+@bp.route("/model")
+def get_models() -> Response:
+    """Get a list of all available models.
+
+    Parameters
+    ----------
+    (optional query param) reload_models : bool
+        Whether or note to reload the models before generating the list of models.
+        (this flag might be removed when a message queue based update mechanism is in place)
+
+    Returns
+    -------
+    json:
+        A json object containing a list of available models and a list of loaded models
+
+    Examples
+    --------
+    curl
+        `curl http://localhost:5254/model`
+    curl with reloading models
+        `curl http://localhost:5254/models?reload_models=true`
+    """
+    update_models = request.args.get("reload_models", default=False, type=bool)
+    if update_models:
+        current_app.extensions["inference_manager"].update_models(force=True, load_models=True)
+
+    data = current_app.extensions["inference_manager"].get_models_list()
+
+    return jsonify({"status": "successfully retrieved models", "updated_models": update_models, "data": data})
+
+
 @bp.route("/model/<model_name>/infer", methods=["POST"])
 def infer_from_model(model_name: str, passed_request: Request = None) -> Response:
     """Get an inference from the given model.
@@ -31,7 +62,6 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
     ------
     NotFound
         When the specified model name is not found, a NotFound (404) error is raised
-
 
     Examples
     --------
