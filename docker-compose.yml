@@ -16,7 +16,7 @@ services:
         environment:
             - UID=1000
             - GID=1000
-            - MODEL_INFERENCE_URL=http://serving-server:8000/invocations
+            - MODEL_INFERENCE_URL=http://serving-api:8000/invocations
         volumes:
             - ./docker-data/webapp/html:/usr/src/app/templates
             - ./docker-data/webapp/images:/usr/src/app/static/images
@@ -104,19 +104,18 @@ services:
         profiles:
             - ''
 
-    # serving
-    # : serves models from the artifact store to the frontend application
-    serving-server:
+    # Serving API
+    # : serves models from the artifact store to applications
+    serving-api:
+        container_name: serving-api
         restart: unless-stopped
         build:
-            context: ./serving
+            context: ./serving_api
             dockerfile: Dockerfile
-        image: chimp-serving:demonstrator-v1.0.0
-        container_name: serving-server
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
-            start_period: 15s
-            interval: 30s
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            start_period: 30s
+            interval: 60s
             retries: 5
             timeout: 15s
         networks:
@@ -124,11 +123,9 @@ services:
         ports:
             - "5254:8000"
         environment:
-            - UID=1000
-            - GID=1000
-            - MODEL_NAME=onnx emotion model
-            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
-        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "main:get_app()"]
+            - LEGACY_MODEL_NAME=onnx emotion model
+            - TRACKING_URI=http://monitoring-server:8999
+        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "manage:app"]
         depends_on:
             - monitoring-server
         profiles:

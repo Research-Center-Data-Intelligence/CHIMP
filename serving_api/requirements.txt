@@ -1,5 +1,7 @@
-flask
-flask-cors
-python-dotenv
-mlflow
-onnxruntime
+flask==3.0.2
+flask-cors==4.0.0
+gevent==24.2.1
+gunicorn==21.2.0
+mlflow==2.11.3
+onnxruntime==1.17.1
+python-dotenv==1.0.1
