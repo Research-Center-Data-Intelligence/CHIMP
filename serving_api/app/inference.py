@@ -140,5 +140,8 @@ class InferenceManager:
         model = self._connector.get_model(model_name, model_id)
         if not model:
             return False
-        self._models[model_name] = model
+        if model_id:
+            self._models[model_id] = model
+        else:
+            self._models[model_name] = model
         return True

@@ -86,7 +86,11 @@ class MLFlowConnector(BaseConnector):
 
     @staticmethod
     def _get_calibrated_model(model_id: str) -> any:
-        model = mlflow_pyfunc.load_model(f"runs:/{model_id}/model")
+        runs = mlflow.search_runs(search_all_experiments=True, filter_string=f"run_name = {model_id}")
+        if len(runs) != 1:
+            raise MlflowException(f"Could not find run with name {model_id}")
+        run_id = runs.iloc[0].run_id
+        model = mlflow_pyfunc.load_model(f"runs:/{run_id}/model")
         # TODO: check the type of model, then return an object of the proper Model subclass.
         return OnnxModel(model_id, {"staging": model, "production": model})
 
@@ -132,5 +136,7 @@ class MLFlowConnector(BaseConnector):
         for model in models:
             available_models.add(model.name)
             available_models.add(model.run_id)
+            run_info = self._client.get_run(model.run_id)
+            available_models.add(run_info.info.run_name)
 
         return available_models
