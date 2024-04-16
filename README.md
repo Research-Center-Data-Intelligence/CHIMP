@@ -71,7 +71,7 @@ To run the Python/Flask based CHIMP components outside of Docker (for example, w
   - Serving `source serving/env/bin/activate` or `serving\env\Scripts\activate` on Windows
   - ML-frontend `source ml-frontend/env/bin/activate` or `ml-frontend\env\Scripts\activate` on Windows
 - Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
-  - Experimentation `pip install -r experimentation/requirements.txt`
+  - Experimentation `pip install -r experimentation/requirements.txt`, there is an issue with a deprecated sklearn lib, to solve this in windows run the command `set SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=true` before the pip install.
   - Serving `pip install -r serving/requirements.txt`
   - ML-frontend `pip install -r ml-frontend/requirements.txt`
 - Each component can now be ran as usual
