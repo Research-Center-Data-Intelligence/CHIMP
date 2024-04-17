@@ -13,14 +13,14 @@ a continual AI pipeline. It was originally part of a bachelor thesis project.
   of the CHIMP system).
 - **mlflow-tracking:** MLFlow is used to track the different models and log metrics for these models.
 
-The table below shows which ports are used by the different components. The "Local Dev Port" is the port that is used when a component is ran on the host instead of in Docker.
+The table below shows which ports are used by the different components. The "Local Dev Port" is the port that is used when a component is run on the host instead of in Docker.
 
-| Component       | Local Dev Port | Docker Host Porst | Docker Internal Ports |
-|-----------------|----------------|-------------------|-----------------------|
-| serving         | 5254           | 5254              | 8000                  |
-| experimentation | 5253           | 5253              | 8000                  |
-| ml-frontend     | 5252           | 5252              | 8000                  |
-| mlflow-tracking | n.a.           | 8999              | 8999                  |
+| Component       | Local Dev Port | Docker Host Port | Docker Internal Ports |
+|-----------------|----------------|------------------|-----------------------|
+| serving         | 5254           | 5254             | 8000                  |
+| experimentation | 5253           | 5253             | 8000                  |
+| ml-frontend     | 5252           | 5252             | 8000                  |
+| mlflow-tracking | n.a.           | 8999             | 8999                  |
 
 ```mermaid
 graph RL
@@ -64,15 +64,19 @@ To run the Python/Flask based CHIMP components outside of Docker (for example, w
 - Run the MLFlow service in Docker using `docker-compose --profile services up -d`
 - Create a virtual environment for each component with the required Python versions 
   - Experimentation (Python 3.9) `python3.9 -m venv experimentation/env`
-  - Serving (Python 3.9) `python3.9 -m venv serving/env`
+  - Serving (Python 3.9) `python3.9 -m venv serving_api/env`
   - ML-frontend (Python 3.11) `python3.11 -m venv ml-frontend/env`
 - Activate the virtual environment for each component
   - Experimentation `source experimentation/env/bin/activate` on Linux or `experimentation\env\Scripts\activate` on Windows
-  - Serving `source serving/env/bin/activate` or `serving\env\Scripts\activate` on Windows
+  - Serving `source serving_api/env/bin/activate` or `serving\env\Scripts\activate` on Windows
   - ML-frontend `source ml-frontend/env/bin/activate` or `ml-frontend\env\Scripts\activate` on Windows
 - Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
-  - Experimentation `pip install -r experimentation/requirements.txt`, there is an issue with a deprecated sklearn lib, to solve this in windows run the command `set SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=true` before the pip install.
-  - Serving `pip install -r serving/requirements.txt`
+  - Experimentation `pip install -r experimentation/requirements.txt`
+  - Serving `pip install -r serving_api/requirements.txt`
   - ML-frontend `pip install -r ml-frontend/requirements.txt`
-- Each component can now be ran as usual
-  - In PyCharm, a "Compound" run configuration can be used to run all the configurations for each components at once (including debugging)
+- Each component can now be run as usual
+  - In PyCharm, a "Compound" run configuration can be used to run all the configurations for each component at once (including debugging)
+- In the terminal, you can run each component whilst _being in the folder directory_ (i.e. `cd experimentation`) using the following commands:
+  - Experimentation `python3 main.py`
+  - Serving `python3 manage.py run`
+  - Experimentation `python3 main.py`
