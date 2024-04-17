@@ -61,7 +61,7 @@ further commands, such as `up -d`. On some setups, to use the default profile (d
 
 ### Local development setup (on host outside of Docker)
 To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
-- Run the MLFlow service in Docker using `docker-compose --profile mlflow up -d`
+- Run the MLFlow service in Docker using `docker-compose --profile services up -d`
 - Create a virtual environment for each component with the required Python versions 
   - Experimentation (Python 3.9) `python3.9 -m venv experimentation/env`
   - Serving (Python 3.9) `python3.9 -m venv serving/env`
