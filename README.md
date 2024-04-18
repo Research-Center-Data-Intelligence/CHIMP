@@ -63,20 +63,26 @@ further commands, such as `up -d`. On some setups, to use the default profile (d
 To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
 - Run the MLFlow service in Docker using `docker-compose --profile services up -d`
 - Create a virtual environment for each component with the required Python versions 
-  - Experimentation (Python 3.9) `python3.9 -m venv experimentation/env`
-  - Serving_api (Python 3.9) `python3.9 -m venv serving_api/env`
-  - ML-frontend (Python 3.11) `python3.11 -m venv ml-frontend/env`
-- Activate the virtual environment for each component
-  - Experimentation `source experimentation/env/bin/activate` on Linux or `experimentation\env\Scripts\activate` on Windows
-  - Serving `source serving_api/env/bin/activate` or `serving_api\env\Scripts\activate` on Windows
-  - ML-frontend `source ml-frontend/env/bin/activate` or `ml-frontend\env\Scripts\activate` on Windows
+  - Experimentation (Python 3.9): `python3.9 -m venv experimentation/env`
+  - Serving_api (Python 3.9): `python3.9 -m venv serving_api/env`
+  - ML-frontend (Python 3.11): `python3.11 -m venv ml-frontend/env`
+- Activate the virtual environment for each component:
+  - Experimentation: 
+    - Linux: `source experimentation/env/bin/activate`
+    - Windows: `experimentation\env\Scripts\activate`
+  - Serving: 
+    - Linux: `source serving_api/env/bin/activate` 
+    - Windows: `serving_api\env\Scripts\activate`
+  - ML-frontend:
+    - Linux: `source ml-frontend/env/bin/activate` 
+    - Windows: `ml-frontend\env\Scripts\activate`
 - Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
-  - Experimentation `pip install -r experimentation/requirements.txt`
-  - Serving_api `pip install -r serving_api/requirements.txt`
-  - ML-frontend `pip install -r ml-frontend/requirements.txt`
+  - Experimentation: `pip install -r experimentation/requirements.txt`
+  - Serving_api: `pip install -r serving_api/requirements.txt`
+  - ML-frontend: `pip install -r ml-frontend/requirements.txt`
 - Each component can now be run as usual
   - In PyCharm, a "Compound" run configuration can be used to run all the configurations for each component at once (including debugging)
 - In the terminal, you can run each component whilst _being in the folder directory_ (i.e. `cd experimentation`) using the following commands:
-  - Experimentation `python3 main.py`
-  - Serving_api `python3 manage.py run`
-  - Experimentation `python3 main.py`
+  - Experimentation: `python3 main.py`
+  - Serving_api: `python3 manage.py run`
+  - ml-frontend: `python3 main.py`
