@@ -100,6 +100,7 @@ class OnnxModel(BaseModel):
             else:
                 model = self._models[stage]
             data = np.asarray(data)
-            return {k: v.tolist() for k, v in model.predict(data).items()}
+            prediction = model.predict(data)
+            return {k: v.tolist() for k, v in prediction.items()}
         except OnnxInvalidArgument:
             raise InvalidDataFormatError()

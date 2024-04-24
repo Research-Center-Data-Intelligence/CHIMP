@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from flask import Flask
 from typing import Dict, Optional, Set, List
 
-from app.connector import BaseConnector
+from app.connectors import BaseConnector
 from app.errors import ModelNotFoundError
 
 
@@ -15,7 +15,9 @@ class InferenceManager:
 
     _app: Flask = None
     _models = {}
-    _available_models: Set = set()  # Set is used here instead of List so that time complexity of lookups is O(1).
+    _available_models: Set = (
+        set()
+    )  # Set is used here instead of List so that time complexity of lookups is O(1).
     _connector: BaseConnector
     _last_update: datetime
 
@@ -77,27 +79,29 @@ class InferenceManager:
 
         # Select correct model if available, or raise an error if the model is not available.
         selected_model = None
-        if model_id:                                            # Calibrated model selection
+        if model_id:  # Calibrated model selection
             if model_id in self._models:
                 selected_model = self._models[model_id]
             elif model_id in self._available_models:
                 if self._get_model(model_name, model_id):
                     selected_model = self._models[model_id]
 
-        if not selected_model:                                  # Global model selection
+        if not selected_model:  # Global model selection
             if model_name in self._models:
                 selected_model = self._models[model_name]
             elif model_name in self._available_models:
                 if self._get_model(model_name):
                     selected_model = self._models[model_name]
 
-        if not selected_model:                                  # No model found
+        if not selected_model:  # No model found
             raise ModelNotFoundError()
 
         # Return inference based on the data
         return selected_model.predict(data, stage, model_id)
 
-    def update_models(self, force: Optional[bool] = False, load_models: Optional[bool] = False) -> None:
+    def update_models(
+        self, force: Optional[bool] = False, load_models: Optional[bool] = False
+    ) -> None:
         """Update the available models.
 
         A method for updating the models used. By default, it only updates the models if the
@@ -113,7 +117,9 @@ class InferenceManager:
             Optional parameter specifying whether to actually load the models,
             or only check if they are available.
         """
-        time_threshold = timedelta(seconds=self._app.config["MODEL_UPDATE_INTERVAL_SECONDS"])
+        time_threshold = timedelta(
+            seconds=self._app.config["MODEL_UPDATE_INTERVAL_SECONDS"]
+        )
         if force or datetime.utcnow() - self._last_update > time_threshold:
             self._available_models = self._connector.get_available_models()
 
@@ -156,5 +162,5 @@ class InferenceManager:
         """
         return {
             "loaded_models": [model.name for model in self._models.values()],
-            "available_models": list(self._available_models)
+            "available_models": list(self._available_models),
         }
