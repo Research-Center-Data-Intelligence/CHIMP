@@ -8,6 +8,8 @@ from flask.testing import FlaskClient
 from typing import List
 
 from app.connectors import BaseConnector
+from app.inference import InferenceManager
+from app.model import BaseModel
 
 testdir = os.path.abspath(os.path.dirname(__file__))
 
@@ -129,6 +131,16 @@ def client(app) -> FlaskClient:
 @pytest.fixture
 def connector(app) -> BaseConnector:
     return app.extensions.get("connector")
+
+
+@pytest.fixture
+def model(connector: BaseConnector, global_model_name: str) -> BaseModel:
+    return connector.get_model(global_model_name)
+
+
+@pytest.fixture
+def inference_manager(app) -> InferenceManager:
+    return app.extensions.get("inference_manager")
 
 
 @pytest.fixture(scope="session", autouse=True)
