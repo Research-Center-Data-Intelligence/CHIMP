@@ -20,6 +20,9 @@ configure_logging(app)
 def index():
     return render_template('index.html')
 
+@app.route('/kali')
+def first_page():
+    return render_template('kali.html')
 
 def run_app():
     return socket_io.run(app=app, host='0.0.0.0', port=5252, debug=True)
@@ -32,3 +35,7 @@ def get_app():
 if __name__ == '__main__':
     load_dotenv()
     run_app()
+
+
+
+
