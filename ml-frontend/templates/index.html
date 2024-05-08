@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>Socket IO Camera Snapshots</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
 
@@ -11,8 +11,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 	<script src="static/js/main.js" defer></script>
+	<script src="../static/js/main.js"></script>
 </head>
+
 <body onload="init()">
+	
+    
     <div class="container">
 		<div class="header">
 			<image class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg"></image>
@@ -20,7 +24,16 @@
 				Emotion Detection using CHIMP
 			</span>
 		</div>
+		
 		<div class="banner"></div>
+		
+		<div class="model-kali">
+			<ul>
+				<li><a href="/">Home</a></li>
+    			<li><a href="/kali">Kalibratie lijst</a></li>
+			</ul>
+		</div>
+		
 		<div class="camera">
 			<div class="title">Camera Feed</div>
 			<hr />

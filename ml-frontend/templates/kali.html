@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kalibratie sessie</title>
+</head>
+<body>
+    <h1>Kalibratie sessie</h1>
+    <video id="videoElement" class="mirror" width="640" height="480" autoplay></video>
+    <br>
+    <button id="snapshotButton">oplsaan</button>
+    <canvas id="canvasElement" width="640" height="480" style="display: none;"></canvas>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <script src="static/js/kali.js" defer></script>
+	<script src="../static/js/kali.js"></script>
+    <link rel="stylesheet" href="static/css/kali.css">
+</body>
+</html>
