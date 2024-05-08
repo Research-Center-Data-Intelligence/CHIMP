@@ -7,7 +7,7 @@ class Example2Plugin(BasePlugin):
         self._info = PluginInfo(name="Example 2 Plugin", version="1.0")
 
     def init(self) -> PluginInfo:
-        return self._PluginInfo
+        return self._info
 
     def run(self):
         print(f"Running {self._PluginInfo.name}")
