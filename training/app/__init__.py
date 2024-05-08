@@ -3,7 +3,7 @@ from typing import Union
 
 from app.endpoints import health_endpoints
 from app.errors import bp as errors_bp
-from app.extensions import cors
+from app.extensions import cors, plugin_loader
 
 
 def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
@@ -20,5 +20,8 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
 
     # Initialize extensions
     cors.init_app(app)
+    plugin_loader.init_app(app)
+    plugin_loader.load_plugins()
+    print(plugin_loader.loaded_plugins(include_details=True))
 
     return app
