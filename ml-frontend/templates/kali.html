@@ -7,17 +7,28 @@
 </head>
 <body>
     <h1>Kalibratie sessie</h1>
-    <video id="videoElement" class="mirror" width="640" height="480" autoplay></video>
-    <br>
-    <button id="snapshotButton">oplsaan</button>
-    <canvas id="canvasElement" width="640" height="480" style="display: none;"></canvas>
-
+    <div class="video-container">
+        <video id="videoElement" autoplay playsinline></video>
+        <div id="countdownOverlay">
+            <span id="countdownText"></span>
+        </div>
+    </div>
+    <div>
+        <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
+        <button id="stopButton"><i class="fas fa-stop"></i> Stop Recording</button>
+        <button id="pauseButton"><i class="fas fa-pause"></i> Pause Recording</button>
+        <button id="resumeButton"><i class="fas fa-play"></i> Resume Recording</button>
+        <button id="saveButton"><i class="fas fa-save"></i> Save Recording</button>
+    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
     <script src="static/js/kali.js" defer></script>
 	<script src="../static/js/kali.js"></script>
-    <link rel="stylesheet" href="static/css/kali.css">
+    <script src="static/css/kali.css" defer></script>
+	<script src="../static/css/kali.css"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </body>
 </html>
