@@ -41,12 +41,9 @@ class WorkerManager:
         plugin_name = kwargs["plugin_name"]
         plugin_loader: PluginLoader = kwargs["plugin_loader"]
         plugin_loader.load_plugins()
-        plugin = plugin_loader.get_plugin(kwargs["plugin_name"])
+        plugin = plugin_loader.get_plugin(plugin_name)
         if not plugin:
-            plugin_loader.load_plugins()
-            plugin = plugin_loader.get_plugin(plugin_name)
-            if not plugin:
-                raise PluginNotFoundError()
+            raise PluginNotFoundError()
         return plugin.run(*args, **kwargs)
 
     def init_app(

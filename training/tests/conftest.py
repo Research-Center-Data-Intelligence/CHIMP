@@ -1,9 +1,12 @@
 import os
 import pytest
+import shutil
 from flask import Flask
 from flask.testing import FlaskClient
+from tempfile import mkdtemp
 
 from app.plugin import BasePlugin, PluginLoader
+from app.worker import WorkerManager
 
 
 @pytest.fixture
@@ -11,6 +14,7 @@ def app() -> Flask:
     from app import create_app, config
 
     config.TESTING = True
+    config.DATA_DIRECTORY = mkdtemp(prefix="CHIMP_TESTING_")
     app = create_app(config)
 
     ctx = app.app_context()
@@ -18,6 +22,7 @@ def app() -> Flask:
 
     yield app
 
+    shutil.rmtree(config.DATA_DIRECTORY)
     ctx.pop()
 
 
@@ -32,7 +37,12 @@ def plugin_loader(app) -> PluginLoader:
 
 
 @pytest.fixture
-def plugin(app) -> BasePlugin:
+def worker_manager(app) -> WorkerManager:
+    return app.extensions["worker_manager"]
+
+
+@pytest.fixture
+def plugin(app) -> str:
     plugin_code = """
 from app.plugin import BasePlugin, PluginInfo
 
@@ -44,7 +54,7 @@ class TestingPlugin(BasePlugin):
     def init(self) -> PluginInfo:
         return self._info
     
-    def run(self):
+    def run(self, *args, **kwargs):
         print("This is a testing plugin")
     """
     plugin_path = os.path.join(app.config["PLUGIN_DIRECTORY"], "testplugin.py")
@@ -54,3 +64,9 @@ class TestingPlugin(BasePlugin):
     yield "Testing Plugin"
 
     os.remove(plugin_path)
+
+
+@pytest.fixture
+def loaded_plugin(plugin_loader: PluginLoader, plugin) -> str:
+    plugin_loader.load_plugins()
+    return plugin

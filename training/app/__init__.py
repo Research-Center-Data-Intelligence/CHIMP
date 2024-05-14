@@ -1,3 +1,5 @@
+import os.path
+
 from celery import Celery, Task
 from flask import Flask
 from typing import Union
@@ -15,6 +17,9 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     if not app.config["TESTING"]:
         # Setup logging
         pass
+
+    if not os.path.exists(app.config["DATA_DIRECTORY"]):
+        os.mkdir(app.config["DATA_DIRECTORY"])
 
     # Register blueprints
     app.register_blueprint(errors_bp)
