@@ -44,8 +44,6 @@ def upload_dataset():
     if "file" not in request.files:
         raise BadRequest("No file in request")
     file = request.files["file"]
-    if not file.filename:
-        raise BadRequest("File can not be empty")
     if not file.filename.endswith(".zip"):
         raise BadRequest("File should be a zip")
 
@@ -56,12 +54,14 @@ def upload_dataset():
         raise BadRequest(
             "Dataset name ('dataset_name') should only contain alphanumeric characters"
         )
+    dataset_path = current_app.config["DATA_DIRECTORY"]
+    if dataset_name in os.listdir(dataset_path):
+        raise BadRequest(f"Dataset with name '{dataset_name}' already exists")
 
-    tmpdir = mkdtemp(suffix="chimp_")
+    tmpdir = mkdtemp(prefix="chimp_")
     zip_path = os.path.join(tmpdir, file.filename)
     file.save(zip_path)
 
-    dataset_path = current_app.config["DATA_DIRECTORY"]
     try:
         with ZipFile(zip_path, "r") as f:
             f.extractall(os.path.join(dataset_path, dataset_name))

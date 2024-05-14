@@ -21,8 +21,6 @@ PLUGIN_DIRECTORY = os.environ.get("PLUGIN_DIRECTORY") or os.path.join(
 DATA_DIRECTORY = os.environ.get("DATA_DIRECTORY") or os.path.join(
     basedir, "../datasets"
 )
-if not os.path.exists(DATA_DIRECTORY):
-    os.mkdir(DATA_DIRECTORY)
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "amqp://localhost"
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "rpc://localhost"
