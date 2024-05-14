@@ -27,3 +27,14 @@ def error_response(
 @bp.app_errorhandler(HTTPException)
 def handle_exception(error) -> Tuple[Response, int]:
     return error_response(error.code, error.description)
+
+
+###########################
+# Start custom exceptions #
+###########################
+
+
+class PluginNotFoundError(Exception):
+    """Custom exception for when a plugin has not been found."""
+
+    pass

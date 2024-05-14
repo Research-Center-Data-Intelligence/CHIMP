@@ -11,6 +11,6 @@ class ExamplePlugin(BasePlugin):
     def init(self) -> PluginInfo:
         return self._info
 
-    def run(self):
-        print(f"Running {self._PluginInfo.name}")
-        print(additional_class.AdditionalClass.some_method())
+    def run(self, *args, **kwargs):
+        print(f"Running {self._info.name}")
+        return additional_class.AdditionalClass.some_method()

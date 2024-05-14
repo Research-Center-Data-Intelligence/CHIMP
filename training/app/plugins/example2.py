@@ -1,3 +1,6 @@
+from time import sleep
+from typing import Any, Optional
+
 from app.plugin import BasePlugin, PluginInfo
 
 
@@ -9,5 +12,7 @@ class Example2Plugin(BasePlugin):
     def init(self) -> PluginInfo:
         return self._info
 
-    def run(self):
-        print(f"Running {self._PluginInfo.name}")
+    def run(self, *args, **kwargs) -> Optional[Any]:
+        print(f"Start running {self._info.name}, sleeping for 20 seconds")
+        sleep(20)
+        print(f"End running {self._info.name}")
