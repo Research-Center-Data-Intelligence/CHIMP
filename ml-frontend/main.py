@@ -21,7 +21,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/kali')
-def first_page():
+def kali_page():
     return render_template('kali.html')
 
 def run_app():

@@ -1,3 +1,60 @@
-.mirror {
-    transform: scaleX(-1); 
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+video {
+    width: 100%;
+    display: block;
+    border: 1px solid #ccc;
+}
+
+#countdownOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black overlay */
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+    z-index: 1; /* Ensure overlay is above the video */
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 10px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Active state for buttons */
+button.active {
+    background-color: #dc3545; /* Red color for active state */
 }
