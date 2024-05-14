@@ -44,7 +44,7 @@ def get_plugins():
     }
 
 
-@bp.route("/tasks/run/<plugin_name>")
+@bp.route("/tasks/run/<plugin_name>", methods=["POST"])
 def start_task(plugin_name: str):
     """Run a task.
 
@@ -61,7 +61,7 @@ def start_task(plugin_name: str):
     Examples
     --------
     curl
-        `curl http://localhost:5253/tasks/run/Example+Plugin`
+        `curl -X POST http://localhost:5253/tasks/run/Example+Plugin`
     """
     plugin_name = plugin_name.replace("+", " ")
     worker_manager: WorkerManager = current_app.extensions["worker_manager"]
