@@ -4,7 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from flask import Flask
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -30,16 +30,17 @@ class BasePlugin(ABC):
         pass
 
     @abstractmethod
-    def run(self):
-        """
-
-        Returns
-        -------
-
-        """
+    def run(self, *args, **kwargs) -> Optional[Any]:
+        """Run the plugin."""
         pass
 
     def info(self) -> dict:
+        """Return the info for the plugin.
+
+        Returns
+        -------
+        A dictionary containing the info about the plugin.
+        """
         return asdict(self._info)
 
 
@@ -70,6 +71,8 @@ class PluginLoader:
         self.plugin_directory = app.config["PLUGIN_DIRECTORY"]
 
     def load_plugins(self):
+        """Load all plugins from the configured plugin folder."""
+        self._loaded_plugins = {}
         for file in os.listdir(self.plugin_directory):
             path = os.path.join(self.plugin_directory, file)
             module = None
@@ -109,3 +112,17 @@ class PluginLoader:
             )
             for p in self._loaded_plugins
         ]
+
+    def get_plugin(self, name: str) -> Optional[BasePlugin]:
+        """Get a plugin by name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the plugin to load
+
+        Returns
+        -------
+        The loaded plugin or None
+        """
+        return self._loaded_plugins.get(name)
