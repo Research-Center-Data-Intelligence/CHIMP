@@ -14,10 +14,11 @@ class TestTrainingEndpoints:
         data = resp.get_json()
         assert "status" in data and data["status"] == "successfully retrieved plugins"
         assert "reloaded plugins" in data and data["reloaded plugins"]
-        assert "plugins" in data and data["plugins"] == [
-            "Example Plugin",
-            "Example 2 Plugin",
-        ]
+        assert (
+            "plugins" in data
+            and "Example Plugin" in data["plugins"]
+            and "Example 2 Plugin" in data["plugins"]
+        )
 
     def test_start_task(self, client: FlaskClient, mocker):
         """Test the start task endpoint."""
@@ -27,7 +28,11 @@ class TestTrainingEndpoints:
                 return "Testing-ID"
 
         mocker.patch.object(WorkerManager, "start_task", new=patched_start_task)
-        resp = client.post("/tasks/run/Example+Plugin")
+
+        # Successful flow
+        resp = client.post(
+            "/tasks/run/Example+Plugin", data={"dataset": "TestingDataset"}
+        )
         assert resp.status_code == 200
         assert resp.is_json
         data = resp.get_json()
@@ -38,8 +43,23 @@ class TestTrainingEndpoints:
         )
         assert "task_id" in data and data["task_id"] == "Testing-ID"
 
-        resp = client.post("/tasks/run/Plugin+Does+Not+Exist")
+        # Non existing plugin
+        resp = client.post(
+            "/tasks/run/Plugin+Does+Not+Exist", data={"dataset": "TestingDataset"}
+        )
         assert resp.status_code == 404
+
+        # No dataset
+        resp = client.post("/tasks/run/Example+Plugin")
+        assert resp.status_code == 400
+        assert resp.get_json()["message"] == "Must specify a dataset"
+
+        # Non existing dataset
+        resp = client.post(
+            "/tasks/run/Example+Plugin", data={"dataset": "DoesNotExist"}
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()["message"] == "Dataset DoesNotExist not found"
 
     def test_poll_task(self, client: FlaskClient, mocker):
         """Test the poll task endpoint."""

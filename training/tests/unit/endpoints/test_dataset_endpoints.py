@@ -17,7 +17,7 @@ class TestDatasetEndpoints:
         assert resp.is_json
         data = resp.get_json()
         assert "status" in data and data["status"] == "successfully retrieved datasets"
-        assert "datasets" in data and data["datasets"] == []
+        assert "datasets" in data and data["datasets"] == ["TestingDataset"]
 
         os.mkdir(os.path.join(app.config["DATA_DIRECTORY"], "test_dataset"))
         resp = client.get("/datasets")
@@ -90,13 +90,14 @@ class TestDatasetEndpoints:
                 "/datasets",
                 data={
                     "file": (zip_file, os.path.basename(zip_path)),
-                    "dataset_name": "TestingDataset",
+                    "dataset_name": "TestingDataset2",
                 },
             )
         assert resp.status_code == 200
         assert resp.is_json
         data = resp.get_json()
         assert "status" in data and data["status"] == "successfully uploaded dataset"
+        assert "TestingDataset2" in os.listdir(dataset_dir)
 
         # Duplicate dataset
         with open(zip_path, "rb") as zip_file:

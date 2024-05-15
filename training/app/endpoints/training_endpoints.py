@@ -1,4 +1,9 @@
+import os
+import shutil
+from datetime import datetime
 from flask import abort, Blueprint, current_app, request
+from tempfile import mkdtemp
+from werkzeug.exceptions import BadRequest
 
 from app.plugin import PluginLoader
 from app.worker import WorkerManager
@@ -53,6 +58,9 @@ def start_task(plugin_name: str):
     ----------
     plugin_name : str
         The name of the plugin to run for the task
+    (form data) dataset : str
+        The name of the dataset to use
+
 
     Returns
     -------
@@ -61,11 +69,23 @@ def start_task(plugin_name: str):
     Examples
     --------
     curl
-        `curl -X POST http://localhost:5253/tasks/run/Example+Plugin`
+        `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
+    dataset = request.form.get("dataset")
+    if not dataset:
+        raise BadRequest("Must specify a dataset")
+    if dataset not in os.listdir(current_app.config["DATA_DIRECTORY"]):
+        raise BadRequest(f"Dataset {dataset} not found")
+
+    data_dir = os.path.join(current_app.config["DATA_DIRECTORY"], dataset)
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
+    temp_data_dir = mkdtemp(prefix=f"chimp_{timestamp}_{dataset}_")
+    temp_data_dir = os.path.join(temp_data_dir, dataset)
+    shutil.copytree(data_dir, temp_data_dir)
+
     plugin_name = plugin_name.replace("+", " ")
     worker_manager: WorkerManager = current_app.extensions["worker_manager"]
-    task_id = worker_manager.start_task(plugin_name)
+    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir)
     if not task_id:
         abort(404)
     return {
