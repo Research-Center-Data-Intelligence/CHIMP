@@ -15,6 +15,7 @@ def app() -> Flask:
 
     config.TESTING = True
     config.DATA_DIRECTORY = mkdtemp(prefix="CHIMP_TESTING_")
+    os.mkdir(os.path.join(config.DATA_DIRECTORY, "TestingDataset"))
     app = create_app(config)
 
     ctx = app.app_context()
