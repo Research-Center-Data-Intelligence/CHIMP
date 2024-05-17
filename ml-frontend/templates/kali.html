@@ -21,14 +21,26 @@
         <button id="saveButton"><i class="fas fa-save"></i> Save Recording</button>
     </div>
     
+    <div>
+        <button class="emotionButton" data-emotion="Angry"><i class="fas fa-angry"></i> Angry</button>
+        <button class="emotionButton" data-emotion="Disgust"><i class="fas fa-meh"></i> Disgust</button>
+        <button class="emotionButton" data-emotion="Fear"><i class="fas fa-frown"></i> Fear</button>
+        <button class="emotionButton" data-emotion="Happy"><i class="fas fa-smile"></i> Happy</button>
+        <button class="emotionButton" data-emotion="Neutral"><i class="fas fa-meh-blank"></i> Neutral</button>
+        <button class="emotionButton" data-emotion="Sad"><i class="fas fa-sad-tear"></i> Sad</button>
+        <button class="emotionButton" data-emotion="Surprised"><i class="fas fa-surprise"></i> Surprised</button>
+    </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
     <script src="static/js/kali.js" defer></script>
 	<script src="../static/js/kali.js"></script>
-    <script src="static/css/kali.css" defer></script>
-	<script src="../static/css/kali.css"></script>
-    
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+    <link rel="stylesheet" href="../static/css/kali.css">
+    <link rel="stylesheet" type="css" href="{{ url_for('static',filename='../static/css/kali.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </body>
 </html>

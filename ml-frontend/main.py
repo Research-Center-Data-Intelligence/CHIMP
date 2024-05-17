@@ -25,7 +25,7 @@ def kali_page():
     return render_template('kali.html')
 
 def run_app():
-    return socket_io.run(app=app, host='0.0.0.0', port=5252, debug=True)
+    return socket_io.run(app=app, host='0.0.0.0', port=5252, debug=False)
 
 def get_app():
     load_dotenv()

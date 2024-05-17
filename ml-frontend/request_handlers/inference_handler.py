@@ -1,3 +1,4 @@
+import base64
 from os import environ
 import logging
 import requests
@@ -27,34 +28,43 @@ def _on_disconnect():
 
 
 def _process_image(data):
+    print("TEST")
     user_id = data['user_id'] if data['user_id'] != '' else request.sid
     image_blob = data['image_blob']
-
-    # Process the image (Example: Saving locally)
-    image_path = f"images/{user_id}_image.jpg"
-    with open(image_path, "wb") as image_file:
-        image_file.write(image_blob)
-
-    # Prepare data for sending to Flask backend
-    payload = {
-        'user_id': user_id,
-        'image_blob': image_blob.decode('utf-8')  # Convert bytes to string for JSON serialization
-    }
-
-    # Make a POST request to your Flask backend's REST API
-    backend_url = 'http://your-flask-backend-url/api/save_image'
-    headers = {'Content-Type': 'application/json'}
+    emotion = data['emotion']
     
-    try:
-        response = requests.post(backend_url, json=payload, headers=headers)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        backend_data = response.json()
-        # Emit an update using SocketIO or return data as needed
-        emit('update-data', backend_data)
-        return jsonify(success=True, message='Image processed and saved successfully')
-    except requests.exceptions.RequestException as e:
-        return jsonify(success=False, message=f'Error sending image data to backend: {str(e)}')
+    video_data = base64.b64decode(image_blob)
+    
+    # Save vTESTideo data to a file
+    print(f"{user_id}_{emotion}_recording.webm")
+    with open(f"{user_id}_{emotion}_recording.webm", "wb") as video_file:
+        video_file.write(video_data)
+    
+    _logger.debug(f'Saved video for user {user_id} with emotion {emotion}.')
+    
+    #Process the image if needed
+    #img_processor = _image_processors.get(user_id, ImageProcessor(INFERENCE_INTERVAL))
+    #img_processor.load_image(image_blob)
+    #img_processor.process(user_id)
 
+    #emit('update-data', img_processor.predictions)
+
+    #return img_processor.get_image_blob()
+def _process_image(data):
+    print("TEST")
+    user_id = data['user_id'] if data['user_id'] != '' else request.sid
+    image_blob = data['image_blob']
+    emotion = data['emotion']
+    
+    video_data = base64.b64decode(image_blob)
+    
+    # Save vTESTideo data to a file
+    print(f"{user_id}_{emotion}_recording.webm")
+    with open(f"{user_id}_{emotion}_recording.webm", "wb") as video_file:
+        video_file.write(video_data)
+    
+    _logger.debug(f'Saved video for user {user_id} with emotion {emotion}.')
+    
 
 
 def add_as_websocket_handler(socket_io: SocketIO):
@@ -63,5 +73,5 @@ def add_as_websocket_handler(socket_io: SocketIO):
     _on_connect = socket_io.on('connect')(_on_connect)
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
     _process_image = socket_io.on('process-image')(_process_image)
-
+    print("adding hand")
     return socket_io

@@ -1,156 +1,156 @@
-let mediaRecorder;
-let recordedChunks = [];
-const videoElement = document.getElementById('videoElement');
-const countdownText = document.getElementById('countdownText');
-const startButton = document.getElementById('startButton');
-const stopButton = document.getElementById('stopButton');
-const pauseButton = document.getElementById('pauseButton');
-const resumeButton = document.getElementById('resumeButton');
-const saveButton = document.getElementById('saveButton');
-const countdownOverlay = document.getElementById('countdownOverlay');
+document.addEventListener('DOMContentLoaded', () => {
+    const videoElement = document.getElementById('videoElement');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const countdownText = document.getElementById('countdownText');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const pauseButton = document.getElementById('pauseButton');
+    const resumeButton = document.getElementById('resumeButton');
+    const saveButton = document.getElementById('saveButton');
+    const emotionButtons = document.querySelectorAll('.emotionButton');
 
-// Function to update button states
-function updateButtonState(isRecording, isPaused) {
-    startButton.disabled = isRecording;
-    stopButton.disabled = !isRecording;
-    pauseButton.disabled = !isRecording || isPaused;
-    resumeButton.disabled = !isRecording || !isPaused;
-    saveButton.disabled = recordedChunks.length === 0;
-    
-    // Visual feedback: Update button styles based on state
-    startButton.classList.toggle('active', isRecording);
-    pauseButton.classList.toggle('active', isPaused);
-}
+    let mediaRecorder;
+    let currentEmotion = '';
+    let recordedBlob;
+    let isRecording = false;
+    let isPaused = false;
+    const socket = io('http://localhost:5252'); // Connect to your Flask-SocketIO server
 
-async function setupCamera() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        videoElement.srcObject = stream;
-    } catch (error) {
-        console.error('Error accessing webcam:', error);
-        alert('Failed to access webcam.');
+    async function setupCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            await new Promise((resolve) => {
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    resolve();
+                };
+            });
+        } catch (error) {
+            console.error('Error accessing webcam:', error);
+            alert('Failed to access webcam.');
+        }
     }
-}
 
-function startRecordingWithCountdown() {
-    return new Promise((resolve, reject) => {
-        countdownOverlay.style.display = 'flex';
-        countdownText.textContent = '3';
+    async function startRecordingWithCountdown() {
+        return new Promise((resolve) => {
+            countdownOverlay.style.display = 'flex';
+            let countdown = 3;
+            countdownText.textContent = countdown;
 
-        let countdown = 3;
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            countdownText.textContent = countdown.toString();
-            if (countdown === 0) {
-                clearInterval(countdownInterval);
-                countdownOverlay.style.display = 'none';
-                resolve();
-            }
-        }, 1000);
-    });
-}
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                countdownText.textContent = countdown;
+                if (countdown === 0) {
+                    clearInterval(countdownInterval);
+                    countdownOverlay.style.display = 'none';
+                    resolve();
+                }
+            }, 1000);
+        });
+    }
 
-async function startRecording() {
-    try {
-        if (!videoElement.srcObject) {
-            await setupCamera();
+    async function startRecording(emotion = '') {
+        if (isRecording) {
+            console.warn('Already recording.');
+            return;
         }
 
-        recordedChunks = []; // Clear previously recorded chunks
-
+        currentEmotion = emotion;
         await startRecordingWithCountdown();
 
         mediaRecorder = new MediaRecorder(videoElement.srcObject);
+        recordedBlob = null;
 
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
-                recordedChunks.push(event.data);
+                recordedBlob = event.data;
             }
         };
 
-        mediaRecorder.onstart = () => {
-            updateButtonState(true, false); // Recording started
-        };
-
-        mediaRecorder.onpause = () => {
-            updateButtonState(true, true); // Recording paused
-        };
-
-        mediaRecorder.onresume = () => {
-            updateButtonState(true, false); // Recording resumed
-        };
-
         mediaRecorder.onstop = () => {
-            updateButtonState(false, false); // Recording stopped
+            console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} stopped.`);
+            if (recordedBlob) {
+                saveButton.disabled = false;
+            }
         };
 
         mediaRecorder.start();
-        console.log('Recording started...');
-    } catch (error) {
-        console.error('Error starting recording:', error);
-        alert('Failed to start recording.');
-    }
-}
-
-function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        console.log('Recording stopped...');
-    } else {
-        console.error('MediaRecorder not initialized or not recording.');
-    }
-}
-
-function pauseRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.pause();
-        console.log('Recording paused...');
-    } else {
-        console.error('MediaRecorder not initialized or not recording.');
-    }
-}
-
-function resumeRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'paused') {
-        mediaRecorder.resume();
-        console.log('Recording resumed...');
-    } else {
-        console.error('Recording is not paused.');
-    }
-}
-
-function saveRecording() {
-    if (recordedChunks.length === 0) {
-        console.error('No recorded data available.');
-        return;
+        console.log(`Recording ${emotion ? 'for ' + emotion : ''} started...`);
+        isRecording = true;
+        isPaused = false;
+        updateButtonState();
     }
 
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            isRecording = false;
+            updateButtonState();
+        }
+    }
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'recorded-video.webm';
-    document.body.appendChild(a);
-    a.click();
+    function pauseRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.pause();
+            console.log('Recording paused...');
+            isPaused = true;
+            updateButtonState();
+        }
+    }
 
-    // Clean up
-    recordedChunks = [];
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    function resumeRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'paused') {
+            mediaRecorder.resume();
+            console.log('Recording resumed...');
+            isPaused = false;
+            updateButtonState();
+        }
+    }
 
-    // Visual feedback: Reset button states after saving
-    updateButtonState(false, false);
-}
+    function saveRecording() {
+        if (!recordedBlob) {
+            console.warn('No recorded data to save.');
+            return;
+        }
 
-// Event listeners for buttons
-startButton.addEventListener('click', startRecording);
-stopButton.addEventListener('click', stopRecording);
-pauseButton.addEventListener('click', pauseRecording);
-resumeButton.addEventListener('click', resumeRecording);
-saveButton.addEventListener('click', saveRecording);
+        //const reader = new FileReader();
+        //reader.onloadend = function() {
+            //const base64data = reader.result.split(',')[1];
+            socket.emit('process-image', {
+                user_id: '', // You can send a specific user_id if needed
+                image_blob: recordedBlob,
+                emotion: currentEmotion
+            });
+            console.log(recordedBlob)
+        //};
+       // reader.readAsDataURL(recordedBlob);
 
-// Initialize webcam on page load
-setupCamera().catch(error => {
-    console.error('Failed to initialize webcam:', error);
+        console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} saved.`);
+        recordedBlob = null;
+        saveButton.disabled = true;
+        updateButtonState();
+    }
+
+    function updateButtonState() {
+        startButton.disabled = isRecording;
+        stopButton.disabled = !isRecording;
+        pauseButton.disabled = !isRecording || isPaused;
+        resumeButton.disabled = !isRecording || !isPaused;
+        emotionButtons.forEach(button => button.disabled = isRecording);
+    }
+
+    startButton.addEventListener('click', () => startRecording());
+    stopButton.addEventListener('click', stopRecording);
+    pauseButton.addEventListener('click', pauseRecording);
+    resumeButton.addEventListener('click', resumeRecording);
+    saveButton.addEventListener('click', saveRecording);
+
+    emotionButtons.forEach(button => {
+        button.addEventListener('click', () => startRecording(button.getAttribute('data-emotion')));
+    });
+
+    setupCamera().catch(error => {
+        console.error('Failed to initialize webcam:', error);
+    });
 });
