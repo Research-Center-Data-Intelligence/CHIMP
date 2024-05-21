@@ -4,19 +4,49 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from flask import Flask
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from app.connectors import BaseConnector
 
 
 @dataclass
 class PluginInfo:
+    """PluginInfo contains the information about a plugin.
+
+    Attributes
+    ----------
+    name : str
+        The name of the plugin
+    version : str
+        The version of the plugin
+    description : str
+        Description of the plugin
+    arguments : Dict[str, Dict[str, Union[str, Type]]]
+        A dictionary with possible arguments for the plugin. Each argument has a key,
+        which is the name of the (keyword) argument as passed to the plugin. The value
+        is a dictionary containing three fields:
+            - name (a string with the name of the argument)
+            - type (description of the type of the argument, as a string)
+            - description (a description of the argument)
+    model_return_type : Optional[str]
+        The type of model object returned by the plugin. Preferably, this should be the value
+        of one of the ModelType types. If the plugin does not return anything (including
+        creating a model and uploading it via a connector), the model_return_type should
+        be set to None.
+    """
+
     name: str
     version: str
+    description: str
+    arguments: Dict[str, Dict[str, str]]
+    model_return_type: Optional[str] = None
 
 
 class BasePlugin(ABC):
     """This abstract class provides a base for implementing different plugins."""
 
     _info: PluginInfo
+    _connector: BaseConnector
 
     @abstractmethod
     def init(self) -> PluginInfo:
@@ -48,14 +78,17 @@ class PluginLoader:
     _app: Flask = None
     plugin_directory: str = ""
     _loaded_plugins: Dict[str, BasePlugin] = {}
+    _connector: BaseConnector
 
-    def init_app(self, app: Flask):
+    def init_app(self, app: Flask, connector: BaseConnector):
         """Initialize a Flask application for use with this extension instance.
 
         Parameters
         ----------
         app : Flask
             The Flask application to initialize this extension with.
+        connector : BaseConnector
+            Connector instance provided to the plugins for storing models and metrics.
 
         Raises
         ------
@@ -68,6 +101,7 @@ class PluginLoader:
             )
         app.extensions["plugin_loader"] = self
         self._app = app
+        self._connector = connector
         self.plugin_directory = app.config["PLUGIN_DIRECTORY"]
 
     def load_plugins(self):
@@ -90,6 +124,7 @@ class PluginLoader:
                     ):
                         plg = obj()
                         info = plg.info()
+                        plg._connector = self._connector
                         self._loaded_plugins[info["name"]] = plg
 
     def loaded_plugins(self, include_details: bool = False) -> List:
