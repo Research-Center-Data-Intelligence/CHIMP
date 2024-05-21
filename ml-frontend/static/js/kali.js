@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentEmotion = emotion;
         await startRecordingWithCountdown();
-        var options = {mimeType: 'video/webm;codecs=h264'};
+        var options = {mimeType: 'video/x-matroska;codecs=avc1'};
         mediaRecorder = new MediaRecorder(videoElement.srcObject,options);
         recordedBlob = null;
 
@@ -109,27 +109,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveRecording() {
-        console.log(recordedBlob)
+        console.log(recordedBlob);
         
         if (!recordedBlob) {
             console.warn('No recorded data to save.');
             return;
         }
-
-        var blob = new Blob(recordedBlob, {type: 'video/mp4'})
-            socket.emit('process-video', {
-                user_id: '', // You can send a specific user_id if needed
-                image_blob: blob,
-                emotion: currentEmotion
-            });
-            
+    
         
-
+        var blob = recordedBlob;
+        
+        socket.emit('process-video', {
+            user_id: '', 
+            image_blob: blob,
+            emotion: currentEmotion
+        });
+        
         console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} saved.`);
         recordedBlob = null;
         saveButton.disabled = true;
         updateButtonState();
     }
+    
 
     function updateButtonState() {
         startButton.disabled = isRecording;
