@@ -1,11 +1,11 @@
-# Custom
+### Custom ignores
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 experimentation/ONNX Emotion Recognition/
 ml-frontend/logs
 serving/mlruns
 
-### Custom venv
+# Custom venv
 experimentation_venv
 experimentation_env
 mlfrontend_venv
@@ -16,6 +16,14 @@ serving_venv
 serving_env
 serving_api_venv
 serving_api_env
+
+# Training module plugins and datasets
+training/app/plugins/*
+!training/app/plugins/example
+!training/app/plugins/example2.py
+training/datasets/*
+
+### Generic ignores
 
 # IDE
 .idea/
