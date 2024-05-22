@@ -1,4 +1,7 @@
 import base64
+from time import time
+
+import cv2
 from os import environ
 import logging
 from flask_socketio import SocketIO, emit
@@ -42,18 +45,39 @@ def _process_image(data):
 def _process_video(data):
     print("TEST")
     user_id = data['user_id'] if data['user_id'] != '' else request.sid
-    image_blob = data['image_blob']
+    video_blob = data['image_blob']
     emotion = data['emotion']
     
-    video_data = base64.b64decode(image_blob)
-    
-    # Save vTESTideo data to a file
-    print(f"{user_id}_{emotion}_recording.webm")
-    with open(f"{user_id}_{emotion}_recording.webm", "wb") as video_file:
-        video_file.write(video_data)
+    # Save the video Blob to a temporary file
+    video_path = f"{user_id}_{emotion}_recording.webm"
+    with open(video_path, "wb") as video_file:
+        video_file.write(video_blob)
     
     _logger.debug(f'Saved video for user {user_id} with emotion {emotion}.')
+    print(f"Video path: {video_path}")
+
+    # Display the video using OpenCV
+    cap = cv2.VideoCapture(video_path)
     
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        return
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        cv2.imshow('Video Footage', frame)
+
+        # Press 'q' to quit the video window
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    time.sleep(10)
+    cv2.destroyAllWindows()
+
 
 
 def add_as_websocket_handler(socket_io: SocketIO):
@@ -63,5 +87,5 @@ def add_as_websocket_handler(socket_io: SocketIO):
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
     _process_image = socket_io.on('process-image')(_process_image)
     _process_video = socket_io.on('process-video')(_process_video)
-    print("adding hand")
+    print("adding handler")
     return socket_io

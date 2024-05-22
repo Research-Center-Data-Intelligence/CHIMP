@@ -57,12 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentEmotion = emotion;
-        await startRecordingWithCountdown();
+        await startRecordingWithCountdown();  
+
         var options = {mimeType: 'video/x-matroska;codecs=avc1'};
         mediaRecorder = new MediaRecorder(videoElement.srcObject,options);
         recordedBlob = null;
 
         mediaRecorder.ondataavailable = (event) => {
+            console.log(event);
             if (event.data.size > 0) {
                 recordedBlob = event.data;
             }
@@ -84,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function stopRecording() {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.requestData();
             mediaRecorder.stop();
             isRecording = false;
             updateButtonState();
