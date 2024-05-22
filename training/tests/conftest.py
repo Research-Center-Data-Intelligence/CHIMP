@@ -1,16 +1,48 @@
 import os
+import numpy as np
 import pytest
 import shutil
 from flask import Flask
 from flask.testing import FlaskClient
+from sklearn import svm
 from tempfile import mkdtemp
 
+from app import connectors
+from app.connectors import BaseConnector
 from app.plugin import BasePlugin, PluginLoader
 from app.worker import WorkerManager
 
 
 @pytest.fixture
-def app() -> Flask:
+def mocked_mlflow(monkeypatch):
+    class MockedStartRun:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self, *args, **kwargs):
+            return self
+
+        def __exit__(self, *args, **kwargs):
+            pass
+
+    def mocked_log_things(*args, **kwargs):
+        pass
+
+    def mocked_infer_signature(*args, **kwargs):
+        return 1
+
+    monkeypatch.setattr(connectors.mlflow, "start_run", MockedStartRun)
+    monkeypatch.setattr(connectors.mlflow, "log_params", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow, "log_metric", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow, "set_tag", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow.sklearn, "log_model", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow.onnx, "log_model", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow.tensorflow, "log_model", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow, "set_experiment", mocked_log_things)
+
+
+@pytest.fixture
+def app(mocked_mlflow: None) -> Flask:
     from app import create_app, config
 
     config.TESTING = True
@@ -50,7 +82,12 @@ from app.plugin import BasePlugin, PluginInfo
 
 class TestingPlugin(BasePlugin):
     def __init__(self):
-        self._info = PluginInfo(name="Testing Plugin", version="1.0")
+        self._info = PluginInfo(
+            name="Testing Plugin",
+            version="1.0",
+            description="test description",
+            arguments={"arg1": {"name": "test", "type": "str", "description": "testing arg1"}}
+        )
         
     def init(self) -> PluginInfo:
         return self._info
@@ -71,3 +108,15 @@ class TestingPlugin(BasePlugin):
 def loaded_plugin(plugin_loader: PluginLoader, plugin) -> str:
     plugin_loader.load_plugins()
     return plugin
+
+
+@pytest.fixture
+def connector(app: Flask) -> BaseConnector:
+    return app.extensions["connector"]
+
+
+@pytest.fixture(scope="session")
+def sklearn_model() -> svm.SVC:
+    model = svm.SVC()
+    model.fit(np.array([[0, 1], [1, 0]]), np.array([1, 0]))
+    return model
