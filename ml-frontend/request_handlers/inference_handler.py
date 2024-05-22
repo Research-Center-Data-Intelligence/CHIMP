@@ -1,5 +1,6 @@
-import base64
-from time import time
+
+import os
+import time
 
 import cv2
 from os import environ
@@ -22,7 +23,7 @@ def _on_connect():
 
 def _on_disconnect():
     _logger.debug(f'Web client disconnected: {request.sid}')
-
+    print(request)
     # Note: has a vulnerability in which by not explicitly disconnecting from other side of the socket, more image
     #           processors keep getting cached
     if request.sid in _image_processors:
@@ -63,20 +64,29 @@ def _process_video(data):
         print("Error: Could not open video.")
         return
 
+    allframes = []
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
-
+            
+        allframes.append(frame)
         cv2.imshow('Video Footage', frame)
 
         # Press 'q' to quit the video window
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    numpyframes = np.asarray(allframes)
     cap.release()
-    time.sleep(10)
+    try:
+        time.sleep(1)
+    except:
+        pass
+
     cv2.destroyAllWindows()
+    os.remove(video_path)
+    
 
 
 

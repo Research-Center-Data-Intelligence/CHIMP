@@ -123,11 +123,12 @@ document.addEventListener('DOMContentLoaded', () => {
         var blob = recordedBlob;
         
         socket.emit('process-video', {
+            
             user_id: '', 
             image_blob: blob,
             emotion: currentEmotion
         });
-        
+        console.log('gestuurd')
         console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} saved.`);
         recordedBlob = null;
         saveButton.disabled = true;
