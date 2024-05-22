@@ -2,6 +2,7 @@ import pytest
 from flask import Flask
 from sklearn.svm import SVC
 
+from app import connectors
 from app.connectors import BaseConnector, MLFlowConnector
 from app.model_type import ModelType
 
@@ -26,10 +27,20 @@ class TestMlflowConnector:
             conn.init_app(app, "")
 
     def test_store_model(
-        self, mocked_mlflow: None, connector: BaseConnector, sklearn_model: SVC
+        self,
+        mocked_mlflow: None,
+        connector: BaseConnector,
+        sklearn_model: SVC,
+        monkeypatch,
     ):
         """Test the store_model method of the connector."""
-        connector.store_model(
+
+        class MockUuid4:
+            hex = "TestHex"
+
+        monkeypatch.setattr(connectors, "uuid4", MockUuid4)
+
+        result = connector.store_model(
             "TestExperiment",
             sklearn_model,
             ModelType.SKLEARN,
@@ -37,6 +48,7 @@ class TestMlflowConnector:
             metrics={"accuracy": 0},
             tags={"tag1": "value"},
         )
+        assert type(result) is str
         connector.store_model(
             "TestExperiment",
             sklearn_model,

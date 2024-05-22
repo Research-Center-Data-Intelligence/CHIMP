@@ -1,6 +1,7 @@
 import mlflow
 from abc import ABC, abstractmethod
 from flask import Flask
+from uuid import uuid4
 from typing import Dict, Optional, Union
 
 from app.model_type import ModelType
@@ -23,10 +24,11 @@ class BaseConnector(ABC):
         experiment_name: str,
         model: any,
         model_type: Union[ModelType, str],
+        model_name: Optional[str] = None,
         hyperparameters: Optional[Dict[str, any]] = None,
         metrics: Optional[Dict[str, any]] = None,
         tags: Optional[Dict[str, str]] = None,
-    ):  # pragma: no cover
+    ) -> str:  # pragma: no cover
         """Store a model in the tracking service.
 
         The connector provides options to store the model, the inference details,
@@ -43,6 +45,8 @@ class BaseConnector(ABC):
             The model object to store
         model_type : Union[ModelType, str]
             The type of the model
+        model_name : Optional[str]
+            The name of the model. If no model name is specified, the experiment_name is used.
         hyperparameters : Optional[Dict[str, any]]
             Any hyperparameters used to train the model
         metrics : Optional[Dict[str, any]]
@@ -90,11 +94,17 @@ class MLFlowConnector(BaseConnector):
         experiment_name: str,
         model: any,
         model_type: ModelType,
+        model_name: Optional[str] = None,
         hyperparameters: Optional[Dict[str, any]] = None,
         metrics: Optional[Dict[str, any]] = None,
         tags: Optional[Dict[str, str]] = None,
-    ):
-        with mlflow.start_run():
+    ) -> str:
+        mlflow.set_experiment(experiment_name)
+        run_name = uuid4().hex
+        with mlflow.start_run(run_name=run_name):
+            if not model_name:
+                model_name = experiment_name
+
             if hyperparameters:
                 mlflow.log_params(hyperparameters)
 
@@ -116,22 +126,23 @@ class MLFlowConnector(BaseConnector):
                 model_info = mlflow.sklearn.log_model(
                     sk_model=model,
                     artifact_path="model",
-                    registered_model_name=experiment_name,
+                    registered_model_name=model_name,
                 )
                 print(model_info)
             if model_type == ModelType.ONNX:
                 model_info = mlflow.onnx.log_model(
                     onnx_model=model,
                     artifact_path="model",
-                    registered_model_name=experiment_name,
+                    registered_model_name=model_name,
                 )
                 print(model_info)
             if model_type == ModelType.TENSORFLOW:
                 model_info = mlflow.tensorflow.log_model(
                     model,
                     artifact_path="model",
-                    registered_model_name=experiment_name,
+                    registered_model_name=model_name,
                 )
                 print(model_info)
             if model_type == ModelType.OTHER:
                 pass
+        return run_name
