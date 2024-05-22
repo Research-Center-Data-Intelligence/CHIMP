@@ -38,6 +38,7 @@ def mocked_mlflow(monkeypatch):
     monkeypatch.setattr(connectors.mlflow.sklearn, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow.onnx, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow.tensorflow, "log_model", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow, "set_experiment", mocked_log_things)
 
 
 @pytest.fixture
@@ -81,7 +82,12 @@ from app.plugin import BasePlugin, PluginInfo
 
 class TestingPlugin(BasePlugin):
     def __init__(self):
-        self._info = PluginInfo(name="Testing Plugin", version="1.0")
+        self._info = PluginInfo(
+            name="Testing Plugin",
+            version="1.0",
+            description="test description",
+            arguments={"arg1": {"name": "test", "type": "str", "description": "testing arg1"}}
+        )
         
     def init(self) -> PluginInfo:
         return self._info
