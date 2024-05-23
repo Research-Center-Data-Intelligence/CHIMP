@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let recordedBlob;
     let isRecording = false;
     let isPaused = false;
+    const MAX_RECORDING_TIME = 3;
     const socket = io('http://localhost:5252'); // Connect to your Flask-SocketIO server
 
     async function setupCamera() {
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startRecordingWithCountdown() {
         return new Promise((resolve) => {
             countdownOverlay.style.display = 'flex';
-            let countdown = 3;
+            let countdown = MAX_RECORDING_TIME;
             countdownText.textContent = countdown;
 
             const countdownInterval = setInterval(() => {
@@ -76,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveButton.disabled = false;
             }
         };
+        
+        setTimeout(() => {
+            stopRecording();
+        }, MAX_RECORDING_TIME * 1000);
 
         mediaRecorder.start();
         console.log(`Recording ${emotion ? 'for ' + emotion : ''} started...`);
