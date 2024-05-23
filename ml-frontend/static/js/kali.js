@@ -121,12 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
         
         var blob = recordedBlob;
-        
+const timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(/[: ]/g, '-');
         socket.emit('process-video', {
             
             user_id: '', 
             image_blob: blob,
-            emotion: currentEmotion
+            emotion: currentEmotion,
+            timestamp: timestamp
         });
         console.log('gestuurd')
         console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} saved.`);
