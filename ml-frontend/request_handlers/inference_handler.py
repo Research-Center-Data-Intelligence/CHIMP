@@ -90,7 +90,7 @@ def _process_video(data):
     
     npy_path = f"{emotion}_{timestamp}_{user_id}_recording.npy"
     np.save(npy_path, video_array)
-    print(f"Video frames saved as NumPy array to {npy_path}")
+    print(f"NumPy array to {npy_path}")
     
     # TEMP
     np_array = np.load(npy_path)
@@ -99,7 +99,7 @@ def _process_video(data):
     else:
         print("Something went wrong")
     # END OF TEMP
-
+   
 
 def add_as_websocket_handler(socket_io: SocketIO):
     global _on_connect, _on_disconnect, _process_image, _process_video
