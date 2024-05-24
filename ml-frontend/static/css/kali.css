@@ -37,3 +37,112 @@ button.active {
     background-color: green;
     color: white;
 }
+.container {
+    height: 100vh;
+    width: 100vw;
+
+    display: grid;
+    grid-template-columns: 1fr max-content max-content 1fr;
+    grid-template-rows: 8.5vh 5vh min-content 1fr 25px;
+    grid-template-areas:
+        "header header header header"
+        ".		banner banner ."
+        ". 		camera info   ."
+        ".		.	   .	  ."
+        "footer footer footer footer";
+    column-gap: 25px;
+    row-gap: 20px;
+}
+.header {
+    position: relative;
+    background-color: hsl(352,89%,47%);
+    color: hsl(0,0%,95%);
+    font-size: 1.35rem;
+    line-height: 8.5vh;
+    text-align: center;
+    grid-area: header;
+    overflow: hidden;
+
+    box-shadow: 0 0 10px rgba(0,0,0,.5);
+}
+
+.header-logo {
+    display: block;
+    position: absolute;
+    float: left;
+    background-color: hsl(0,0%,95%);
+    padding: 1rem .8rem .7rem 1rem;
+    box-sizing: border-box;
+    max-width: 100%;
+    max-height: 100%;
+
+    box-shadow: 0 0 1rem 1.1rem hsla(0,0%,95%,100%)
+}
+
+.footer {
+    position: relative;
+    background-color: hsl(0,0%,93.5%);
+    font-size: .7rem;
+    line-height: 25px;
+    text-align: right;
+    grid-area: footer;
+
+    box-shadow: 0 0 7px rgba(0,0,0,.5);
+}
+
+.footer-by {
+    display: block;
+    position: absolute;
+    padding-left: .5vw;
+    text-align: left;
+    width: 99.5vw;
+    height: 100%;
+}
+
+.footer-owner {
+    display: block;
+    position: absolute;
+    padding-right: .5vw;
+    text-align: right;
+    width: 99.5vw;
+    height: 100%;
+}
+.camera {
+    background-color: hsl(0,0%,95%);
+    grid-area: camera;
+
+    box-shadow: 0 0 7px rgba(0,0,0,.5);
+}
+.banner {
+    visibility: hidden;
+
+    background-color: hsl(60,80%,85%);
+    grid-area: banner;
+
+    box-shadow: 0 0 5px rgba(0,0,0,.5);
+}
+.info {
+    background-color: hsl(0,0%,95%);
+    grid-area: info;
+
+    box-shadow: 0 0 7px rgba(0,0,0,.5);
+}
+
+.title {
+    padding: 0.9rem 1.5rem;
+    color: hsl(352,83%,47%);
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.data-container {
+    padding: 1.5rem 1.5rem;
+    font-size: .96rem;
+}
+.data-table {
+    border-spacing: 13px 5px;
+}
+hr {
+    border-top-color: hsla(352,89%,47%,55%);
+    margin: 0 .9vw;
+}

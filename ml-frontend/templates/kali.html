@@ -3,44 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kalibratie sessie</title>
 </head>
 <body>
-    <h1>Kalibratie sessie</h1>
-    <div class="video-container">
-        <video id="videoElement" autoplay playsinline></video>
-        <div id="countdownOverlay">
-            <span id="countdownText"></span>
+    <div class="container">
+        <div class="header">
+			<image class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg"></image>
+			<span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is build to demonstrate its functionalities.">
+				Kalibratie session CHIMP
+			</span>
+		</div>
+		
+		<div class="banner"></div>
+		
+		<div class="model-kali">
+			<ul>
+				<li><a href="/">Home</a></li>
+    			<li><a href="/kali">Kalibratie lijst</a></li>
+			</ul>
+		</div>
+        <div class="camera">
+			<div class="title">Camera Feed</div>
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <div id="countdownOverlay">
+                    <span id="countdownText"></span>
+                </div>
+            </div>
+
+            <div class="info">
+                <div class="title">Emotions</div>
+                <hr class="info-divider" />
+                <div class="data-container">
+                    <table class="data-table">
+                        <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
+                        <button id="stopButton"><i class="fas fa-stop"></i> Stop Recording</button>
+                        <button id="pauseButton"><i class="fas fa-pause"></i> Pause Recording</button>
+                        <button id="resumeButton"><i class="fas fa-play"></i> Resume Recording</button>
+                        <button id="saveButton"><i class="fas fa-save"></i> Save Recording</button>
+                    </table>
+                    <table>
+                        <button class="emotionButton" data-emotion="Angry"><i class="fas fa-angry"></i> Angry</button>
+                        <button class="emotionButton" data-emotion="Disgust"><i class="fas fa-meh"></i> Disgust</button>
+                        <button class="emotionButton" data-emotion="Fear"><i class="fas fa-frown"></i> Fear</button>
+                        <button class="emotionButton" data-emotion="Happy"><i class="fas fa-smile"></i> Happy</button>
+                        <button class="emotionButton" data-emotion="Neutral"><i class="fas fa-meh-blank"></i> Neutral</button>
+                        <button class="emotionButton" data-emotion="Sad"><i class="fas fa-sad-tear"></i> Sad</button>
+                        <button class="emotionButton" data-emotion="Surprised"><i class="fas fa-surprise"></i> Surprised</button>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
-    <div>
-        <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
-        <button id="stopButton"><i class="fas fa-stop"></i> Stop Recording</button>
-        <button id="pauseButton"><i class="fas fa-pause"></i> Pause Recording</button>
-        <button id="resumeButton"><i class="fas fa-play"></i> Resume Recording</button>
-        <button id="saveButton"><i class="fas fa-save"></i> Save Recording</button>
-    </div>
-    
-    <div>
-        <button class="emotionButton" data-emotion="Angry"><i class="fas fa-angry"></i> Angry</button>
-        <button class="emotionButton" data-emotion="Disgust"><i class="fas fa-meh"></i> Disgust</button>
-        <button class="emotionButton" data-emotion="Fear"><i class="fas fa-frown"></i> Fear</button>
-        <button class="emotionButton" data-emotion="Happy"><i class="fas fa-smile"></i> Happy</button>
-        <button class="emotionButton" data-emotion="Neutral"><i class="fas fa-meh-blank"></i> Neutral</button>
-        <button class="emotionButton" data-emotion="Sad"><i class="fas fa-sad-tear"></i> Sad</button>
-        <button class="emotionButton" data-emotion="Surprised"><i class="fas fa-surprise"></i> Surprised</button>
-    </div>
+           
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+        <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+        <!-- <script src="static/js/kali.js" defer></script> -->
+        <script src="../static/js/kali.js"></script>
+        <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-    <!-- <script src="static/js/kali.js" defer></script> -->
-	<script src="../static/js/kali.js"></script>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-
-    <link rel="stylesheet" href="../static/css/kali.css">
-    <link rel="stylesheet" type="css" href="{{ url_for('static',filename='../static/css/kali.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+        <link rel="stylesheet" href="../static/css/kali.css">
+        <link rel="stylesheet" type="css" href="{{ url_for('static',filename='../static/css/kali.css') }}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </div>
 </body>
 </html>
