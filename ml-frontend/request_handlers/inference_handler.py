@@ -48,12 +48,13 @@ def sanitize_timestamp(timestamp):
 def _process_video(data):
     print("TEST")
     user_id = data['user_id'] if data['user_id'] != '' else request.sid
+    username =data['username']
     video_blob = data['image_blob']
     emotion = data['emotion']
     timestamp = sanitize_timestamp(data['timestamp'])
     
     # Save the video Blob to a temporary file
-    video_path = f"{emotion}_{timestamp}_{user_id}_recording.webm"
+    video_path = f"{username}_{emotion}_{timestamp}_{user_id}_recording.webm"
     with open(video_path, "wb") as video_file:
         video_file.write(video_blob)
     
@@ -88,7 +89,7 @@ def _process_video(data):
    
     video_array = np.array(frames)
     
-    npy_path = f"{emotion}_{timestamp}_{user_id}_recording.npy"
+    npy_path = f"{username}_{emotion}_{timestamp}_{user_id}_recording.npy"
     np.save(npy_path, video_array)
     print(f"NumPy array to {npy_path}")
     
