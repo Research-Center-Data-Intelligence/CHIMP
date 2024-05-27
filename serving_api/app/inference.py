@@ -97,6 +97,7 @@ class InferenceManager:
             raise ModelNotFoundError()
 
         # Return inference based on the data
+        # TODO: add metadata (e.g. which model was selected) to return
         return selected_model.predict(data, stage, model_id)
 
     def update_models(

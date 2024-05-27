@@ -6,7 +6,7 @@ from mlflow import pyfunc as mlflow_pyfunc, MlflowException, MlflowClient
 from onnxruntime.capi.onnxruntime_pybind11_state import NoSuchFile as MlflowNoSuchFile
 from typing import Union, Optional, Set
 
-from app.model import BaseModel, OnnxModel
+from app.model import BaseModel, OnnxModel, PyTorchModel
 
 
 class BaseConnector(ABC):
@@ -17,6 +17,7 @@ class BaseConnector(ABC):
     these models in Model (app.model.Model) objects that can be used
     in the rest of the application.
     """
+
     _tracking_uri: str
 
     @abstractmethod
@@ -86,7 +87,9 @@ class MLFlowConnector(BaseConnector):
 
     @staticmethod
     def _get_calibrated_model(model_id: str) -> any:
-        runs = mlflow.search_runs(search_all_experiments=True, filter_string=f"run_name = {model_id}")
+        runs = mlflow.search_runs(
+            search_all_experiments=True, filter_string=f"run_name = {model_id}"
+        )
         if len(runs) != 1:
             raise MlflowException(f"Could not find run with name {model_id}")
         run_id = runs.iloc[0].run_id
@@ -101,7 +104,9 @@ class MLFlowConnector(BaseConnector):
         # TODO: check the type of model, then return an object of the proper Model subclass.
         return OnnxModel(model_name, {"staging": staging, "production": production})
 
-    def get_model(self, model_name: str, model_id: Optional[str] = "") -> Union[BaseModel, None]:
+    def get_model(
+        self, model_name: str, model_id: Optional[str] = ""
+    ) -> Union[BaseModel, None]:
         try:
             if model_id:
                 return self._get_calibrated_model(model_id)
@@ -118,7 +123,9 @@ class MLFlowConnector(BaseConnector):
         for model_tag in model.get_model_tags():
             try:
                 if model_tag in ("production", "staging"):
-                    new_model = mlflow_pyfunc.load_model(f"models:/{model.name}/{model_tag}")
+                    new_model = mlflow_pyfunc.load_model(
+                        f"models:/{model.name}/{model_tag}"
+                    )
                 else:
                     new_model = mlflow_pyfunc.load_model(f"runs:/{model.name}/model")
                 model.update_model(model_tag, new_model)
