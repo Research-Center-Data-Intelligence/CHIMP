@@ -5,6 +5,7 @@ class ModelType(Enum):
     SKLEARN = "sklearn"
     ONNX = "onnx"
     TENSORFLOW = "tensorflow"
+    PYTORCH = "pytorch"
     OTHER = "other"
     NONE = None
 

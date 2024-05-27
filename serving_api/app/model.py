@@ -104,3 +104,26 @@ class OnnxModel(BaseModel):
             return {k: v.tolist() for k, v in prediction.items()}
         except OnnxInvalidArgument:
             raise InvalidDataFormatError()
+
+
+class PyTorchModel(BaseModel):
+
+    def predict(
+        self,
+        data: Any,
+        stage: Optional[str] = "production",
+        model_id: Optional[str] = "",
+    ) -> Any:
+
+        if type(data) is not list:
+            raise InvalidDataFormatError("Expected a list as data input")
+        try:
+            if model_id and model_id in self._models:
+                model = self._models[model_id]
+            else:
+                model = self._models[stage]
+            data = np.asarray(data)
+            prediction = model(data)
+            return {k: v.tolist() for k, v in prediction.items()}
+        except OnnxInvalidArgument:
+            raise InvalidDataFormatError()
