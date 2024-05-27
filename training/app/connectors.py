@@ -134,6 +134,8 @@ class MLFlowConnector(BaseConnector):
                     onnx_model=model,
                     artifact_path="model",
                     registered_model_name=model_name,
+                    conda_env=None,
+                    code_paths=None,
                 )
                 print(model_info)
             if model_type == ModelType.TENSORFLOW:
@@ -141,8 +143,18 @@ class MLFlowConnector(BaseConnector):
                     model,
                     artifact_path="model",
                     registered_model_name=model_name,
+                    conda_env=None,
+                    code_paths=None,
                 )
                 print(model_info)
+            if model_type == ModelType.PYTORCH:
+                model_info = mlflow.pytorch.log_model(
+                    model,
+                    artifact_path="model",
+                    registered_model_name=model_name,
+                    conda_env=None,
+                    code_paths=None,
+                )
             if model_type == ModelType.OTHER:
                 pass
         return run_name
