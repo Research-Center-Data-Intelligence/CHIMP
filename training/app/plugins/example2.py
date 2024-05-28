@@ -21,6 +21,7 @@ class Example2Plugin(BasePlugin):
                     "name": "settings",
                     "type": "Dict[str, str]",
                     "description": "The setting to use",
+                    "optional": True,
                 },
             },
             model_return_type=None,

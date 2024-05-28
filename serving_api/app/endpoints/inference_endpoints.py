@@ -2,7 +2,7 @@ import warnings
 from flask import Blueprint, current_app, jsonify, Response, request, Request
 from werkzeug.exceptions import BadRequest, NotFound
 
-from app.errors import ModelNotFoundError, InvalidDataFormatError
+from app.errors import ModelNotFoundError, InvalidDataFormatError, InvalidModelIdOrStage
 
 bp = Blueprint("inference", __name__)
 
@@ -31,11 +31,19 @@ def get_models() -> Response:
     """
     update_models = request.args.get("reload_models", default=False, type=bool)
     if update_models:
-        current_app.extensions["inference_manager"].update_models(force=True, load_models=True)
+        current_app.extensions["inference_manager"].update_models(
+            force=True, load_models=True
+        )
 
     data = current_app.extensions["inference_manager"].get_models_list()
 
-    return jsonify({"status": "successfully retrieved models", "updated_models": update_models, "data": data})
+    return jsonify(
+        {
+            "status": "successfully retrieved models",
+            "updated_models": update_models,
+            "data": data,
+        }
+    )
 
 
 @bp.route("/model/<model_name>/infer", methods=["POST"])
@@ -76,7 +84,7 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
     # removed.
     current_request = request
     if passed_request:
-        current_request = passed_request
+        current_request = passed_request  # pragma: no cover
 
     model_name = model_name.replace(
         "+", " "
@@ -86,9 +94,11 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
 
     if not current_request.is_json:
         raise BadRequest("The request data must be a json object.")
-    elif not type(current_request.json) is dict or not current_request.json.get("inputs"):
+    elif not type(current_request.json) is dict or not current_request.json.get(
+        "inputs"
+    ):
         raise BadRequest(
-            "The json requests must contain an 'inputs' field with an array of input " \
+            "The json requests must contain an 'inputs' field with an array of input "
             f"data. Got '{current_request.json}'"
         )
     try:
@@ -99,14 +109,19 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
         raise NotFound(f"Could not find model with name {model_name}")
     except InvalidDataFormatError as ex:
         raise BadRequest(str(ex))
+    except InvalidModelIdOrStage as ex:
+        raise BadRequest(str(ex))
 
     return jsonify(
-        {"status": f"inference from model {model_name} success", "predictions": predictions}
+        {
+            "status": f"inference from model {model_name} success",
+            "predictions": predictions,
+        }
     )
 
 
 @bp.route("/invocations", methods=["POST"])
-def invocations():
+def invocations():  # pragma: no cover
     """Legacy route to support the old style of inference.
 
     WARNING: Calling the /invocations endpoint is deprecated, use the /model/<model_name>/infer endpoint instead
