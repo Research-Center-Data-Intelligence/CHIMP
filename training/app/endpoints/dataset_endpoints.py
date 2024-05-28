@@ -41,6 +41,7 @@ def upload_dataset():
     curl
         `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/datasets`
     """
+    # TODO: Ensure that the dataset is also available on an external worker
     if "file" not in request.files:
         raise BadRequest("No file in request")
     file = request.files["file"]
