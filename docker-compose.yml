@@ -22,23 +22,80 @@ services:
             - ./docker-data/webapp/images:/usr/src/app/static/images
             - ./docker-data/webapp/css:/usr/src/app/static/css
             - ./docker-data/webapp/js:/usr/src/app/static/js
-        entrypoint: ["gunicorn", "--worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--bind=0.0.0.0:8000", "--workers=1", "--threads=8", "main:get_app()"]
         depends_on:
             - monitoring-server
         profiles:
             - ''
             - 'gpu'
+            - 'external-worker'
 
-    # experimentation
-    # : trains and calibrates models while being publicly available for training calls. This includes a mount
-    #   for the GPU.
-    experimentation-server-gpu:
+    # Training API
+    # : provides the API endpoints for starting training
+    training-api:
+        container_name: training-api
         restart: unless-stopped
-        build: 
-            context: ./experimentation
-            dockerfile: Dockerfile
-        image: chimp-experimentation:demonstrator-v1.0.0
-        container_name: experimentation-server-gpu
+        build:
+            context: ./training
+            dockerfile: Dockerfile.web
+        healthcheck:
+            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            start_period: 30s
+            interval: 60s
+            retries: 5
+            timeout: 15s
+        networks:
+            - backend-network
+        ports:
+            - "5253:8000"
+        environment:
+            - LEGACY_PLUGIN_NAME=Emotion Recognition
+            - TRACKING_URI=http://monitoring-server:8999
+            - CELERY_BROKER_URL=amqp://message-queue
+            - CELERY_RESULTS_BACKEND=rpc://message-queue
+        volumes:
+            - ./training/datasets:/usr/src/app/datasets
+            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./docker-data/training/tmp:/tmp
+        depends_on:
+            - monitoring-server
+        profiles:
+            - ''
+            - 'gpu'
+            - 'external-worker'
+
+    # Training Worker
+    # : worker for the training service that does the actual training.
+    training-worker:
+        container_name: training-worker
+        restart: unless-stopped
+        build:
+            context: ./training
+            dockerfile: Dockerfile.worker
+        networks:
+            - backend-network
+        environment:
+            - LEGACY_PLUGIN_NAME=Emotion Recognition
+            - TRACKING_URI=http://monitoring-server:8999
+            - CELERY_BROKER_URL=amqp://message-queue
+            - CELERY_RESULTS_BACKEND=rpc://message-queue
+        volumes:
+            - ./training/datasets:/usr/src/app/datasets
+            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./docker-data/training/tmp:/tmp
+        depends_on:
+            - monitoring-server
+        profiles:
+            - ''
+            - 'worker-only'
+
+    # Training Worker - GPU
+    # : worker for the training service that does the actual training with GPU.
+    training-worker-gpu:
+        container_name: training-worker
+        restart: unless-stopped
+        build:
+            context: ./training
+            dockerfile: Dockerfile.worker
         deploy:
             resources:
                 reservations:
@@ -46,63 +103,22 @@ services:
                         - driver: nvidia
                           count: 1
                           capabilities: [gpu]
-        healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
-            start_period: 15s
-            interval: 30s
-            retries: 5
-            timeout: 15s
         networks:
-            - public-network
-        ports:
-            - "5253:8000"
+            - backend-network
         environment:
-            - UID=1000
-            - GID=1000
-            - MODEL_NAME=onnx emotion model
-            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
+            - LEGACY_PLUGIN_NAME=Emotion Recognition
+            - TRACKING_URI=http://monitoring-server:8999
+            - CELERY_BROKER_URL=amqp://message-queue
+            - CELERY_RESULTS_BACKEND=rpc://message-queue
         volumes:
-            - ./docker-data/experimentation/config.json:/usr/src/app/config.json
-            - ./docker-data/experimentation/data:/usr/src/app/data
-        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=128", "--timeout=0", "main:get_app()"]
+            - ./training/datasets:/usr/src/app/datasets
+            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./docker-data/training/tmp:/tmp
         depends_on:
             - monitoring-server
         profiles:
             - 'gpu'
-
-    # experimentation
-    # : trains and calibrates models while being publicly available for training calls. This includes a mount
-    #   for the GPU.
-    experimentation-server:
-        restart: unless-stopped
-        build:
-            context: ./experimentation
-            dockerfile: Dockerfile
-        image: chimp-experimentation:demonstrator-v1.0.0
-        container_name: experimentation-server
-        healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health' || exit 1"]
-            start_period: 15s
-            interval: 30s
-            retries: 5
-            timeout: 15s
-        networks:
-            - public-network
-        ports:
-            - "5253:8000"
-        environment:
-            - UID=1000
-            - GID=1000
-            - MODEL_NAME=onnx emotion model
-            - MLFLOW_TRACKING_URI=http://monitoring-server:8999
-        volumes:
-            - ./docker-data/experimentation/config.json:/usr/src/app/config.json
-            - ./docker-data/experimentation/data:/usr/src/app/data
-        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=128", "--timeout=0", "main:get_app()"]
-        depends_on:
-            - monitoring-server
-        profiles:
-            - ''
+            - 'worker-only-gpu'
 
     # Serving API
     # : serves models from the artifact store to applications
@@ -123,17 +139,18 @@ services:
         ports:
             - "5254:8000"
         environment:
-            - LEGACY_MODEL_NAME=onnx emotion model
+            - LEGACY_MODEL_NAME=OnnxEmotionModel
             - TRACKING_URI=http://monitoring-server:8999
-        entrypoint: ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "manage:app"]
         depends_on:
             - monitoring-server
         profiles:
             - ''
             - 'gpu'
+            - 'external-worker'
 
     # monitoring
-    # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local files (artifact-/object store) for ease of deployment with persistent storage
+    # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local
+    #   files (artifact-/object store) for ease of deployment with persistent storage
     monitoring-server:
         restart: unless-stopped
         build:
@@ -162,6 +179,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'external-worker'
 
     # message queue
     # : serves as a message broker for the CHIMP system.
@@ -185,6 +203,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'external-worker'
 
 networks:
     public-network:

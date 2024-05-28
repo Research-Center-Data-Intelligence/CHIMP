@@ -74,6 +74,7 @@ def start_task(plugin_name: str, passed_request=None):
     curl
         `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
+    # TODO: Get plugin arguments and pass these to the plugin
     # This code is required to support the depricated /model/train and /model/calibrate endpoints
     # until they are removed
     current_request = request
@@ -86,6 +87,7 @@ def start_task(plugin_name: str, passed_request=None):
     if dataset not in os.listdir(current_app.config["DATA_DIRECTORY"]):
         raise BadRequest(f"Dataset {dataset} not found")
 
+    # TODO: Move this to the worker (where the dataset is used)
     data_dir = os.path.join(current_app.config["DATA_DIRECTORY"], dataset)
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
     temp_data_dir = mkdtemp(prefix=f"chimp_{timestamp}_{dataset}_")

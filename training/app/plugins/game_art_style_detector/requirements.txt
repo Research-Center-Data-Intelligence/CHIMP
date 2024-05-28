@@ -1,5 +1,5 @@
 tensorflow
 image-slicer
-sklearn
+scikit-learn
 numpy
 pillow
