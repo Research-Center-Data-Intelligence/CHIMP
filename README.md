@@ -64,32 +64,22 @@ further commands, such as `up -d`. On some setups, to use the default profile (d
 ### Local development setup (on host outside of Docker)
 To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
 - Run the MLFlow service in Docker using `docker-compose --profile services up -d`
-- Create a virtual environment for each component with the required Python versions 
-  - Training (Python 3.11): `python3.11 -m venv training/env`
-  - Serving_api (Python 3.9): `python3.9 -m venv serving_api/env`
-  - ML-frontend (Python 3.11): `python3.11 -m venv ml-frontend/env`
-- Activate the virtual environment for each component:
-  - Experimentation: 
-    - Linux: `source training/env/bin/activate`
-    - Windows: `training\env\Scripts\activate`
-  - Serving: 
-    - Linux: `source serving_api/env/bin/activate` 
-    - Windows: `serving_api\env\Scripts\activate`
-  - ML-frontend:
-    - Linux: `source ml-frontend/env/bin/activate` 
-    - Windows: `ml-frontend\env\Scripts\activate`
-- Install the dependencies for each component using said components' `requirements.txt` file while the right virtual environment is activated:
+- Create a virtual environment using Python 3.11 with the command `python3.11 -m venv env`
+- Activate the virtual environment:
+    - Linux: `source env/bin/activate`
+    - Windows: `env\Scripts\activate`
+- Install the dependencies for each component using said components' `requirements.txt` file while the virtual environment is activated:
   - Training: `pip install -r training/requirements.txt`
   - Serving_api: `pip install -r serving_api/requirements.txt`
   - ML-frontend: `pip install -r ml-frontend/requirements.txt`
-- Install the development dependencies for each component using said components' `requirements-dev.txt` file while the right virtual environment is activated:
+- Install the development dependencies for each component using said components' `requirements-dev.txt` file while the virtual environment is activated:
   - Training: `pip install -r training/requirements-dev.txt`
   - Serving_api: `pip install -r serving_api/requirements.txt`
-- Install the plugin dependencies for the training component using the `plugin-requirements.txt` file while the right virtual environment is activated:
+- Install the plugin dependencies for the training component using the `plugin-requirements.txt` file while the virtual environment is activated:
   - Training: `pip install -r training/plugin-requirements.txt` 
 - Each component can now be run as usual
   - In PyCharm, a "Compound" run configuration can be used to run all the configurations for each component at once (including debugging)
-- In the terminal, you can run each component whilst _being in the folder directory_ (i.e. `cd experimentation`) using the following commands:
+- In the terminal, you can run each component whilst _being in the component directory_ (i.e. `cd experimentation`) using the following commands:
   - Training (API): `python3 manage.py run`
   - Training (worker): `celery -A manage:celery_app worker`
   - Serving_api: `python3 manage.py run`

@@ -1,4 +1,4 @@
-FROM python:3.10.11-slim
+FROM python:3.11-slim
 
 LABEL authors="Research Center Data Intelligence - Zuyd University of Applied Science, Bryan Kroon"
 LABEL owners="Research Center Data Intelligence - Zuyd University of Applied Science, Bryan Kroon"
