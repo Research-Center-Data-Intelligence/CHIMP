@@ -29,9 +29,9 @@ graph RL
         afe[Emotion recognition front-end<br/>- HTML/CSS/JS] --> abe[Emotion recognition back-end<br/>- Python/Flask];
     end
     abe --> tapi[Training service API<br/>- Python/Flask<br/>- TalosML/Tensorflow];
-    tapi --> twork[Training service worker<br/>- Python];
     abe --> srv[Serving_api service<br/>- Python/Flask];
     subgraph Services
+        tapi --> twork[Training service worker<br/>- Python];
         twork --> mlf[Tracking<br/>- MLFlow];
         srv --> mlf;
         mlf --> db[Database<br/>- SQLite];
