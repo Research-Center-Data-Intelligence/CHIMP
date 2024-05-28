@@ -6,7 +6,7 @@ from mlflow import pyfunc as mlflow_pyfunc, MlflowException, MlflowClient
 from onnxruntime.capi.onnxruntime_pybind11_state import NoSuchFile as MlflowNoSuchFile
 from typing import Union, Optional, Set
 
-from app.model import BaseModel, OnnxModel, PyTorchModel
+from app.model import BaseModel, OnnxModel
 
 
 class BaseConnector(ABC):
@@ -21,7 +21,7 @@ class BaseConnector(ABC):
     _tracking_uri: str
 
     @abstractmethod
-    def get_model(self, model_name: str) -> Optional[BaseModel]:
+    def get_model(self, model_name: str) -> Optional[BaseModel]:  # pragma: no cover
         """Retrieves a model based on a given name.
 
         Parameters
@@ -36,7 +36,7 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def update_model(self, model: BaseModel) -> None:
+    def update_model(self, model: BaseModel) -> None:  # pragma: no cover
         """Updates a given model.
 
         Parameters
@@ -47,10 +47,10 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def get_available_models(self) -> Set:
+    def get_available_models(self) -> Set:  # pragma: no cover
         pass
 
-    def _init_connector(self):
+    def _init_connector(self):  # pragma: no cover
         """Helper method for any connector specific initialization."""
         pass
 
@@ -81,7 +81,7 @@ class BaseConnector(ABC):
 class MLFlowConnector(BaseConnector):
     _client: MlflowClient
 
-    def _init_connector(self):
+    def _init_connector(self):  # pragma: no cover
         mlflow.set_tracking_uri(self._tracking_uri)
         self._client = MlflowClient()
 
@@ -99,8 +99,19 @@ class MLFlowConnector(BaseConnector):
 
     @staticmethod
     def _get_global_model(model_name: str) -> any:
-        staging = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
-        production = mlflow_pyfunc.load_model(f"models:/{model_name}/production")
+        try:
+            staging = mlflow_pyfunc.load_model(f"models:/{model_name}/staging")
+        except MlflowException:
+            staging = None
+
+        try:
+            production = mlflow_pyfunc.load_model(f"models:/{model_name}/production")
+        except MlflowException:
+            production = None
+
+        if not staging and not production:
+            raise MlflowException(f"Could not find model with name {model_name}")
+
         # TODO: check the type of model, then return an object of the proper Model subclass.
         return OnnxModel(model_name, {"staging": staging, "production": production})
 

@@ -24,10 +24,11 @@ class PluginInfo:
     arguments : Dict[str, Dict[str, Union[str, Type]]]
         A dictionary with possible arguments for the plugin. Each argument has a key,
         which is the name of the (keyword) argument as passed to the plugin. The value
-        is a dictionary containing three fields:
+        is a dictionary containing three required fields and can contain one optional field:
             - name (a string with the name of the argument)
             - type (description of the type of the argument, as a string)
             - description (a description of the argument)
+            - [OPTIONAL] optional (True if the argument is optional)
     model_return_type : Optional[str]
         The type of model object returned by the plugin. Preferably, this should be the value
         of one of the ModelType types. If the plugin does not return anything (including

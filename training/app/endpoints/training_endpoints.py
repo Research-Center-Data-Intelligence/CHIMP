@@ -1,7 +1,8 @@
 import os
 import shutil
+import warnings
 from datetime import datetime
-from flask import abort, Blueprint, current_app, request
+from flask import abort, Blueprint, current_app, request, Request
 from tempfile import mkdtemp
 from werkzeug.exceptions import BadRequest
 
@@ -50,7 +51,7 @@ def get_plugins():
 
 
 @bp.route("/tasks/run/<plugin_name>", methods=["POST"])
-def start_task(plugin_name: str):
+def start_task(plugin_name: str, passed_request=None):
     """Run a task.
 
 
@@ -60,6 +61,8 @@ def start_task(plugin_name: str):
         The name of the plugin to run for the task
     (form data) dataset : str
         The name of the dataset to use
+    passed_request : Request
+        A overwrite to support the (depricated) /model/train and /model/calibrate endpoints
 
 
     Returns
@@ -71,7 +74,13 @@ def start_task(plugin_name: str):
     curl
         `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
-    dataset = request.form.get("dataset")
+    # This code is required to support the depricated /model/train and /model/calibrate endpoints
+    # until they are removed
+    current_request = request
+    if passed_request:
+        current_request = passed_request
+
+    dataset = current_request.form.get("dataset")
     if not dataset:
         raise BadRequest("Must specify a dataset")
     if dataset not in os.listdir(current_app.config["DATA_DIRECTORY"]):
@@ -116,3 +125,19 @@ def poll(task_id: str):
     if not task_info:
         abort(404)
     return task_info.as_dict()
+
+
+@bp.route("/model/<train_or_calibrate>", methods=["POST"])
+def model_train_or_calibrate(train_or_calibrate: str):
+    """Legacy route to support the old style of inference.
+
+    WARNING: Calling the /model/train endpoint is deprecated, use the /tasks/run/<plugin> endpoint instead
+    """
+    warnings.warn(
+        "Calling the /model/train endpoint is deprecated, use the /tasks/run/<plugin> endpoint instead"
+    )
+
+    class ReplacementRequest:
+        form = {"dataset": current_app.config["LEGACY_DATASET_NAME"]}
+
+    return start_task(current_app.config["LEGACY_PLUGIN_NAME"], ReplacementRequest())
