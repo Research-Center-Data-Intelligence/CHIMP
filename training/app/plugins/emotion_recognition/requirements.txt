@@ -1,0 +1,5 @@
+tensorflow
+opencv-python
+tensorflow
+tf2onnx
+onnxruntime
