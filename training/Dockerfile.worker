@@ -5,17 +5,20 @@ LABEL owners="Research Center Data Intelligence - Zuyd University of Applied Sci
 
 ENV CONTAINER_HOME=/usr/src/app
 
-# Setup apt dependencies
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update && apt-get install -y -q wget protobuf-compiler
+# Setup dependencies
+RUN apt-get update && apt-get upgrade -y && apt-get install -y -q wget git ffmpeg build-essential
 
 # Setup pip dependencies
 WORKDIR $CONTAINER_HOME
 COPY ./requirements.txt $CONTAINER_HOME/requirements.txt
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Install plugin dependencies
+COPY ./plugin-requirements.txt $CONTAINER_HOME/plugin-requirements.txt
+RUN pip3 install --no-cache-dir -r plugin-requirements.txt
+
 # Copy project to container
 COPY . $CONTAINER_HOME
 
 # Entrypoint
-ENTRYPOINT ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "manage:app"]
+ENTRYPOINT ["celery", "-A", "manage:celery_app", "worker"]

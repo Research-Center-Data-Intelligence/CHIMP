@@ -9,7 +9,7 @@ from typing import List
 
 from app.connectors import BaseConnector
 from app.inference import InferenceManager
-from app.model import BaseModel
+from app.model import BaseModel, OnnxModel
 
 testdir = os.path.abspath(os.path.dirname(__file__))
 

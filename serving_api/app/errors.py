@@ -45,3 +45,9 @@ class InvalidDataFormatError(Exception):
 
     def __init__(self, msg="Invalid data format", *args, **kwargs):
         super().__init__(msg, *args, **kwargs)
+
+
+class InvalidModelIdOrStage(Exception):
+    """Custom exception for when a given model ID or model stage is used."""
+
+    pass
