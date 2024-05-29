@@ -112,7 +112,7 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
 - **description:** A description of the plugin
 - **arguments:** A dictionary containing the arguments expected by this plugin. Note that these expected arguments are currently not checked. Each argument uses the argument name as a key and the value is a dictionary containing the following:
   - **name:** Name of the argument (should be the same as the key).
-  - **type:** The type of the argument. It is encouraged to use the Python type hinting format here, but this is not enforced.
+  - **type:** The type of the argument. It is encouraged to use the Python type hinting format here, but this is not enforced. Note that checking if a argument has the correct type and converting it from a string to said type is the responsibility of the plugin implementor.
   - **description:** A description of the argument.
   - **optional:** [OPTIONAL] This is an optional field to denote that a argument is optional, if it is not present (or explicitly set to False), it is assumed that a argument is not optional (i.e. required).
 - **model_return_type:** The type of model returned by the plugin. If no model is returned, it should be set to `None`
