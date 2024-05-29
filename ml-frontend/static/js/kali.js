@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRecording = false;
     let isPaused = false;
     const MAX_RECORDING_TIME = 3;
+    let emotionQueue = [];
+    let recordedSessions = [];
+    let isQueuePaused = false;
     const socket = io('http://localhost:5252'); // Connect to your Flask-SocketIO server
 
     async function setupCamera() {
@@ -59,14 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentEmotion = emotion;
+        highlightEmotionButton(currentEmotion);
         await startRecordingWithCountdown();  
 
-        var options = {mimeType: 'video/x-matroska;codecs=avc1'};
-        mediaRecorder = new MediaRecorder(videoElement.srcObject,options);
+        var options = { mimeType: 'video/x-matroska;codecs=avc1' };
+        mediaRecorder = new MediaRecorder(videoElement.srcObject, options);
         recordedBlob = null;
 
         mediaRecorder.ondataavailable = (event) => {
-            console.log(event);
             if (event.data.size > 0) {
                 recordedBlob = event.data;
             }
@@ -75,18 +78,24 @@ document.addEventListener('DOMContentLoaded', () => {
         mediaRecorder.onstop = () => {
             console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} stopped.`);
             if (recordedBlob) {
+                recordedSessions.push({ emotion: currentEmotion, blob: recordedBlob });
                 saveButton.disabled = false;
             }
+            isRecording = false;
+            if (!isQueuePaused) {
+                processEmotionQueue();
+            }
         };
-        
-        setTimeout(() => {
-            stopRecording();
-        }, MAX_RECORDING_TIME * 1000);
 
         mediaRecorder.start();
         console.log(`Recording ${emotion ? 'for ' + emotion : ''} started...`);
         isRecording = true;
         isPaused = false;
+
+        setTimeout(() => {
+            stopRecording();
+        }, MAX_RECORDING_TIME * 1000);
+
         updateButtonState();
     }
 
@@ -95,73 +104,121 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.requestData();
             mediaRecorder.stop();
             isRecording = false;
+            clearHighlightEmotionButton();
             updateButtonState();
         }
     }
 
-    function pauseRecording() {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.pause();
-            console.log('Recording paused...');
-            isPaused = true;
-            updateButtonState();
+    function pauseRecordingQueue() {
+        if (isRecording) {
+            stopRecording();
         }
+        isQueuePaused = true;
+        console.log('Recording paused...');
+        updateButtonState();
     }
 
-    function resumeRecording() {
-        if (mediaRecorder && mediaRecorder.state === 'paused') {
-            mediaRecorder.resume();
-            console.log('Recording resumed...');
-            isPaused = false;
-            updateButtonState();
-        }
+    function resumeRecordingQueue() {
+        isQueuePaused = false;
+        console.log('Recording resumed...');
+        processEmotionQueue();
+        updateButtonState();
     }
 
     function saveRecording() {
-        console.log(recordedBlob);
-        
-        if (!recordedBlob) {
+        if (recordedSessions.length === 0) {
             console.warn('No recorded data to save.');
             return;
         }
-    
-        
-        var blob = recordedBlob;
+
         const timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(/[: ]/g, '-');
         const username = usernameInput.value || 'anonymous';
-        socket.emit('process-video', {
-            
-            user_id: '', 
-            username: username,
-            image_blob: blob,
-            emotion: currentEmotion,
-            timestamp: timestamp
+
+        recordedSessions.forEach((session, index) => {
+            const blob = session.blob;
+            const emotion = session.emotion;
+
+            socket.emit('process-video', {
+                user_id: '', 
+                username: username,
+                image_blob: blob,
+                emotion: emotion,
+                timestamp: `${timestamp}-${index}`
+            });
+            console.log(`Recording for ${emotion} saved.`);
         });
-        console.log('gestuurd')
-        console.log(`Recording ${currentEmotion ? 'for ' + currentEmotion : ''} saved.`);
-        recordedBlob = null;
+
+        recordedSessions = []; 
         saveButton.disabled = true;
         updateButtonState();
     }
-    
 
     function updateButtonState() {
-        startButton.disabled = isRecording;
-        stopButton.disabled = !isRecording;
-        pauseButton.disabled = !isRecording || isPaused;
-        resumeButton.disabled = !isRecording || !isPaused;
+        startButton.disabled = isRecording || emotionQueue.length > 0;
+        stopButton.disabled = !isRecording && emotionQueue.length === 0;
+        pauseButton.disabled = !isRecording || isPaused || emotionQueue.length === 0;
+        resumeButton.disabled = !isQueuePaused || emotionQueue.length === 0;
         emotionButtons.forEach(button => button.disabled = isRecording);
     }
 
-    startButton.addEventListener('click', () => startRecording());
-    stopButton.addEventListener('click', stopRecording);
-    pauseButton.addEventListener('click', pauseRecording);
-    resumeButton.addEventListener('click', resumeRecording);
-    saveButton.addEventListener('click', saveRecording);
+    function processEmotionQueue() {
+        if (emotionQueue.length > 0 && !isQueuePaused) {
+            const nextEmotion = emotionQueue.shift();
+            startRecording(nextEmotion);
+        }
+    }
+
+    function highlightEmotionButton(emotion) {
+        clearHighlightEmotionButton();
+        const button = document.querySelector(`.emotionButton[data-emotion="${emotion}"]`);
+        if (button) {
+            button.classList.add('highlight');
+        }
+    }
+
+    function clearHighlightEmotionButton() {
+        const highlightedButton = document.querySelector('.emotionButton.highlight');
+        if (highlightedButton) {
+            highlightedButton.classList.remove('highlight');
+        }
+    }
+
+    function resetRecordingState() {
+        isRecording = false;
+        isPaused = false;
+        isQueuePaused = false;
+        emotionQueue = [];
+        clearHighlightEmotionButton();
+        updateButtonState();
+    }
 
     emotionButtons.forEach(button => {
-        button.addEventListener('click', () => startRecording(button.getAttribute('data-emotion')));
+        button.addEventListener('click', () => {
+            const emotion = button.getAttribute('data-emotion');
+            emotionQueue.push(emotion);
+            processEmotionQueue();
+        });
     });
+
+    startButton.addEventListener('click', () => {
+        emotionButtons.forEach(button => {
+            const emotion = button.getAttribute('data-emotion');
+            emotionQueue.push(emotion);
+        });
+        processEmotionQueue();
+    });
+
+    stopButton.addEventListener('click', () => {
+        isQueuePaused = true;
+        emotionQueue = [];
+        stopRecording();
+        resetRecordingState();
+    });
+
+    startButton.addEventListener('click', () => startRecording());
+    pauseButton.addEventListener('click', pauseRecordingQueue);
+    resumeButton.addEventListener('click', resumeRecordingQueue);
+    saveButton.addEventListener('click', saveRecording);
 
     setupCamera().catch(error => {
         console.error('Failed to initialize webcam:', error);

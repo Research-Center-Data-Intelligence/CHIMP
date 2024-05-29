@@ -146,3 +146,7 @@ hr {
     border-top-color: hsla(352,89%,47%,55%);
     margin: 0 .9vw;
 }
+.highlight {
+    border: 2px solid red;
+    background-color: red;
+}
