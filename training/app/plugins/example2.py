@@ -17,6 +17,11 @@ class Example2Plugin(BasePlugin):
                     "type": "str",
                     "description": "The dataset to use",
                 },
+                "start_value": {
+                    "name": "start_value",
+                    "type": int,
+                    "description": "The starting value",
+                },
                 "settings": {
                     "name": "settings",
                     "type": "Dict[str, str]",
@@ -31,6 +36,10 @@ class Example2Plugin(BasePlugin):
         return self._info
 
     def run(self, *args, **kwargs) -> Optional[Any]:
-        print(f"Start running {self._info.name}, sleeping for 20 seconds")
+        print(f"Start running {self._info.name}")
+        print(f"Starting value: {kwargs['start_value']}")
+        if "settings" in kwargs:
+            print(f"Settings: {kwargs['settings']}")
+        print("Sleeping for 20 seconds")
         sleep(20)
         print(f"End running {self._info.name}")

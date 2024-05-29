@@ -23,7 +23,26 @@ class EmotionRecognitionPlugin(BasePlugin):
             name="Emotion Recognition",
             version="1.0",
             description="An emotion recognition model.",
-            arguments={},
+            arguments={
+                "calibrate": {
+                    "name": "calibrate",
+                    "type": "bool",
+                    "description": "Whether to calibrate an existing model, if not set, a global model is trained",
+                    "optional": True,
+                },
+                "calibration_dataset": {
+                    "name": "calibration_dataset",
+                    "type": "str",
+                    "description": "The dataset to use for calibration purposes",
+                    "optional": True,
+                },
+                "calibration_id": {
+                    "name": "calibration_id",
+                    "type": "str",
+                    "description": "ID to use to denote the calibrated model by",
+                    "optional": True,
+                },
+            },
             model_return_type="onnx",
         )
 
@@ -31,6 +50,16 @@ class EmotionRecognitionPlugin(BasePlugin):
         return self._info
 
     def run(self, *args, **kwargs) -> Optional[str]:
+        if "calibrate" in kwargs and kwargs["calibrate"]:
+            if (
+                not "calibration_dataset" in kwargs
+                or not "calibration_id" not in kwargs
+            ):
+                raise RuntimeError(
+                    "If 'calibrate' is set to true, the 'calibration_dataset' and 'calibration_id' fields are required"
+                )
+            print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
+
         with open(os.path.join(plugin_dir, "config.json")) as f:
             self.config = json.load(f)
 

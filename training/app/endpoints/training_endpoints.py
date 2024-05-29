@@ -4,6 +4,7 @@ import warnings
 from datetime import datetime
 from flask import abort, Blueprint, current_app, request, Request
 from tempfile import mkdtemp
+from typing import Dict
 from werkzeug.exceptions import BadRequest
 
 from app.plugin import PluginLoader
@@ -75,12 +76,13 @@ def start_task(plugin_name: str, passed_request=None):
         `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
     # TODO: Get plugin arguments and pass these to the plugin
-    # This code is required to support the depricated /model/train and /model/calibrate endpoints
+    # This code is required to support the deprecated /model/train and /model/calibrate endpoints
     # until they are removed
     current_request = request
     if passed_request:
         current_request = passed_request
 
+    # Setup dataset for plugin
     dataset = current_request.form.get("dataset")
     if not dataset:
         raise BadRequest("Must specify a dataset")
@@ -94,11 +96,25 @@ def start_task(plugin_name: str, passed_request=None):
     temp_data_dir = os.path.join(temp_data_dir, dataset)
     shutil.copytree(data_dir, temp_data_dir)
 
+    # Check if plugin exists and retrieve the plugin info
     plugin_name = plugin_name.replace("+", " ")
     worker_manager: WorkerManager = current_app.extensions["worker_manager"]
-    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir)
-    if not task_id:
+    plugin_info = worker_manager.get_plugin_info(plugin_name)
+    if not plugin_info:
         abort(404)
+
+    # Check the arguments
+    kwargs: Dict[str, str] = {}
+    for expected_args in plugin_info["arguments"].values():
+        key = expected_args["name"]
+        value = request.form.get(key)
+        if not value:
+            value = request.args.get(key)
+        if not value and not expected_args.get("optional"):
+            raise BadRequest(f"Missing required argument '{key}'")
+        kwargs[key] = value
+
+    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir, **kwargs)
     return {
         "status": f"task started successfully, use '/tasks/poll/{task_id}' to poll for the current status",
         "task_id": task_id,
