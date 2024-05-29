@@ -83,8 +83,8 @@ class DataProcessorABC(ABC):
 
         self._config = config
         self._data = self._load_data() if data is None else data
-        assert(self._data is not None, "'self.data' attribute is None: The data processor is initialised without any "
-                                       "data, nor instructions on how to load data into memory.")
+        assert self._data is not None, "'self.data' attribute is None: The data processor is initialised without any "\
+                                       "data, nor instructions on how to load data into memory."
 
     # region Functions
     def process_data(self) -> DataProcessorABC:

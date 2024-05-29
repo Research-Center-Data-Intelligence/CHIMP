@@ -255,6 +255,7 @@ class MLFlowEmotionModelPublisher(EmotionModelPublisher):
         # (TODO: quality measure to only update if better??)
         client = MlflowClient()
 
+        # Try to put the previous staging model in production, then set new model in staging
         try:
             curr_staging_model_info = get_model_info(f'models:/{self._config["model_name"]}/Staging')
             model_run_id = curr_staging_model_info.run_id
@@ -262,18 +263,29 @@ class MLFlowEmotionModelPublisher(EmotionModelPublisher):
 
             client.transition_model_version_stage(self._config['model_name'], model_version_info.version,
                                                   stage='production', archive_existing_versions=True)
+            
+            # Promote new model to staging model
+            model_run_id = new_model_info.run_id
+            model_version_info = client.search_model_versions(f"run_id = '{model_run_id}'")[0]
+
+            client.transition_model_version_stage(self._config['model_name'], model_version_info.version,
+                                              stage='staging', archive_existing_versions=False)
+            print("MV:+++ succesfully transitioned old and new model")
         except Exception:
+            
+            # Promote new model to production if previous attemt failed, possibly to starting with a new database and no previous model available
+            model_run_id = new_model_info.run_id
+            model_version_info = client.search_model_versions(f"run_id = '{model_run_id}'")[0]
+
+            client.transition_model_version_stage(self._config['model_name'], model_version_info.version,
+                                              stage='production', archive_existing_versions=False)
+            
+            print("MV:--- unsuccesfully transitioned old and new model, transitioned new to production")
+
             # Generic exception handling. Bad practice, but could not find the exception thrown when client has couldn't
             #   return model data
             pass
-
-        # Promote new model to staging model
-        model_run_id = new_model_info.run_id
-        model_version_info = client.search_model_versions(f"run_id = '{model_run_id}'")[0]
-
-        client.transition_model_version_stage(self._config['model_name'], model_version_info.version,
-                                              stage='staging', archive_existing_versions=False)
-
+        
         return best_models
 
 
