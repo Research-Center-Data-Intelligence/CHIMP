@@ -103,7 +103,7 @@ def _calibrate_model():
         config['data_directory'] = folder_path
 
         pipeline = build_emotion_recognition_pipeline(config=config, do_calibrate_base_model=True)
-        pipeline.run(run_name=request.args.get('user_id', '', str))
+        pipeline.run(run_name='calib'+request.args.get('user_id', '', str))
 
     # Remove data folder
     remove_directory(config['data_directory'], ignore_errors=True)
