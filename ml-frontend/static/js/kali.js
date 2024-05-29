@@ -37,15 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function startRecordingWithCountdown() {
+    async function startRecordingWithCountdown(emotion) {
         return new Promise((resolve) => {
             countdownOverlay.style.display = 'flex';
-            let countdown = MAX_RECORDING_TIME;
-            countdownText.textContent = countdown;
+            countdownText.textContent = `${MAX_RECORDING_TIME} - ${emotion}`;
 
+            let countdown = MAX_RECORDING_TIME;
             const countdownInterval = setInterval(() => {
                 countdown--;
-                countdownText.textContent = countdown;
+                countdownText.textContent = `${countdown} - ${emotion}`;
                 if (countdown === 0) {
                     clearInterval(countdownInterval);
                     countdownOverlay.style.display = 'none';
@@ -62,10 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentEmotion = emotion;
-        highlightEmotionButton(currentEmotion);
-        await startRecordingWithCountdown();  
+        await startRecordingWithCountdown(currentEmotion);  
 
-        var options = { mimeType: 'video/x-matroska;codecs=avc1' };
+        const options = { mimeType: 'video/x-matroska;codecs=avc1' };
         mediaRecorder = new MediaRecorder(videoElement.srcObject, options);
         recordedBlob = null;
 
@@ -215,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         resetRecordingState();
     });
 
-    startButton.addEventListener('click', () => startRecording());
     pauseButton.addEventListener('click', pauseRecordingQueue);
     resumeButton.addEventListener('click', resumeRecordingQueue);
     saveButton.addEventListener('click', saveRecording);
