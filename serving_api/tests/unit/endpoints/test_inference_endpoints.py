@@ -27,6 +27,9 @@ class TestInferenceEndpoints:
         assert calibrated_model_id in data["data"]["available_models"]
         assert calibrated_model_name in data["data"]["available_models"]
 
+        resp = client.get("/model?reload_models=true")
+        assert resp.status_code == 200
+
     def test_infer_from_model_endpoint(
         self,
         client: FlaskClient,
@@ -38,6 +41,12 @@ class TestInferenceEndpoints:
         """Test the infer from model endpoint."""
         resp = client.post("/model/doesnotexist/infer", json={"inputs": [1, 2, 3]})
         assert resp.status_code == 404
+
+        resp = client.post(f"/model/{global_model_name}/infer", data="abc")
+        assert resp.status_code == 400
+
+        resp = client.post(f"/model/{global_model_name}/infer", json={"abc": 123})
+        assert resp.status_code == 400
 
         resp = client.post(f"/model/{global_model_name}/infer", json={"inputs": 12})
         assert resp.status_code == 400
@@ -53,3 +62,9 @@ class TestInferenceEndpoints:
             and data["status"] == f"inference from model {global_model_name} success"
         )
         assert "predictions" in data and type(data["predictions"]["dense_3"]) is list
+
+        resp = client.post(
+            f"/model/{global_model_name}/infer?stage=doesnotexist",
+            json={"inputs": [1, 2, 3]},
+        )
+        assert resp.status_code == 400

@@ -1,0 +1,16 @@
+# Use this requirements file to specify the dependencies used within a plugin. Above
+# the list of dependencies for a plugin, use "# <PLUGIN_NAME>" to denote where the list
+# starts. Additionally, it is recommended to give a full list of dependencies, even if
+# a dependency is already listed for another plugin (in case the other plugin is
+# removed).
+
+# Emotion Recognition
+tensorflow
+opencv-python
+tf2onnx
+onnxruntime
+
+# Game Art Style Detector
+tensorflow
+scikit-learn
+numpy

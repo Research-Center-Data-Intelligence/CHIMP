@@ -7,7 +7,7 @@ from onnxruntime.capi.onnxruntime_pybind11_state import (
     InvalidArgument as OnnxInvalidArgument,
 )
 
-from app.errors import InvalidDataFormatError
+from app.errors import InvalidDataFormatError, InvalidModelIdOrStage
 
 
 class BaseModel(ABC):
@@ -22,13 +22,31 @@ class BaseModel(ABC):
         self._models = models
         self.updated = datetime.utcnow()
 
+    def get_model(
+        self, stage: Optional[str] = "production", model_id: Optional[str] = ""
+    ) -> Any:
+        """Get a model by ID or stage name, raises a `InvalidModelIdOrStage` if
+        no model with a given AI or stage exists.
+        """
+        model = None
+        if model_id and model_id in self._models:
+            model = self._models[model_id]
+        elif stage in self._models:
+            model = self._models[stage]
+
+        if not model:
+            raise InvalidModelIdOrStage(
+                f"No model with ID '{model_id}' or with stage '{stage}' found"
+            )
+        return model
+
     @abstractmethod
     def predict(
         self,
         data: Any,
         stage: Optional[str] = "production",
         model_id: Optional[str] = "",
-    ) -> Any:
+    ) -> Any:  # pragma: no cover
         """Run a prediction on the given data.
 
         Parameters
@@ -95,12 +113,37 @@ class OnnxModel(BaseModel):
         if type(data) is not list:
             raise InvalidDataFormatError("Expected a list as data input")
         try:
+            model = self.get_model(stage=stage, model_id=model_id)
+            data = np.asarray(data)
+            prediction = model.predict(data)
+            return {k: v.tolist() for k, v in prediction.items()}
+        except OnnxInvalidArgument:
+            raise InvalidDataFormatError()
+
+
+class PyTorchModel(BaseModel):  # pragma: no cover
+    """(WIP) implementation of BaseModel for PyTorch model.
+
+    This implementation has not been tested yet. Currently, there are a number of issues
+    with the import system between the training module and this module.
+    """
+
+    def predict(
+        self,
+        data: Any,
+        stage: Optional[str] = "production",
+        model_id: Optional[str] = "",
+    ) -> Any:
+
+        if type(data) is not list:
+            raise InvalidDataFormatError("Expected a list as data input")
+        try:
             if model_id and model_id in self._models:
                 model = self._models[model_id]
             else:
                 model = self._models[stage]
             data = np.asarray(data)
-            prediction = model.predict(data)
+            prediction = model(data)
             return {k: v.tolist() for k, v in prediction.items()}
         except OnnxInvalidArgument:
             raise InvalidDataFormatError()

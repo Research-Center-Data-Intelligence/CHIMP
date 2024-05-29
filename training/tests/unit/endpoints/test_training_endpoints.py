@@ -49,6 +49,13 @@ class TestTrainingEndpoints:
         )
         assert resp.status_code == 404
 
+        # Missing arguments
+        resp = client.post(
+            "/tasks/run/Example+2+Plugin", data={"dataset": "TestingDataset"}
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()["message"] == "Missing required argument 'start_value'"
+
         # No dataset
         resp = client.post("/tasks/run/Example+Plugin")
         assert resp.status_code == 400
