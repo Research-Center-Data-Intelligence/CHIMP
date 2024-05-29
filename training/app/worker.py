@@ -5,7 +5,7 @@ from flask import Flask
 from typing import Any, Optional
 
 from app.errors import PluginNotFoundError
-from app.plugin import PluginLoader
+from app.plugin import PluginLoader, PluginInfo
 
 
 @dataclass
@@ -91,6 +91,23 @@ class WorkerManager:
         kwargs["plugin_name"] = plugin_name
         res = self._run_task.delay(plugin_name, *args, **kwargs)
         return res.id
+
+    def get_plugin_info(self, plugin_name: str) -> Optional[PluginInfo]:
+        """Get the PluginInfo for a given plugin by name.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name of the plugin to get the info for.
+
+        Returns
+        -------
+        The PluginInfo object or None if the plugin could not be found.
+        """
+        plugin = self._plugin_loader.get_plugin(plugin_name)
+        if plugin:
+            return plugin.info()
+        return None
 
     @staticmethod
     def get_task_status(task_id: str) -> Optional[TaskResult]:
