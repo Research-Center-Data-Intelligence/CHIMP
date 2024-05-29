@@ -12,7 +12,9 @@ TESTING = os.environ.get("TESTING")
 DEVELOPMENT = os.environ.get("DEVELOPMENT") or False
 DEV = DEVELOPMENT
 
-LEGACY_MODEL_NAME = os.environ.get("LEGACY_MODEL_NAME") or "onnx emotion model"
+LEGACY_PLUGIN_NAME = os.environ.get("LEGACY_PLUGIN_NAME") or "Emotion Recognition"
+LEGACY_DATASET_NAME = os.environ.get("LEGACY_DATASET_NAME") or "emotions"
+
 TRACKING_URI = os.environ.get("TRACKING_URI") or "http://localhost:8999"
 
 PLUGIN_DIRECTORY = os.environ.get("PLUGIN_DIRECTORY") or os.path.join(

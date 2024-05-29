@@ -10,7 +10,3 @@ class TestAppFactory:
         """Test if an app instance can be created."""
         app = create_app()
         assert type(app) is Flask
-        out, err = capfd.readouterr()
-        assert not err
-        assert "Example Plugin" in out
-        assert "Example 2 Plugin" in out

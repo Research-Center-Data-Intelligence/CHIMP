@@ -1,8 +1,10 @@
 import os
 import shutil
+import warnings
 from datetime import datetime
-from flask import abort, Blueprint, current_app, request
+from flask import abort, Blueprint, current_app, request, Request
 from tempfile import mkdtemp
+from typing import Dict
 from werkzeug.exceptions import BadRequest
 
 from app.plugin import PluginLoader
@@ -50,7 +52,7 @@ def get_plugins():
 
 
 @bp.route("/tasks/run/<plugin_name>", methods=["POST"])
-def start_task(plugin_name: str):
+def start_task(plugin_name: str, passed_request=None):
     """Run a task.
 
 
@@ -60,6 +62,8 @@ def start_task(plugin_name: str):
         The name of the plugin to run for the task
     (form data) dataset : str
         The name of the dataset to use
+    passed_request : Request
+        A overwrite to support the (depricated) /model/train and /model/calibrate endpoints
 
 
     Returns
@@ -71,23 +75,46 @@ def start_task(plugin_name: str):
     curl
         `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
-    dataset = request.form.get("dataset")
+    # TODO: Get plugin arguments and pass these to the plugin
+    # This code is required to support the deprecated /model/train and /model/calibrate endpoints
+    # until they are removed
+    current_request = request
+    if passed_request:
+        current_request = passed_request
+
+    # Setup dataset for plugin
+    dataset = current_request.form.get("dataset")
     if not dataset:
         raise BadRequest("Must specify a dataset")
     if dataset not in os.listdir(current_app.config["DATA_DIRECTORY"]):
         raise BadRequest(f"Dataset {dataset} not found")
 
+    # TODO: Move this to the worker (where the dataset is used)
     data_dir = os.path.join(current_app.config["DATA_DIRECTORY"], dataset)
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
     temp_data_dir = mkdtemp(prefix=f"chimp_{timestamp}_{dataset}_")
     temp_data_dir = os.path.join(temp_data_dir, dataset)
     shutil.copytree(data_dir, temp_data_dir)
 
+    # Check if plugin exists and retrieve the plugin info
     plugin_name = plugin_name.replace("+", " ")
     worker_manager: WorkerManager = current_app.extensions["worker_manager"]
-    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir)
-    if not task_id:
+    plugin_info = worker_manager.get_plugin_info(plugin_name)
+    if not plugin_info:
         abort(404)
+
+    # Check the arguments
+    kwargs: Dict[str, str] = {}
+    for expected_args in plugin_info["arguments"].values():
+        key = expected_args["name"]
+        value = request.form.get(key)
+        if not value:
+            value = request.args.get(key)
+        if not value and not expected_args.get("optional"):
+            raise BadRequest(f"Missing required argument '{key}'")
+        kwargs[key] = value
+
+    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir, **kwargs)
     return {
         "status": f"task started successfully, use '/tasks/poll/{task_id}' to poll for the current status",
         "task_id": task_id,
@@ -116,3 +143,19 @@ def poll(task_id: str):
     if not task_info:
         abort(404)
     return task_info.as_dict()
+
+
+@bp.route("/model/<train_or_calibrate>", methods=["POST"])
+def model_train_or_calibrate(train_or_calibrate: str):
+    """Legacy route to support the old style of inference.
+
+    WARNING: Calling the /model/train endpoint is deprecated, use the /tasks/run/<plugin> endpoint instead
+    """
+    warnings.warn(
+        "Calling the /model/train endpoint is deprecated, use the /tasks/run/<plugin> endpoint instead"
+    )
+
+    class ReplacementRequest:
+        form = {"dataset": current_app.config["LEGACY_DATASET_NAME"]}
+
+    return start_task(current_app.config["LEGACY_PLUGIN_NAME"], ReplacementRequest())
