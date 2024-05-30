@@ -15,11 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let recordedBlob;
     let isRecording = false;
     let isPaused = false;
-    const MAX_RECORDING_TIME = 3;
     let emotionQueue = [];
     let recordedSessions = [];
     let isQueuePaused = false;
-    const socket = io('http://localhost:5252'); // Connect to your Flask-SocketIO server
+    const socket = io(CONFIG.SOCKET_URL);
 
     async function setupCamera() {
         try {
@@ -40,12 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startRecordingWithCountdown(emotion) {
         return new Promise((resolve) => {
             countdownOverlay.style.display = 'flex';
-            countdownText.textContent = `${MAX_RECORDING_TIME} - ${emotion}`;
+            const smiley = CONFIG.EMOTION_SMILEYS[emotion] || '';
+            countdownText.textContent = `${CONFIG.MAX_RECORDING_TIME} - ${smiley} ${emotion}`;
 
-            let countdown = MAX_RECORDING_TIME;
+            let countdown = CONFIG.MAX_RECORDING_TIME;
             const countdownInterval = setInterval(() => {
                 countdown--;
-                countdownText.textContent = `${countdown} - ${emotion}`;
+                countdownText.textContent = `${countdown} - ${smiley} ${emotion}`;
                 if (countdown === 0) {
                     clearInterval(countdownInterval);
                     countdownOverlay.style.display = 'none';
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             stopRecording();
-        }, MAX_RECORDING_TIME * 1000);
+        }, CONFIG.MAX_RECORDING_TIME * 1000);
 
         updateButtonState();
     }
