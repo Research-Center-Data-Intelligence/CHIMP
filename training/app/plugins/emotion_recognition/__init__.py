@@ -79,10 +79,14 @@ class EmotionRecognitionPlugin(BasePlugin):
         ]
         tf_model.output_names = ["output"]
         onnx_model, _ = tf2onnx.convert.from_keras(tf_model, input_sig, opset=13)
+        metrics = {k:v[0] for k, v in history.history.items() if k in ('accuracy', 'loss', 'val_accuracy','val_loss')}
+        hyperparameters={k:v for k, v in self.config.items() if k in ('learning_rate', 'optimizer', 'epochs','batch_size','convolutional_layers','dense_layers','early_stopping')}
         run_name = self._connector.store_model(
             experiment_name="OnnxEmotionModel",
             model=onnx_model,
             model_type="onnx",
+            hyperparameters=hyperparameters,
+            metrics=metrics
         )
 
         return run_name
