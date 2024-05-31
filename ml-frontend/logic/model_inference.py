@@ -44,9 +44,9 @@ class FacialEmotionInference:
             else:
                 _logger.debug(f"Failed to get inference with status code {response.status_code}: {response.text}")
                 pass
-        except ConnectionError:
+        except ConnectionError as e:
             # Not possible to connect to inference server
-            _logger.debug("Could not get inference...")
+            _logger.debug("Could not get inference..."+str(e))
             return [('', 0.0)]
         except TypeError:
             # Inference server did not have a model loaded, equipped to handle the request
