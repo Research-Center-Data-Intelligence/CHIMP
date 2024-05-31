@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        const USERNAME = "{{ username }}";
+    </script>
 </head>
 <body>
     <div class="container">
@@ -36,10 +39,10 @@
                 <div class="title">Emotions</div>
                 <hr class="info-divider" />
                 <div class="data-container">
-                    <div>
-                        <label for="username">Name:</label>
+                    <!-- <div>
+                        <label for="username">Name:</label> 
                         <input type="text" id="username" placeholder="Enter your name">
-                    </div>
+                    </div> -->
                     <table class="data-table">
                         <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
                         <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop Recording</button>
@@ -60,6 +63,7 @@
                 </div>
             </div>
         </div>
+      
            
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
