@@ -86,6 +86,7 @@ class TestingPlugin(BasePlugin):
             name="Testing Plugin",
             version="1.0",
             description="test description",
+            datasets={},
             arguments={"arg1": {"name": "test", "type": "str", "description": "testing arg1"}}
         )
         

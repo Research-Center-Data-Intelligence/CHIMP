@@ -1,7 +1,11 @@
+import os
+import shutil
 from celery import Celery, shared_task
 from celery.result import AsyncResult
 from dataclasses import asdict, dataclass
-from flask import Flask
+from datetime import datetime
+from flask import current_app, Flask
+from tempfile import mkdtemp
 from typing import Any, Optional
 
 from app.errors import PluginNotFoundError
@@ -36,6 +40,7 @@ class WorkerManager:
             Dictionary of keyword arguments. The Kwargs dictionary should at least contain a
             'plugin_name' keyword parameter, which is used to select the correct plugin.
         """
+        # Load the plugin
         if "plugin_name" not in kwargs:
             raise PluginNotFoundError()
         plugin_name = kwargs["plugin_name"]
@@ -44,7 +49,32 @@ class WorkerManager:
         plugin = plugin_loader.get_plugin(plugin_name)
         if not plugin:
             raise PluginNotFoundError()
-        return plugin.run(*args, **kwargs)
+
+        # Setting up temporary directory
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
+        plugin_tmp_dir = mkdtemp(prefix=f"chimp_{timestamp}_{plugin_name}")
+
+        # If datasets are provided, make a copy of the datasets
+        if "datasets" in kwargs:
+            datasets_dir = os.path.join(plugin_tmp_dir, "datasets")
+            os.mkdir(datasets_dir)
+            datasets = {}
+            for dataset_name, dataset_on_disk in kwargs["datasets"].items():
+                original_dir = os.path.join(
+                    current_app.config["DATA_DIRECTORY"], dataset_on_disk
+                )
+                dataset_dir = os.path.join(datasets_dir, dataset_name)
+                shutil.copytree(original_dir, dataset_dir)
+                datasets[dataset_name] = dataset_dir
+            kwargs["datasets"] = datasets
+
+        # Starting plugin
+        print(f"Starting plugin '{plugin_name}' (directory: '{plugin_tmp_dir}')")
+        run_id = plugin.run(*args, **kwargs)
+
+        # Cleanup
+        shutil.rmtree(plugin_tmp_dir)
+        return run_id
 
     def init_app(
         self, app: Flask, plugin_loader: PluginLoader, celery_app: Celery
@@ -63,7 +93,7 @@ class WorkerManager:
         if "worker_manager" in app.extensions:
             raise RuntimeError(
                 "A 'WorkerManager' instance has already been registered on this Flask app."
-            )
+            )  # pragma: no cover
         app.extensions["worker_manager"] = self
         self._app = app
         self._plugin_loader = plugin_loader

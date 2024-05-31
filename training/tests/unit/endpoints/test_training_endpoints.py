@@ -24,14 +24,15 @@ class TestTrainingEndpoints:
         """Test the start task endpoint."""
 
         def patched_start_task(obj, plugin_name: str, *args, **kwargs):
-            if plugin_name == "Example Plugin":
+            if plugin_name == "Example Plugin" or plugin_name == "Example 2 Plugin":
                 return "Testing-ID"
 
         mocker.patch.object(WorkerManager, "start_task", new=patched_start_task)
 
         # Successful flow
         resp = client.post(
-            "/tasks/run/Example+Plugin", data={"dataset": "TestingDataset"}
+            "/tasks/run/Example+2+Plugin",
+            data={"datasets": '{"dataset": "TestingDataset"}', "start_value": 42},
         )
         assert resp.status_code == 200
         assert resp.is_json
@@ -44,29 +45,46 @@ class TestTrainingEndpoints:
         assert "task_id" in data and data["task_id"] == "Testing-ID"
 
         # Non existing plugin
-        resp = client.post(
-            "/tasks/run/Plugin+Does+Not+Exist", data={"dataset": "TestingDataset"}
-        )
+        resp = client.post("/tasks/run/Plugin+Does+Not+Exist")
         assert resp.status_code == 404
 
         # Missing arguments
         resp = client.post(
-            "/tasks/run/Example+2+Plugin", data={"dataset": "TestingDataset"}
+            "/tasks/run/Example+2+Plugin",
+            data={"datasets": '{"dataset": "TestingDataset"}'},
         )
         assert resp.status_code == 400
         assert resp.get_json()["message"] == "Missing required argument 'start_value'"
 
         # No dataset
-        resp = client.post("/tasks/run/Example+Plugin")
+        resp = client.post("/tasks/run/Example+2+Plugin")
         assert resp.status_code == 400
-        assert resp.get_json()["message"] == "Must specify a dataset"
+        assert resp.get_json()["message"] == "Must specify the required datasets"
+
+        # Missing dataset
+        resp = client.post(
+            "/tasks/run/Example+2+Plugin",
+            data={"datasets": '{"optional_ds": "TestingDataset"}'},
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()["message"] == "Missing required dataset 'dataset'"
 
         # Non existing dataset
         resp = client.post(
-            "/tasks/run/Example+Plugin", data={"dataset": "DoesNotExist"}
+            "/tasks/run/Example+2+Plugin",
+            data={"datasets": '{"dataset": "DoesNotExist"}'},
         )
         assert resp.status_code == 400
         assert resp.get_json()["message"] == "Dataset DoesNotExist not found"
+
+        # Wrong formatted dataset JSON
+        resp = client.post(
+            "/tasks/run/Example+2+Plugin", data={"datasets": "{wrong: format: json}"}
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()["message"].startswith(
+            "Could not decode the datasets dictionary:"
+        )
 
     def test_poll_task(self, client: FlaskClient, mocker):
         """Test the poll task endpoint."""

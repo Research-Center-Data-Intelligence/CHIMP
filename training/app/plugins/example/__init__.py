@@ -10,13 +10,8 @@ class ExamplePlugin(BasePlugin):
             name="Example Plugin",
             version="1.0",
             description="This example plugin uses a folder (module) instead of a single py file.",
-            arguments={
-                "dataset": {
-                    "name": "dataset",
-                    "type": "str",
-                    "description": "The dataset to use",
-                },
-            },
+            arguments={},
+            datasets={},
             model_return_type="tensorflow",
         )
 

@@ -17,6 +17,7 @@ class EmotionRecognitionPlugin(BasePlugin):
     config: Dict
     data: Dict
     data_dir: str
+    calibration_dir: str
 
     def __init__(self):
         self._info = PluginInfo(
@@ -30,16 +31,18 @@ class EmotionRecognitionPlugin(BasePlugin):
                     "description": "Whether to calibrate an existing model, if not set, a global model is trained",
                     "optional": True,
                 },
-                "calibration_dataset": {
-                    "name": "calibration_dataset",
-                    "type": "str",
-                    "description": "The dataset to use for calibration purposes",
-                    "optional": True,
-                },
                 "calibration_id": {
                     "name": "calibration_id",
                     "type": "str",
                     "description": "ID to use to denote the calibrated model by",
+                    "optional": True,
+                },
+            },
+            datasets={
+                "train": {"name": "train", "description": "Training dataset"},
+                "calibration": {
+                    "name": "calibration",
+                    "description": "Calibration dataset",
                     "optional": True,
                 },
             },
@@ -52,20 +55,21 @@ class EmotionRecognitionPlugin(BasePlugin):
     def run(self, *args, **kwargs) -> Optional[str]:
         if "calibrate" in kwargs and kwargs["calibrate"]:
             if (
-                not "calibration_dataset" in kwargs
-                or not "calibration_id" not in kwargs
+                "calibration" not in kwargs["datasets"]
+                or "calibration_id" not in kwargs
             ):
                 raise RuntimeError(
-                    "If 'calibrate' is set to true, the 'calibration_dataset' and 'calibration_id' fields are required"
+                    "If 'calibrate' is set to true, the 'calibration' dataset and 'calibration_id' field are required"
                 )
+            self.calibration_dir = kwargs["datasets"]["calibration"]
+            print(f"calibration dataset: {self.calibration_dir}")
+            print(f"calibration id: {kwargs['calibration_id']}")
             print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
 
         with open(os.path.join(plugin_dir, "config.json")) as f:
             self.config = json.load(f)
 
-        if "data_dir" not in kwargs:
-            raise RuntimeError("No data_dir specified")
-        self.data_dir = kwargs["data_dir"]
+        self.data_dir = kwargs["datasets"]["train"]
 
         self.load_data()
 
