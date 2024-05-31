@@ -12,11 +12,6 @@ class Example2Plugin(BasePlugin):
             version="1.0",
             description="This is the most basic example plugin.",
             arguments={
-                "dataset": {
-                    "name": "dataset",
-                    "type": "str",
-                    "description": "The dataset to use",
-                },
                 "start_value": {
                     "name": "start_value",
                     "type": int,
@@ -26,6 +21,14 @@ class Example2Plugin(BasePlugin):
                     "name": "settings",
                     "type": "Dict[str, str]",
                     "description": "The setting to use",
+                    "optional": True,
+                },
+            },
+            datasets={
+                "dataset": {"name": "dataset", "description": "Basic dataset"},
+                "optional_ds": {
+                    "name": "optional_ds",
+                    "description": "An optional dataset",
                     "optional": True,
                 },
             },

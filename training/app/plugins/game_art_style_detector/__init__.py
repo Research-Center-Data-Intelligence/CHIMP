@@ -14,6 +14,7 @@ other. For this a CNN is trained using Tensorflow.
             version="1.0",
             description=description,
             arguments={},
+            datasets={},
             model_return_type="tensorflow",
         )
 

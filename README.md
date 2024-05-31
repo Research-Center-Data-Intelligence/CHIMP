@@ -114,5 +114,9 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
   - **name:** Name of the argument (should be the same as the key).
   - **type:** The type of the argument. It is encouraged to use the Python type hinting format here, but this is not enforced. Note that checking if a argument has the correct type and converting it from a string to said type is the responsibility of the plugin implementor.
   - **description:** A description of the argument.
-  - **optional:** [OPTIONAL] This is an optional field to denote that a argument is optional, if it is not present (or explicitly set to False), it is assumed that a argument is not optional (i.e. required).
+  - **optional:** [OPTIONAL] This is an optional field to denote that an argument is optional, if it is not present (or explicitly set to False), it is assumed that an argument is not optional (i.e. required).
+- **datasets:** A dictionary containing the datasets expected by this plugin. Each dataset value is a dictionary with the following fields:
+  - **name:** Name of the dataset (this should be the same as the key)
+  - **description:** A description of the dataset. It is encouraged to give a detailed description of the dataset, the format, the hierarchy, etc. in this field.
+  - **optional:** [OPTIONAL] This is an optional field to denote that a dataset is optional, if it is not present (or explicitly set to False), it is assumed that a dataset is not optional (i.e. required).
 - **model_return_type:** The type of model returned by the plugin. If no model is returned, it should be set to `None`
