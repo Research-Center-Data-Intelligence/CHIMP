@@ -1,12 +1,13 @@
+import json
 import os
-import shutil
 import warnings
 from datetime import datetime
 from flask import abort, Blueprint, current_app, request, Request
-from tempfile import mkdtemp
 from typing import Dict
 from werkzeug.exceptions import BadRequest
+from werkzeug.utils import secure_filename
 
+from app.endpoints.dataset_endpoints import upload_dataset
 from app.plugin import PluginLoader
 from app.worker import WorkerManager
 
@@ -75,26 +76,11 @@ def start_task(plugin_name: str, passed_request=None):
     curl
         `curl -X POST -F "dataset=Example" http://localhost:5253/tasks/run/Example+Plugin`
     """
-    # TODO: Get plugin arguments and pass these to the plugin
     # This code is required to support the deprecated /model/train and /model/calibrate endpoints
     # until they are removed
     current_request = request
     if passed_request:
-        current_request = passed_request
-
-    # Setup dataset for plugin
-    dataset = current_request.form.get("dataset")
-    if not dataset:
-        raise BadRequest("Must specify a dataset")
-    if dataset not in os.listdir(current_app.config["DATA_DIRECTORY"]):
-        raise BadRequest(f"Dataset {dataset} not found")
-
-    # TODO: Move this to the worker (where the dataset is used)
-    data_dir = os.path.join(current_app.config["DATA_DIRECTORY"], dataset)
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
-    temp_data_dir = mkdtemp(prefix=f"chimp_{timestamp}_{dataset}_")
-    temp_data_dir = os.path.join(temp_data_dir, dataset)
-    shutil.copytree(data_dir, temp_data_dir)
+        current_request = passed_request  # pragma: no cover
 
     # Check if plugin exists and retrieve the plugin info
     plugin_name = plugin_name.replace("+", " ")
@@ -103,8 +89,37 @@ def start_task(plugin_name: str, passed_request=None):
     if not plugin_info:
         abort(404)
 
+    # Check datasets
+    datasets_kwarg = {}
+    if plugin_info["datasets"]:
+        datasets = current_request.form.get("datasets")
+        # If datasets are expected, but not provided
+        if not datasets:
+            raise BadRequest("Must specify the required datasets")
+        try:
+            datasets = json.loads(datasets)
+        except json.JSONDecodeError as ex:
+            raise BadRequest(f"Could not decode the datasets dictionary: {ex.msg}")
+
+        # Check if all datasets are provided
+        for name, dataset in plugin_info["datasets"].items():
+            if name not in datasets:
+                # If a dataset is not provided, check if it is optional
+                if "optional" not in dataset or not dataset["optional"]:
+                    raise BadRequest(f"Missing required dataset '{name}'")
+            else:
+                dataset_name_on_disk = datasets[name]
+                # Check if the specified dataset on disk is actually available
+                if dataset_name_on_disk not in os.listdir(
+                    current_app.config["DATA_DIRECTORY"]
+                ):
+                    raise BadRequest(f"Dataset {dataset_name_on_disk} not found")
+                datasets_kwarg[name] = dataset_name_on_disk
+    kwargs: Dict[str, any] = {}
+    if datasets_kwarg:
+        kwargs["datasets"] = datasets_kwarg
+
     # Check the arguments
-    kwargs: Dict[str, str] = {}
     for expected_args in plugin_info["arguments"].values():
         key = expected_args["name"]
         value = request.form.get(key)
@@ -114,7 +129,7 @@ def start_task(plugin_name: str, passed_request=None):
             raise BadRequest(f"Missing required argument '{key}'")
         kwargs[key] = value
 
-    task_id = worker_manager.start_task(plugin_name, data_dir=temp_data_dir, **kwargs)
+    task_id = worker_manager.start_task(plugin_name, **kwargs)
     return {
         "status": f"task started successfully, use '/tasks/poll/{task_id}' to poll for the current status",
         "task_id": task_id,
@@ -146,7 +161,7 @@ def poll(task_id: str):
 
 
 @bp.route("/model/<train_or_calibrate>", methods=["POST"])
-def model_train_or_calibrate(train_or_calibrate: str):
+def model_train_or_calibrate(train_or_calibrate: str):  # pragma: no cover
     """Legacy route to support the old style of inference.
 
     WARNING: Calling the /model/train endpoint is deprecated, use the /tasks/run/<plugin> endpoint instead
@@ -156,6 +171,50 @@ def model_train_or_calibrate(train_or_calibrate: str):
     )
 
     class ReplacementRequest:
-        form = {"dataset": current_app.config["LEGACY_DATASET_NAME"]}
+        form: Dict
+        files: Dict
 
-    return start_task(current_app.config["LEGACY_PLUGIN_NAME"], ReplacementRequest())
+        def __init__(self, request_files, request_form):
+            self.files = request_files
+            self.form = request_form
+
+    form = {"datasets": {"train": current_app.config["LEGACY_DATASET_NAME"]}}
+    files = {}
+
+    if train_or_calibrate == "calibrate":
+        form["calibrate"] = True
+        # get user_id from request
+        if "user_id" not in request.args:
+            return BadRequest("No user specified.")
+        user_id = request.args["user_id"]
+        form["calibration_id"] = user_id
+
+        # get zipfile from request
+        if len(request.files) == 0:
+            return BadRequest("No files uploaded.")
+        if "zipfile" not in request.files:
+            return BadRequest("Different file expected.")
+        file = request.files["zipfile"]
+        if file.filename == "":
+            return BadRequest("No file selected.")
+        if not (
+            "." in file.filename and file.filename.rsplit(".", 1)[1].lower() == "zip"
+        ):
+            return BadRequest("File type not allowed. Must be a zip.")
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        dataset_name = secure_filename(
+            f"emotions{user_id}{timestamp}".replace("-", "").replace("_", "")
+        )
+        files["file"] = file
+        form["dataset_name"] = dataset_name
+        form["datasets"]["calibration"] = dataset_name
+        form["datasets"] = json.dumps(form["datasets"])
+        try:
+            upload_dataset(ReplacementRequest(files, form))
+        except BadRequest as ex:
+            print(ex)
+            raise BadRequest("Could not store dataset")
+
+    return start_task(
+        current_app.config["LEGACY_PLUGIN_NAME"], ReplacementRequest(files, form)
+    )

@@ -1,6 +1,7 @@
 import pytest
 from celery.app.task import Task
 
+from app import worker
 from app.errors import PluginNotFoundError
 from app.worker import WorkerManager, TaskResult
 
@@ -8,8 +9,16 @@ from app.worker import WorkerManager, TaskResult
 class TestWorkerManager:
     """Tests for the worker manager class."""
 
-    def test_run_task(self, worker_manager: WorkerManager, plugin: str):
+    def test_run_task(self, worker_manager: WorkerManager, plugin: str, mocker):
         """Test the _run_task method."""
+
+        def patched_file_func(*args, **kwargs):
+            pass
+
+        mocker.patch.object(worker.os, "mkdir", new=patched_file_func)
+        mocker.patch.object(worker.shutil, "copytree", new=patched_file_func)
+        mocker.patch.object(worker.shutil, "rmtree", new=patched_file_func)
+
         with pytest.raises(PluginNotFoundError):
             worker_manager._run_task(worker_manager)
 
@@ -17,8 +26,7 @@ class TestWorkerManager:
             worker_manager._run_task(worker_manager, plugin_name="doesnotexist")
 
         worker_manager._run_task(
-            worker_manager,
-            plugin_name=plugin,
+            worker_manager, plugin_name=plugin, datasets={"dataset": "TestingDataset"}
         )
 
     def test_start_task(self, worker_manager: WorkerManager, loaded_plugin: str):
