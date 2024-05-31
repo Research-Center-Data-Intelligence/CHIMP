@@ -22,13 +22,13 @@ users = {
 @app.route('/')
 def index():
     if 'username' in session:
-        return render_template('index.html')
+        return render_template('index.html', username=session['username'])
     return redirect(url_for('login'))
 
 @app.route('/kali')
 def kali_page():
     if 'username' in session:
-        return render_template('kali.html')
+        return render_template('kali.html', username=session['username'])
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])

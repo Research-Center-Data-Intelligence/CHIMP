@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeButton = document.getElementById('resumeButton');
     const saveButton = document.getElementById('saveButton');
     const emotionButtons = document.querySelectorAll('.emotionButton');
-    const usernameInput = document.getElementById('username');
+    
 
     let mediaRecorder;
     let currentEmotion = '';
@@ -131,7 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(/[: ]/g, '-');
-        const username = usernameInput.value || 'anonymous';
+        //const username = usernameInput.value || 'anonymous';
+        const username = USERNAME;
 
         recordedSessions.forEach((session, index) => {
             const blob = session.blob;
