@@ -1,7 +1,7 @@
 ### Custom ignores
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
-experimentation/ONNX Emotion Recognition/
+experimentation/
 ml-frontend/logs
 serving/mlruns
 
