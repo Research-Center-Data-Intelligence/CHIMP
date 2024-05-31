@@ -1,6 +1,6 @@
 import os
 import shutil
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, request, Request
 from tempfile import mkdtemp
 from werkzeug.exceptions import BadRequest
 from zipfile import ZipFile, BadZipFile
@@ -29,8 +29,13 @@ def get_datasets():
 
 
 @bp.route("/datasets", methods=["POST"])
-def upload_dataset():
+def upload_dataset(passed_request: Request = None):
     """Upload a dataset as a zip file, which is made available for training.
+
+    Parameters
+    ----------
+    passed_request : Request
+        A overwrite to support the (depricated) /model/train and /model/calibrate endpoints
 
     Returns
     -------
@@ -41,14 +46,17 @@ def upload_dataset():
     curl
         `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/datasets`
     """
-    # TODO: Ensure that the dataset is also available on an external worker
-    if "file" not in request.files:
+    current_request = request
+    if passed_request:
+        current_request = passed_request  # pragma: no cover
+
+    if "file" not in current_request.files:
         raise BadRequest("No file in request")
-    file = request.files["file"]
+    file = current_request.files["file"]
     if not file.filename.endswith(".zip"):
         raise BadRequest("File should be a zip")
 
-    dataset_name = request.form.get("dataset_name")
+    dataset_name = current_request.form.get("dataset_name")
     if not dataset_name:
         raise BadRequest("Dataset name ('dataset_name') field missing")
     if not dataset_name.isalnum():
