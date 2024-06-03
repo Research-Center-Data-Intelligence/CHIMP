@@ -1,7 +1,7 @@
 # CHIMP
 
 CHIMP (Continuous Hypothesis and Information Mending Pipeline) is a project that aims to give a reference for operating
-a continual AI pipeline. It was originally part of a bachelor thesis project.
+a continual AI pipeline. It was originally part of a bachelor thesis project by Bryan Kroon.
 
 ## Components
 
