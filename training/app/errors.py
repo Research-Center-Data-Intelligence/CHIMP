@@ -38,3 +38,15 @@ class PluginNotFoundError(Exception):
     """Custom exception for when a plugin has not been found."""
 
     pass
+
+
+class RunNotFoundError(Exception):
+    """Custom exception for when a run has not been found."""
+
+    pass
+
+
+class ModelNotFoundError(Exception):
+    """Custom exception for when a run has not been found."""
+
+    pass

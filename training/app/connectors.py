@@ -4,6 +4,7 @@ from flask import Flask
 from uuid import uuid4
 from typing import Dict, Optional, Union
 
+from app.errors import RunNotFoundError, ModelNotFoundError
 from app.model_type import ModelType
 
 
@@ -22,12 +23,15 @@ class BaseConnector(ABC):
     def store_model(
         self,
         experiment_name: str,
+        run_name: str,
         model: any,
         model_type: Union[ModelType, str],
         model_name: Optional[str] = None,
         hyperparameters: Optional[Dict[str, any]] = None,
         metrics: Optional[Dict[str, any]] = None,
         tags: Optional[Dict[str, str]] = None,
+        artifacts: Optional[Dict[str, any]] = None,
+        datasets: Optional[Dict[str, str]] = None,
     ) -> str:  # pragma: no cover
         """Store a model in the tracking service.
 
@@ -41,6 +45,8 @@ class BaseConnector(ABC):
         ----------
         experiment_name : str
             Name for the experiment to store
+        run_name : str
+            Name of the run
         model : any
             The model object to store
         model_type : Union[ModelType, str]
@@ -52,15 +58,27 @@ class BaseConnector(ABC):
         metrics : Optional[Dict[str, any]]
             Any metrics to log
         tags : Optional[Dict[str, str]]
-            Any additional tags to store in the tracking systems.
+            Any additional tags to store in the tracking system.
+        artifacts : Optional[Dict[str, str]]
+            Any additional artifacts that need to be uploaded to the tracking system. The key
+            is the name of the artifact, the value is the path to the artifact on the local
+            system.
+        datasets : Optional[Dict[str, str]]
+            Any datasets that need to be uploaded to the tracking system. The key is the name of the
+            dataset, the value is the path to the dataset.
         """
         pass
 
     @abstractmethod
-    def get_production_model(
-        self, save_to: str, model_name: str, experiment_name: str
+    def get_artifact(
+        self,
+        save_to: str,
+        model_name: str,
+        experiment_name: str,
+        run_name: Optional[str] = None,
+        artifact_path: Optional[str] = "model",
     ) -> str:  # pragma: no cover
-        """Retrieve a production model from the tracking service.
+        """Retrieve an artifact from the tracking service.
 
         Parameters
         ----------
@@ -71,6 +89,9 @@ class BaseConnector(ABC):
             Name of the model to retrieve the artifact for.
         experiment_name : str
             Name of the experiment to retrieve the artifact for
+        run_name : Optional[str]
+            Name of the run to load
+        artifact_path : Optional[artifact_path]
 
         Returns
         -------
@@ -114,12 +135,15 @@ class MLFlowConnector(BaseConnector):
     def store_model(
         self,
         experiment_name: str,
+        run_name: str,
         model: any,
         model_type: ModelType,
         model_name: Optional[str] = None,
         hyperparameters: Optional[Dict[str, any]] = None,
         metrics: Optional[Dict[str, any]] = None,
         tags: Optional[Dict[str, str]] = None,
+        artifacts: Optional[Dict[str, str]] = {},
+        datasets: Optional[Dict[str, str]] = {},
     ) -> str:
         mlflow.set_experiment(experiment_name)
         run_name = uuid4().hex
@@ -143,6 +167,14 @@ class MLFlowConnector(BaseConnector):
                 tags["model_type"] = model_type.value
             for tag, value in tags.items():
                 mlflow.set_tag(tag, value)
+
+            if artifacts:
+                for artifact_name, artifact_location in artifacts.items():
+                    mlflow.log_artifact(artifact_location, artifact_name)
+
+            if datasets:
+                for dataset_name, dataset_location in datasets.items():
+                    mlflow.log_artifact(dataset_location, f"dataset_{dataset_name}")
 
             if model_type == ModelType.SKLEARN:
                 model_info = mlflow.sklearn.log_model(
@@ -181,17 +213,32 @@ class MLFlowConnector(BaseConnector):
                 pass
         return run_name
 
-    def get_production_model(
-        self, save_to: str, model_name: str, experiment_name: str
+    def get_artifact(
+        self,
+        save_to: str,
+        model_name: str,
+        experiment_name: str,
+        run_name: Optional[str] = None,
+        artifact_path: Optional[str] = "model",
     ) -> str:
-        production_model_info = mlflow.models.get_model_info(
-            f"models:/{model_name}/Production"
-        )
-        production_model_run = mlflow.search_runs(
-            experiment_names=[experiment_name],
-            filter_string=f"run_id = ''{production_model_info.run_id}",
-        )
+        try:
+            production_model_info = mlflow.models.get_model_info(
+                f"models:/{model_name}/Production"
+            )
+        except mlflow.exceptions.MlflowException:
+            raise ModelNotFoundError()
+        if run_name:
+            run_info = mlflow.search_runs(
+                experiment_names=[experiment_name],
+                filter_string=f"run_name = '{run_name}'",
+            )
+            if len(run_info) < 1:
+                raise RunNotFoundError()
+            run_id = run_info[0].run_id
+        else:
+            run_id = production_model_info.run_id
+
         model_path = mlflow.artifacts.download_artifacts(
-            run_id=production_model_info.run_id, artifact_path="model", dst_path=save_to
+            run_id=run_id, artifact_path=artifact_path, dst_path=save_to
         )
         return model_path
