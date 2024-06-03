@@ -53,18 +53,15 @@ class WorkerManager:
         # Setting up temporary directory
         timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
         plugin_tmp_dir = mkdtemp(prefix=f"chimp_{timestamp}_{plugin_name}")
+        kwargs["temp_dir"] = plugin_tmp_dir
 
-        # If datasets are provided, make a copy of the datasets
+        # If datasets are provided, fetch the paths to the datasets
         if "datasets" in kwargs:
-            datasets_dir = os.path.join(plugin_tmp_dir, "datasets")
-            os.mkdir(datasets_dir)
             datasets = {}
             for dataset_name, dataset_on_disk in kwargs["datasets"].items():
-                original_dir = os.path.join(
+                dataset_dir = os.path.join(
                     current_app.config["DATA_DIRECTORY"], dataset_on_disk
                 )
-                dataset_dir = os.path.join(datasets_dir, dataset_name)
-                shutil.copytree(original_dir, dataset_dir)
                 datasets[dataset_name] = dataset_dir
             kwargs["datasets"] = datasets
 

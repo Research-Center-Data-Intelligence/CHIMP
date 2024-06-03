@@ -56,7 +56,6 @@ services:
         volumes:
             - ./training/datasets:/usr/src/app/datasets
             - ./training/app/plugins:/usr/src/app/app/plugins
-            - ./docker-data/training/tmp:/tmp
         depends_on:
             - monitoring-server
         profiles:
@@ -80,9 +79,8 @@ services:
             - CELERY_BROKER_URL=amqp://message-queue
             - CELERY_RESULTS_BACKEND=rpc://message-queue
         volumes:
-            - ./training/datasets:/usr/src/app/datasets
+            - ./training/datasets:/usr/src/app/datasets:ro
             - ./training/app/plugins:/usr/src/app/app/plugins
-            - ./docker-data/training/tmp:/tmp
         depends_on:
             - monitoring-server
         profiles:
