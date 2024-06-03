@@ -56,6 +56,28 @@ class BaseConnector(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_production_model(
+        self, save_to: str, model_name: str, experiment_name: str
+    ) -> str:  # pragma: no cover
+        """Retrieve a production model from the tracking service.
+
+        Parameters
+        ----------
+        save_to : str
+            The path to save the artifact to (this should be inside the tmp directory created
+            for a task.
+        model_name : str
+            Name of the model to retrieve the artifact for.
+        experiment_name : str
+            Name of the experiment to retrieve the artifact for
+
+        Returns
+        -------
+        The model path where the model is stored.
+        """
+        pass
+
     def _init_connector(self):  # pragma: no cover
         """Helper method for any connector specific initialization."""
         pass
@@ -158,3 +180,18 @@ class MLFlowConnector(BaseConnector):
             if model_type == ModelType.OTHER:
                 pass
         return run_name
+
+    def get_production_model(
+        self, save_to: str, model_name: str, experiment_name: str
+    ) -> str:
+        production_model_info = mlflow.models.get_model_info(
+            f"models:/{model_name}/Production"
+        )
+        production_model_run = mlflow.search_runs(
+            experiment_names=[experiment_name],
+            filter_string=f"run_id = ''{production_model_info.run_id}",
+        )
+        model_path = mlflow.artifacts.download_artifacts(
+            run_id=production_model_info.run_id, artifact_path="model", dst_path=save_to
+        )
+        return model_path

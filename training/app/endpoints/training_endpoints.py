@@ -214,7 +214,8 @@ def model_train_or_calibrate(train_or_calibrate: str):  # pragma: no cover
         except BadRequest as ex:
             print(ex)
             raise BadRequest("Could not store dataset")
-
+    else:
+        form["datasets"] = json.dumps(form["datasets"])
     return start_task(
         current_app.config["LEGACY_PLUGIN_NAME"], ReplacementRequest(files, form)
     )
