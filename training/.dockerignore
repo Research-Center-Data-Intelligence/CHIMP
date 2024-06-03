@@ -1,0 +1,7 @@
+htmlcov
+env
+datasets
+Dockerfile.web
+Dockerfile.worker
+.coverage
+.coveragerc
