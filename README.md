@@ -94,7 +94,11 @@ This section of the readme contains some instructions on how to develop a new pl
    - `init() -> app.plugin.PluginInfo` should at least fill the plugins `self._info` attribute with a `app.plugin.PluginInfo` object (see [section "filling PluginInfo"](#filling-plugininfo)), and can be used for any initialization (optionally this can also be done in the `__init__()` method), but should at least return the `self._info` attribute
    - `run(*args, **kwargs)` can contain any Python code used to run the plugin, this includes call functions or creating classes outside the `__init__.py` file
 5. [OPTIONAL] Add any (Python/pip) requirements to the `plugin-requirements.txt` file under its' own heading
-6. [OPTIONAL] When the plugin trains a model, it can be saved using the `self._connector.store_model()` method, this method takes a number of arguments:
+6. [OPTIONAL] When using a previous model for continious learning, it can be loaded by using the `self._connector.get_production_model()` method, this method takes a number of arguments:
+   - **save_to:** The path to save the downloaded model to (this should be inside the temp folder provided to the plugin
+   - **model_name:** The name of the model to download
+   - **experiment_name:** Name of the experiment to load a model for
+8. [OPTIONAL] When the plugin trains a model, it can be saved using the `self._connector.store_model()` method, this method takes a number of arguments:
    - **experiment_name:** [str] The experiment name to use (unless a `model_name` is specified, this is also used as the model name)
    - **model:** [any] The model object
    - **model_type:** [str] The type of model (e.g. `"tensorflow"` or `"onnx"`)
