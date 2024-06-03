@@ -7,6 +7,7 @@ from datetime import datetime
 from flask import current_app, Flask
 from tempfile import mkdtemp
 from typing import Any, Optional
+from uuid import uuid4
 
 from app.errors import PluginNotFoundError
 from app.plugin import PluginLoader, PluginInfo
@@ -50,9 +51,13 @@ class WorkerManager:
         if not plugin:
             raise PluginNotFoundError()
 
+        # Generating the run name
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        run_name = f"{timestamp}_{plugin_name}_{uuid4().hex}"
+        kwargs["run_name"] = run_name
+
         # Setting up temporary directory
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M")
-        plugin_tmp_dir = mkdtemp(prefix=f"chimp_{timestamp}_{plugin_name}")
+        plugin_tmp_dir = mkdtemp(prefix=f"chimp_{run_name}")
         kwargs["temp_dir"] = plugin_tmp_dir
 
         # If datasets are provided, fetch the paths to the datasets
