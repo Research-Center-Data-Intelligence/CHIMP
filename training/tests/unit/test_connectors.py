@@ -42,6 +42,7 @@ class TestMlflowConnector:
 
         result = connector.store_model(
             "TestExperiment",
+            "TestRun",
             sklearn_model,
             ModelType.SKLEARN,
             hyperparameters={"param1": "value1", "param2": 5},
@@ -51,6 +52,7 @@ class TestMlflowConnector:
         assert type(result) is str
         connector.store_model(
             "TestExperiment",
+            "TestRun2",
             sklearn_model,
             ModelType.ONNX,
             hyperparameters={"param1": "value1", "param2": 5},
@@ -58,6 +60,7 @@ class TestMlflowConnector:
         )
         connector.store_model(
             "TestExperiment",
+            "TestRun3",
             sklearn_model,
             ModelType.TENSORFLOW,
             hyperparameters={"param1": "value1", "param2": 5},
@@ -65,6 +68,7 @@ class TestMlflowConnector:
         )
         connector.store_model(
             "TestExperiment",
+            "TestRun4",
             sklearn_model,
             ModelType.OTHER,
             hyperparameters={"param1": "value1", "param2": 5},
@@ -72,6 +76,7 @@ class TestMlflowConnector:
         )
         connector.store_model(
             "TestExperiment",
+            "TestRun5",
             sklearn_model,
             "onnx",
             hyperparameters={"param1": "value1", "param2": 5},
