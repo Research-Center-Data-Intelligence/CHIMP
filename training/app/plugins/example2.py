@@ -14,7 +14,7 @@ class Example2Plugin(BasePlugin):
             arguments={
                 "start_value": {
                     "name": "start_value",
-                    "type": int,
+                    "type": "int",
                     "description": "The starting value",
                 },
                 "settings": {
