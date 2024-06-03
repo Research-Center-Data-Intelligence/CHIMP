@@ -4,6 +4,7 @@ docker-data/monitoring/mlflow.db
 experimentation/
 ml-frontend/logs
 serving/mlruns
+.env
 
 # Custom venv
 experimentation_venv

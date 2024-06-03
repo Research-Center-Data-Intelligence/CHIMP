@@ -45,10 +45,11 @@ def get_plugins():
     plugin_loader: PluginLoader = current_app.extensions["plugin_loader"]
     if reload_plugins:
         plugin_loader.load_plugins()
+    plugin_info = plugin_loader.loaded_plugins(include_details=include_details)
     return {
         "status": "successfully retrieved plugins",
         "reloaded plugins": reload_plugins,
-        "plugins": plugin_loader.loaded_plugins(include_details=include_details),
+        "plugins": plugin_info,
     }
 
 
