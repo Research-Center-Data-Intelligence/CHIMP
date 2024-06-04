@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function startRecordingWithCountdown(emotion) {
         return new Promise((resolve) => {
             countdownOverlay.style.display = 'flex';
-            const smiley = CONFIG.EMOTION_SMILEYS[emotion.toLowerCase()] || '';
+            const smiley = CONFIG.EMOTION_SMILEYS[emotion] || '';
             countdownText.textContent = `${CONFIG.MAX_RECORDING_TIME} - ${smiley} ${emotion}`;
 
             let countdown = CONFIG.MAX_RECORDING_TIME;
@@ -112,13 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
             stopRecording();
         }
         isQueuePaused = true;
-        console.log('Recording paused...');
+        console.log('Recording queue paused...');
         updateButtonState();
     }
 
     function resumeRecordingQueue() {
         isQueuePaused = false;
-        console.log('Recording resumed...');
+        console.log('Recording queue resumed...');
         processEmotionQueue();
         updateButtonState();
     }
@@ -190,20 +190,23 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonState();
     }
 
+    // Attach event listeners to start and emotion buttons
+    startButton.addEventListener('click', () => {
+        for (const emotion in CONFIG.EMOTION_SMILEYS) {
+            emotionQueue.push(emotion);
+        }
+        processEmotionQueue();
+    });
+
     emotionButtons.forEach(button => {
         button.addEventListener('click', () => {
             const emotion = button.getAttribute('data-emotion').toLowerCase();
-            emotionQueue.push(emotion);
-            processEmotionQueue();
+            if (!isRecording) {
+                startRecording(emotion);
+            } else {
+                console.warn('Already recording. Please wait for the current recording to finish.');
+            }
         });
-    });
-
-    startButton.addEventListener('click', () => {
-        emotionButtons.forEach(button => {
-            const emotion = button.getAttribute('data-emotion').toLowerCase();
-            emotionQueue.push(emotion);
-        });
-        processEmotionQueue();
     });
 
     stopButton.addEventListener('click', () => {
