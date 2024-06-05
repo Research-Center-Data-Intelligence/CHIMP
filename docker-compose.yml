@@ -203,6 +203,31 @@ services:
             - 'services'
             - 'external-worker'
 
+    # datastore
+    # : storage for datasets and MLFlow
+    datastore:
+        image: quay.io/minio/minio
+        container_name: chimp_datastore
+        command: server --console-address ":9001" /data
+        restart: unless-stopped
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        healthcheck:
+            test: ["CMD", "mc", "ready", "local"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./docker-data/datastore:/data
+        networks:
+            - public-network
+            - backend-network
+        profiles:
+            - ''
+            - 'gpu'
+            - 'services'
+
 networks:
     public-network:
         name: 'chimp-public-network'
