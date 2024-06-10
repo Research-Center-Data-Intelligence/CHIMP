@@ -9,6 +9,7 @@ from tempfile import mkdtemp
 from typing import Any, Optional
 from uuid import uuid4
 
+from app.datastore import BaseDatastore
 from app.errors import PluginNotFoundError
 from app.plugin import PluginLoader, PluginInfo
 
@@ -28,6 +29,7 @@ class WorkerManager:
     _plugin_loader: PluginLoader
     _app: Flask
     _celery_app: Celery
+    _datastore: BaseDatastore
 
     @shared_task(ignore_result=False)
     def _run_task(self, *args, **kwargs) -> Optional[Any]:
@@ -62,12 +64,10 @@ class WorkerManager:
 
         # If datasets are provided, fetch the paths to the datasets
         if "datasets" in kwargs:
-            datasets = {}
-            for dataset_name, dataset_on_disk in kwargs["datasets"].items():
-                dataset_dir = os.path.join(
-                    current_app.config["DATA_DIRECTORY"], dataset_on_disk
-                )
-                datasets[dataset_name] = dataset_dir
+            datasets = {
+                name: name_on_datastore
+                for name, name_on_datastore in kwargs["datasets"].items()
+            }
             kwargs["datasets"] = datasets
 
         # Starting plugin
