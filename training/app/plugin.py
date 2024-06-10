@@ -4,9 +4,10 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from flask import Flask
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 from app.connectors import BaseConnector
+from app.datastore import BaseDatastore
 
 
 @dataclass
@@ -57,6 +58,7 @@ class BasePlugin(ABC):
 
     _info: PluginInfo
     _connector: BaseConnector
+    _datastore: BaseDatastore
 
     @abstractmethod
     def init(self) -> PluginInfo:
@@ -89,8 +91,9 @@ class PluginLoader:
     plugin_directory: str = ""
     _loaded_plugins: Dict[str, BasePlugin] = {}
     _connector: BaseConnector
+    _datastore: BaseDatastore
 
-    def init_app(self, app: Flask, connector: BaseConnector):
+    def init_app(self, app: Flask, connector: BaseConnector, datastore: BaseDatastore):
         """Initialize a Flask application for use with this extension instance.
 
         Parameters
@@ -99,6 +102,8 @@ class PluginLoader:
             The Flask application to initialize this extension with.
         connector : BaseConnector
             Connector instance provided to the plugins for storing models and metrics.
+        datastore : BaseDatastore
+            Datastore instance provided to the plugins for loading datasets.
 
         Raises
         ------
@@ -112,6 +117,7 @@ class PluginLoader:
         app.extensions["plugin_loader"] = self
         self._app = app
         self._connector = connector
+        self._datastore = datastore
         self.plugin_directory = app.config["PLUGIN_DIRECTORY"]
 
     def load_plugins(self):
@@ -135,6 +141,7 @@ class PluginLoader:
                         plg = obj()
                         info = plg.info()
                         plg._connector = self._connector
+                        plg._datastore = self._datastore
                         self._loaded_plugins[info["name"]] = plg
 
     def loaded_plugins(self, include_details: bool = False) -> List:

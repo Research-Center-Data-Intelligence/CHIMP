@@ -3,14 +3,19 @@ import shutil
 import pathlib
 from flask import Flask
 from flask.testing import FlaskClient
+from io import BytesIO
 from tempfile import mkdtemp
 from zipfile import ZipFile
+
+from app.datastore import BaseDatastore
 
 
 class TestDatasetEndpoints:
     """Tests for the dataset endpoints."""
 
-    def test_get_datasets(self, app: Flask, client: FlaskClient):
+    def test_get_datasets(
+        self, app: Flask, client: FlaskClient, datastore: BaseDatastore
+    ):
         """Test the get datasets endpoint."""
         resp = client.get("/datasets")
         assert resp.status_code == 200
@@ -20,11 +25,15 @@ class TestDatasetEndpoints:
         assert "datasets" in data and data["datasets"] == ["TestingDataset"]
 
         os.mkdir(os.path.join(app.config["DATA_DIRECTORY"], "test_dataset"))
+        test_data = BytesIO("test".encode())
+        datastore.store_object("test_dataset/test.txt", test_data, "test.txt")
         resp = client.get("/datasets")
         data = resp.get_json()
         assert "test_dataset" in data["datasets"]
 
-    def test_upload_dataset(self, app: Flask, client: FlaskClient):
+    def test_upload_dataset(
+        self, app: Flask, client: FlaskClient, datastore: BaseDatastore
+    ):
         """Tests for the upload dataset endpoint."""
         # Test setup
         dataset_dir = app.config["DATA_DIRECTORY"]
@@ -97,7 +106,10 @@ class TestDatasetEndpoints:
         assert resp.is_json
         data = resp.get_json()
         assert "status" in data and data["status"] == "successfully uploaded dataset"
-        assert "TestingDataset2" in os.listdir(dataset_dir)
+        assert "TestingDataset2" in [
+            ds.replace("/", "")
+            for ds in datastore.list_from_datastore("", recursive=False)
+        ]
 
         # Duplicate dataset
         with open(zip_path, "rb") as zip_file:

@@ -5,8 +5,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 # First load generic .env file, then load a specific .env file
 # for this component.
+load_dotenv(os.path.join(basedir, "../../.env"))
 load_dotenv(os.path.join(basedir, "../.env"))
-load_dotenv(os.path.join(basedir, "./.env"))
 
 TESTING = os.environ.get("TESTING")
 DEVELOPMENT = os.environ.get("DEVELOPMENT") or False
@@ -26,3 +26,7 @@ DATA_DIRECTORY = os.environ.get("DATA_DIRECTORY") or os.path.join(
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "amqp://localhost"
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "rpc://localhost"
+
+DATASTORE_URI = os.environ.get("DATASTORE_URI") or "localhost:9000"
+DATASTORE_ACCESS_KEY = os.environ.get("DATASTORE_ACCESS_KEY") or ""
+DATASTORE_SECRET_KEY = os.environ.get("DATASTORE_SECRET_KEY") or ""

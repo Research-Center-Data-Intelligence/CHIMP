@@ -50,3 +50,9 @@ class ModelNotFoundError(Exception):
     """Custom exception for when a run has not been found."""
 
     pass
+
+
+class DatasetNotFoundError(Exception):
+    """Custom exception for when a dataset is not found on the datastore."""
+
+    pass

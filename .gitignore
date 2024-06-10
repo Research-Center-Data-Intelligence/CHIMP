@@ -1,6 +1,7 @@
 ### Custom ignores
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
+docker-data/datastore/*
 experimentation/
 ml-frontend/logs
 serving/mlruns

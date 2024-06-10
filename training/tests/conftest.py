@@ -4,11 +4,14 @@ import pytest
 import shutil
 from flask import Flask
 from flask.testing import FlaskClient
+from io import BytesIO
 from sklearn import svm
 from tempfile import mkdtemp
 
+
 from app import connectors
 from app.connectors import BaseConnector
+from app.datastore import BaseDatastore
 from app.plugin import BasePlugin, PluginLoader
 from app.worker import WorkerManager
 
@@ -31,6 +34,10 @@ def mocked_mlflow(monkeypatch):
     def mocked_infer_signature(*args, **kwargs):
         return 1
 
+    def mocked_download_artifact(run_id, artifact_path, dst_path, *args, **kwargs):
+        with open(dst_path, "w") as f:
+            f.write("test")
+
     monkeypatch.setattr(connectors.mlflow, "start_run", MockedStartRun)
     monkeypatch.setattr(connectors.mlflow, "log_params", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow, "log_metric", mocked_log_things)
@@ -39,16 +46,22 @@ def mocked_mlflow(monkeypatch):
     monkeypatch.setattr(connectors.mlflow.onnx, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow.tensorflow, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow, "set_experiment", mocked_log_things)
+    monkeypatch.setattr(
+        connectors.mlflow.artifacts, "download_artifacts", mocked_download_artifact
+    )
 
 
 @pytest.fixture
-def app(mocked_mlflow: None) -> Flask:
+def app(mocked_mlflow: None, minio_mock: None) -> Flask:
     from app import create_app, config
 
     config.TESTING = True
     config.DATA_DIRECTORY = mkdtemp(prefix="CHIMP_TESTING_")
-    os.mkdir(os.path.join(config.DATA_DIRECTORY, "TestingDataset"))
     app = create_app(config)
+    test_data = BytesIO("test data".encode())
+    app.extensions["datastore"].store_object(
+        "TestingDataset/test.txt", test_data, "test.txt"
+    )
 
     ctx = app.app_context()
     ctx.push()
@@ -121,3 +134,8 @@ def sklearn_model() -> svm.SVC:
     model = svm.SVC()
     model.fit(np.array([[0, 1], [1, 0]]), np.array([1, 0]))
     return model
+
+
+@pytest.fixture
+def datastore(app: Flask) -> BaseDatastore:
+    return app.extensions["datastore"]

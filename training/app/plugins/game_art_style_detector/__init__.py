@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 from app.plugin import BasePlugin, PluginInfo
@@ -14,7 +15,12 @@ other. For this a CNN is trained using Tensorflow.
             version="1.0",
             description=description,
             arguments={},
-            datasets={},
+            datasets={
+                "dataset": {
+                    "name": "dataset",
+                    "description": "Game screenshots, divided into pixel and non-pixel folders.",
+                }
+            },
             model_return_type="tensorflow",
         )
 
@@ -25,14 +31,17 @@ other. For this a CNN is trained using Tensorflow.
         from . import training
 
         print(f"Starting {self._info.name}")
+        dataset_name = kwargs["datasets"]["dataset"]
+        temp_dir = kwargs["temp_dir"]
+        dataset_dir = os.path.join(temp_dir, "dataset")
 
-        if "data_dir" not in kwargs:
-            raise RuntimeError("No data_dir specified")
+        self._datastore.load_folder_to_filesystem(dataset_name, dataset_dir)
 
         trainer = training.Training()
-        model = trainer.train(kwargs["data_dir"])
+        model = trainer.train(dataset_dir)
         run_name = self._connector.store_model(
             experiment_name="GameArtDetector",
+            run_name=kwargs["run_name"],
             model=model,
             model_type="tensorflow",
         )
