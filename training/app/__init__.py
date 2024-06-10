@@ -6,7 +6,7 @@ from typing import Union
 
 from app.endpoints import dataset_endpoints, health_endpoints, training_endpoints
 from app.errors import bp as errors_bp
-from app.extensions import connector, cors, plugin_loader, worker_manager
+from app.extensions import connector, cors, datastore, plugin_loader, worker_manager
 from app.plugin import PluginLoader
 
 
@@ -30,6 +30,9 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     # Initialize extensions
     connector.init_app(app, app.config["TRACKING_URI"])
     cors.init_app(app)
+    print(app.config["DATASTORE_ACCESS_KEY"])
+    print(app.config["DATASTORE_SECRET_KEY"])
+    datastore.init_app(app, app.config["DATASTORE_URI"])
     plugin_loader.init_app(app, connector)
     plugin_loader.load_plugins()
     celery_app = create_celery_app(app)
