@@ -103,19 +103,23 @@ def start_task(plugin_name: str, passed_request=None):
             raise BadRequest(f"Could not decode the datasets dictionary: {ex.msg}")
 
         # Check if all datasets are provided
-        for name, dataset in plugin_info["datasets"].items():
-            if name not in datasets:
+        datastore = current_app.extensions["datastore"]
+        datasets_on_datastore = [
+            ds.replace("/", "")
+            for ds in datastore.list_from_datastore("", recursive=False)
+        ]
+        for dataset_name, dataset_info in plugin_info["datasets"].items():
+            if dataset_name not in datasets:
                 # If a dataset is not provided, check if it is optional
-                if "optional" not in dataset or not dataset["optional"]:
-                    raise BadRequest(f"Missing required dataset '{name}'")
+                if "optional" not in dataset_info or not dataset_info["optional"]:
+                    raise BadRequest(f"Missing required dataset '{dataset_name}'")
             else:
-                dataset_name_on_disk = datasets[name]
-                # Check if the specified dataset on disk is actually available
-                if dataset_name_on_disk not in os.listdir(
-                    current_app.config["DATA_DIRECTORY"]
-                ):
-                    raise BadRequest(f"Dataset {dataset_name_on_disk} not found")
-                datasets_kwarg[name] = dataset_name_on_disk
+                dataset_name_on_datastore = datasets[dataset_name]
+                # Check if the specified dataset is available on the datastore
+                if dataset_name_on_datastore not in datasets_on_datastore:
+                    raise BadRequest(f"Dataset {dataset_name_on_datastore} not found")
+
+                datasets_kwarg[dataset_name] = dataset_name_on_datastore
     kwargs: Dict[str, any] = {}
     if datasets_kwarg:
         kwargs["datasets"] = datasets_kwarg

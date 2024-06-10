@@ -61,7 +61,11 @@ class EmotionRecognitionPlugin(BasePlugin):
                 raise RuntimeError(
                     "If 'calibrate' is set to true, the 'calibration' dataset and 'calibration_id' field are required"
                 )
-            self.calibration_dir = kwargs["datasets"]["calibration"]
+            self.calibration_dir = os.path.join(kwargs["temp_dir"], "calibration")
+            dataset_name = kwargs["datasets"]["calibration"]
+            self._datastore.load_folder_to_filesystem(
+                dataset_name, self.calibration_dir
+            )
             print(f"calibration dataset: {self.calibration_dir}")
             print(f"calibration id: {kwargs['calibration_id']}")
             print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
@@ -69,7 +73,9 @@ class EmotionRecognitionPlugin(BasePlugin):
         with open(os.path.join(plugin_dir, "config.json")) as f:
             self.config = json.load(f)
 
-        self.data_dir = kwargs["datasets"]["train"]
+        self.data_dir = os.path.join(kwargs["temp_dir"], "train")
+        dataset_name = kwargs["datasets"]["train"]
+        self._datastore.load_folder_to_filesystem(dataset_name, self.data_dir)
 
         self.load_data()
 
