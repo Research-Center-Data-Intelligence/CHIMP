@@ -7,10 +7,6 @@ from app.datastore import BaseDatastore
 class TestMinioDatastore:
     def test_list_from_datastore(self, datastore: BaseDatastore):
         """Test the list_from_datastore method."""
-        # Empty datastore and no prefix
-        result = datastore.list_from_datastore("")
-        assert result == []
-
         # Single file and no prefix
         file = BytesIO("this is testfile1".encode())
         datastore._client.put_object(
@@ -21,7 +17,7 @@ class TestMinioDatastore:
             content_type="text/plain",
         )
         result = datastore.list_from_datastore("")
-        assert result == ["test/testfile1.txt"]
+        assert result == ["TestingDataset/test.txt", "test/testfile1.txt"]
 
         # Single file with prefix
         result = datastore.list_from_datastore("test")
@@ -52,7 +48,7 @@ class TestMinioDatastore:
         data = BytesIO("this is testfile1".encode())
         datastore.store_object("testfile1.txt", data, "testfile1.txt")
         result = datastore.list_from_datastore("")
-        assert result == ["testfile1.txt"]
+        assert "testfile1.txt" in result
 
     def test_load_object_to_memory(self, datastore: BaseDatastore):
         """Test the load_object_to_memory method."""

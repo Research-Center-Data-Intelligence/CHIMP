@@ -20,13 +20,17 @@ class BaseDatastore(ABC):
         pass
 
     @abstractmethod
-    def list_from_datastore(self, target_path: str) -> List[str]:  # pragma: no cover
+    def list_from_datastore(
+        self, target_path: str, recursive: bool = True
+    ) -> List[str]:  # pragma: no cover
         """List all items from a given path.
 
         Parameters
         ----------
         target_path : str
             Path to the datastore to list the items from.
+        recursive : bool
+            Whether or not to list the items recursively.
 
         Returns
         -------
@@ -183,9 +187,11 @@ class MinioDatastore(BaseDatastore):
         if not self._client.bucket_exists("datasets"):
             self._client.make_bucket("datasets")
 
-    def list_from_datastore(self, target_path: str) -> List[str]:
+    def list_from_datastore(
+        self, target_path: str, recursive: bool = True
+    ) -> List[str]:
         objects = self._client.list_objects(
-            "datasets", prefix=target_path, recursive=True
+            "datasets", prefix=target_path, recursive=recursive
         )
         return [obj.object_name for obj in objects]
 

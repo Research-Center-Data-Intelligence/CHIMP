@@ -21,10 +21,13 @@ def get_datasets():
     curl
         `curl http://localhost:5253/datasets`
     """
-    dataset_path = current_app.config["DATA_DIRECTORY"]
+    datastore = current_app.extensions["datastore"]
     return {
         "status": "successfully retrieved datasets",
-        "datasets": [folder for folder in os.listdir(dataset_path)],
+        "datasets": [
+            ds.replace("/", "")
+            for ds in datastore.list_from_datastore("", recursive=False)
+        ],
     }
 
 
@@ -63,19 +66,27 @@ def upload_dataset(passed_request: Request = None):
         raise BadRequest(
             "Dataset name ('dataset_name') should only contain alphanumeric characters"
         )
-    dataset_path = current_app.config["DATA_DIRECTORY"]
-    if dataset_name in os.listdir(dataset_path):
+    datastore = current_app.extensions["datastore"]
+    if dataset_name in [
+        ds.replace("/", "") for ds in datastore.list_from_datastore("", recursive=False)
+    ]:
         raise BadRequest(f"Dataset with name '{dataset_name}' already exists")
 
     tmpdir = mkdtemp(prefix="chimp_")
     zip_path = os.path.join(tmpdir, file.filename)
     file.save(zip_path)
+    upload_path = os.path.join(tmpdir, "to_upload")
+    os.mkdir(upload_path)
 
     try:
         with ZipFile(zip_path, "r") as f:
-            f.extractall(os.path.join(dataset_path, dataset_name))
+            f.extractall(upload_path)
     except BadZipFile:
         raise BadRequest("Invalid zip file")
+
+    print("start uploading")
+    datastore.store_file_or_folder(dataset_name, upload_path)
+    print("done uploading")
 
     shutil.rmtree(tmpdir)
     return {"status": "successfully uploaded dataset"}

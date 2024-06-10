@@ -4,6 +4,7 @@ import pytest
 import shutil
 from flask import Flask
 from flask.testing import FlaskClient
+from io import BytesIO
 from sklearn import svm
 from tempfile import mkdtemp
 
@@ -56,8 +57,11 @@ def app(mocked_mlflow: None, minio_mock: None) -> Flask:
 
     config.TESTING = True
     config.DATA_DIRECTORY = mkdtemp(prefix="CHIMP_TESTING_")
-    os.mkdir(os.path.join(config.DATA_DIRECTORY, "TestingDataset"))
     app = create_app(config)
+    test_data = BytesIO("test data".encode())
+    app.extensions["datastore"].store_object(
+        "TestingDataset/test.txt", test_data, "test.txt"
+    )
 
     ctx = app.app_context()
     ctx.push()
