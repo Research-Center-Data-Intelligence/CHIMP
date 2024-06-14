@@ -15,7 +15,7 @@ configure_logging(app)
 
 # Sample user data
 users = {
-    'user1': 'password1',
+    'user1': 'banaan',
     'user2': 'password2',
 }
 

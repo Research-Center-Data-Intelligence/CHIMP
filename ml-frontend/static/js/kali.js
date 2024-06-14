@@ -61,7 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentEmotion = emotion;
-        await startRecordingWithCountdown(currentEmotion);  
+        
+        await startRecordingWithCountdown(currentEmotion);
 
         const options = { mimeType: 'video/x-matroska;codecs=avc1' };
         mediaRecorder = new MediaRecorder(videoElement.srcObject, options);
@@ -93,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             stopRecording();
         }, CONFIG.MAX_RECORDING_TIME * 1000);
-
+        
         updateButtonState();
     }
 
@@ -102,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.requestData();
             mediaRecorder.stop();
             isRecording = false;
-            clearHighlightEmotionButton();
+        
             updateButtonState();
         }
     }
@@ -137,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const emotion = session.emotion;
 
             socket.emit('process-video', {
-                user_id: '', 
+                user_id: '',
                 username: username,
                 image_blob: blob,
                 emotion: emotion,
@@ -146,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Recording for ${emotion} saved.`);
         });
 
-        recordedSessions = []; 
+        recordedSessions = [];
         saveButton.disabled = true;
+        showSaveMessage(); 
         updateButtonState();
     }
 
@@ -166,42 +168,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function highlightEmotionButton(emotion) {
-        clearHighlightEmotionButton();
-        const button = document.querySelector(`.emotionButton[data-emotion="${emotion}"]`);
-        if (button) {
-            button.classList.add('highlight');
-        }
-    }
+    
+    
 
-    function clearHighlightEmotionButton() {
-        const highlightedButton = document.querySelector('.emotionButton.highlight');
-        if (highlightedButton) {
-            highlightedButton.classList.remove('highlight');
-        }
-    }
+   
 
     function resetRecordingState() {
         isRecording = false;
         isPaused = false;
         isQueuePaused = false;
         emotionQueue = [];
-        clearHighlightEmotionButton();
+   
         updateButtonState();
     }
 
-    // Attach event listeners to start and emotion buttons
+    function showEmotion(emotion) {
+        const message = `You have selected the ${emotion} emotion for recording.`;
+        alert(message);
+    }
+
+    function showSaveMessage() {
+        const message = 'The recording has been saved to the database.';
+        alert(message);
+    }
+
+    function showStartMessage(){
+        const message = 'You have started kalibration session to record all the emotion.';
+        alert(message);
+    }
+
+    function showStopmessage(){
+        const message = 'The recording has stopped.'
+        alert(message)
+    }
+    
     startButton.addEventListener('click', () => {
         for (const emotion in CONFIG.EMOTION_SMILEYS) {
             emotionQueue.push(emotion);
         }
+        showStartMessage();
         processEmotionQueue();
     });
 
     emotionButtons.forEach(button => {
         button.addEventListener('click', () => {
             const emotion = button.getAttribute('data-emotion').toLowerCase();
-            if (!isRecording) {
+            showEmotion(emotion); 
+            if (!isRecording) { 
                 startRecording(emotion);
             } else {
                 console.warn('Already recording. Please wait for the current recording to finish.');
