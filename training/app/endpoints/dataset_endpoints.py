@@ -56,6 +56,12 @@ def upload_dataset(passed_request: Request = None):
     if "file" not in current_request.files:
         raise BadRequest("No file in request")
     file = current_request.files["file"]
+
+    print(current_request.files)
+    print(file.filename)
+    print(file.filename.endswith(".zip"))
+
+
     if not file.filename.endswith(".zip"):
         raise BadRequest("File should be a zip")
 

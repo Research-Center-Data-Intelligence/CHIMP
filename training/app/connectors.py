@@ -146,7 +146,8 @@ class MLFlowConnector(BaseConnector):
         datasets: Optional[Dict[str, str]] = {},
     ) -> str:
         mlflow.set_experiment(experiment_name)
-        run_name = uuid4().hex
+        if not run_name:
+            run_name = uuid4().hex
         with mlflow.start_run(run_name=run_name):
             if not model_name:
                 model_name = experiment_name
@@ -170,7 +171,7 @@ class MLFlowConnector(BaseConnector):
 
             if artifacts:
                 for artifact_name, artifact_location in artifacts.items():
-                    mlflow.log_artifact(artifact_location, artifact_name)
+                    mlflow.log_artifacts(artifact_location, artifact_name)
 
             if datasets:
                 for dataset_name, dataset_location in datasets.items():

@@ -5,10 +5,11 @@ import numpy as np
 import tensorflow as tf
 import tf2onnx
 from typing import Dict, Optional
+from tensorflow.python.keras.models import save_model as tf_save_model
 
 from app.plugin import BasePlugin, PluginInfo
 
-from .model import EmotionModelGenerator
+from .model import EmotionModelGenerator, EmotionModelCalibrator
 
 plugin_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -25,6 +26,12 @@ class EmotionRecognitionPlugin(BasePlugin):
             version="1.0",
             description="An emotion recognition model.",
             arguments={
+                "experiment_name": {
+                    "name": "experiment_name",
+                    "type": "str",
+                    "description": "Name of the MLFLOW Experiment to use",
+                    "optional": False,
+                },
                 "calibrate": {
                     "name": "calibrate",
                     "type": "bool",
@@ -53,6 +60,9 @@ class EmotionRecognitionPlugin(BasePlugin):
         return self._info
 
     def run(self, *args, **kwargs) -> Optional[str]:
+        with open(os.path.join(plugin_dir, "config.json")) as f:
+            self.config = json.load(f)
+            
         if "calibrate" in kwargs and kwargs["calibrate"]:
             if (
                 "calibration" not in kwargs["datasets"]
@@ -63,24 +73,29 @@ class EmotionRecognitionPlugin(BasePlugin):
                 )
             self.calibration_dir = os.path.join(kwargs["temp_dir"], "calibration")
             dataset_name = kwargs["datasets"]["calibration"]
-            self._datastore.load_folder_to_filesystem(
-                dataset_name, self.calibration_dir
-            )
+            self._datastore.load_folder_to_filesystem(dataset_name, self.calibration_dir)
+
             print(f"calibration dataset: {self.calibration_dir}")
             print(f"calibration id: {kwargs['calibration_id']}")
-            print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
 
-        with open(os.path.join(plugin_dir, "config.json")) as f:
-            self.config = json.load(f)
+            self.load_data(self.calibration_dir)
+            #print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
+            model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="tensorflow")
+            print(model_path)
+            emotion_calibrationmodel_generator = EmotionModelCalibrator(self.config, model_path, self.data)
+            tf_model, history = emotion_calibrationmodel_generator.generate()[0]
+            run_name=kwargs["run_name"] = "calib_" + kwargs["run_name"]
+        else:
+            self.data_dir = os.path.join(kwargs["temp_dir"], "train")
+            dataset_name = kwargs["datasets"]["train"]
+            self._datastore.load_folder_to_filesystem(dataset_name, self.data_dir)
 
-        self.data_dir = os.path.join(kwargs["temp_dir"], "train")
-        dataset_name = kwargs["datasets"]["train"]
-        self._datastore.load_folder_to_filesystem(dataset_name, self.data_dir)
+            self.load_data(self.data_dir)
 
-        self.load_data()
+            emotion_model_generator = EmotionModelGenerator(self.config, self.data)
+            tf_model, history = emotion_model_generator.generate()[0]
+            run_name=kwargs["run_name"] = "base_" + kwargs["run_name"]
 
-        emotion_model_generator = EmotionModelGenerator(self.config, self.data)
-        tf_model, history = emotion_model_generator.generate()[0]
         input_sig = [
             tf.TensorSpec(
                 [None, self.config["image_height"], self.config["image_width"], 1],
@@ -88,6 +103,12 @@ class EmotionRecognitionPlugin(BasePlugin):
             )
         ]
         tf_model.output_names = ["output"]
+        # Upload  tensorflow version using temporary directory as artifact
+        # Note: Important for calibration purposes. (assets folder does not get uploaded, as it is empty)
+        os.mkdir(os.path.join(kwargs["temp_dir"], "tensorflow"))
+        tf_path = os.path.join(kwargs["temp_dir"], "tensorflow")
+        #tf_save_model(tf_model, tf_path) #does not work for keras 3
+        tf_model.save(os.path.join(tf_path, "model.keras"))
         onnx_model, _ = tf2onnx.convert.from_keras(tf_model, input_sig, opset=13)
         metrics = {
             k: v[0]
@@ -109,17 +130,20 @@ class EmotionRecognitionPlugin(BasePlugin):
             )
         }
         run_name = self._connector.store_model(
-            experiment_name="OnnxEmotionModel",
-            run_name=kwargs["run_name"],
+            experiment_name=kwargs["experiment_name"],
+            model_name=kwargs["experiment_name"],
+            run_name=run_name,
             model=onnx_model,
             model_type="onnx",
             hyperparameters=hyperparameters,
             metrics=metrics,
+            artifacts= {'tensorflow' : tf_path}, #save the tensorflow version as well
+            tags={"dataset": dataset_name}
         )
 
         return run_name
 
-    def load_data(self):
+    def load_data(self, data_dir):
         """Loads the emotion image data from the data folder into memory. Then process
         the data by reshaping the 'image_data' into a numpy array of (-1, <image height>,
         <image width>, <colours>), where image height and width are stored in the
@@ -128,7 +152,7 @@ class EmotionRecognitionPlugin(BasePlugin):
         self.data = {"image_data": [], "class_": [], "category": []}
 
         for class_, category in enumerate(self.config["categories"]):
-            directory = os.path.join(self.data_dir, "train", category)
+            directory = os.path.join(data_dir, "train", category)
 
             for image in os.listdir(directory):
                 image_data = cv2.imread(
