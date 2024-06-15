@@ -17,7 +17,7 @@ from request_handlers import inference_handler
 app = Flask(__name__)
 socket_io = SocketIO(app, always_connect=True, logger=False, engineio_logger=False)
 
-socket_io = inference_handler.add_as_websocket_handler(socket_io)
+socket_io = inference_handler.add_as_websocket_handler(socket_io, app)
 
 configure_logging(app)
 
