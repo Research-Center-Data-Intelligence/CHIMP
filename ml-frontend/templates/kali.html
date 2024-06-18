@@ -25,6 +25,7 @@
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
             </ul>
         </div>
+        
         <div class="camera">
             <div class="title">Camera Feed</div>
             <div class="video-container">
@@ -33,15 +34,10 @@
                     <span id="countdownText"></span>
                 </div>
             </div>
-
             <div class="info">
                 <div class="title">Emotions</div>
                 <hr class="info-divider" />
                 <div class="data-container">
-                    <!-- <div>
-                        <label for="username">Name:</label> 
-                        <input type="text" id="username" placeholder="Enter your name">
-                    </div> -->
                     <table class="data-table">
                         <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
                         <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop Recording</button>
@@ -59,6 +55,18 @@
                         <button class="emotionButton" data-emotion="Sad">😢 Sad</button>
                         <button class="emotionButton" data-emotion="Surprised">😲 Surprised</button>
                     </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <div class="title">Instructions</div>
+            <div class="content">
+                <p><strong>Start Recording:</strong> When you press <strong>Start Recording</strong> it wil strat to record the emtion in the order who is given under this tekst.</p>
+                <p><strong>Emotion buttons:</strong> buttons with the emtions are there to be able to record only that emtion.</p>
+                    <div class="title">Emotion Recording Order:</div>
+                    <ul id="emotionOrderList"></ul>
+                    
                 </div>
             </div>
         </div>

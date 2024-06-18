@@ -3,6 +3,7 @@ const CONFIG = {
     SOCKET_URL: 'http://localhost:5252',
     EMOTION_SMILEYS: {
         angry: '😡',
+        
         disgusted: '🤮',
         fear: '😨',
         happy: '😊',
@@ -10,4 +11,5 @@ const CONFIG = {
         sad: '😢',
         surprised: '😲'
     }
+    
 };
