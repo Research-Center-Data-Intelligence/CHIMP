@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeButton = document.getElementById('resumeButton');
     const saveButton = document.getElementById('saveButton');
     const emotionButtons = document.querySelectorAll('.emotionButton');
+    const emotionOrderList = document.getElementById('emotionOrderList');
 
     let mediaRecorder;
     let currentEmotion = '';
@@ -18,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let recordedSessions = [];
     let isQueuePaused = false;
     const socket = io(CONFIG.SOCKET_URL);
+
+    const recordedEmotions = new Set(); // Track recorded emotions
 
     async function setupCamera() {
         try {
@@ -79,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (recordedBlob) {
                 recordedSessions.push({ emotion: currentEmotion, blob: recordedBlob });
                 saveButton.disabled = false;
+                markEmotionAsRecorded(currentEmotion); // Mark emotion as recorded
             }
             isRecording = false;
             if (!isQueuePaused) {
@@ -103,7 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.requestData();
             mediaRecorder.stop();
             isRecording = false;
-        
+
+            // Reset recorded emotions
+            resetRecordedEmotions();
+
             updateButtonState();
         }
     }
@@ -149,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recordedSessions = [];
         saveButton.disabled = true;
-        showSaveMessage(); 
+       
         updateButtonState();
     }
 
@@ -168,11 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    
-    
-
-   
-
     function resetRecordingState() {
         isRecording = false;
         isPaused = false;
@@ -181,39 +183,19 @@ document.addEventListener('DOMContentLoaded', () => {
    
         updateButtonState();
     }
-
-    function showEmotion(emotion) {
-        const message = `You have selected the ${emotion} emotion for recording.`;
-        alert(message);
-    }
-
-    function showSaveMessage() {
-        const message = 'The recording has been saved to the database.';
-        alert(message);
-    }
-
-    function showStartMessage(){
-        const message = 'You have started kalibration session to record all the emotion.';
-        alert(message);
-    }
-
-    function showStopmessage(){
-        const message = 'The recording has stopped.'
-        alert(message)
-    }
     
     startButton.addEventListener('click', () => {
         for (const emotion in CONFIG.EMOTION_SMILEYS) {
             emotionQueue.push(emotion);
         }
-        showStartMessage();
+        
         processEmotionQueue();
     });
 
     emotionButtons.forEach(button => {
         button.addEventListener('click', () => {
             const emotion = button.getAttribute('data-emotion').toLowerCase();
-            showEmotion(emotion); 
+             
             if (!isRecording) { 
                 startRecording(emotion);
             } else {
@@ -236,4 +218,37 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCamera().catch(error => {
         console.error('Failed to initialize webcam:', error);
     });
+
+    // Function to mark an emotion as recorded
+    function markEmotionAsRecorded(emotion) {
+        recordedEmotions.add(emotion.toLowerCase());
+        // Find existing list item and add 'recorded' class
+        const emotionListItem = document.querySelector(`#emotionOrderList li:nth-child(${Object.keys(CONFIG.EMOTION_SMILEYS).indexOf(emotion) + 1})`);
+        if (emotionListItem) {
+            emotionListItem.classList.add('recorded');
+        }
+    }
+
+    // Function to reset recorded emotions
+    function resetRecordedEmotions() {
+        recordedEmotions.clear();
+        // Remove 'recorded' class from all list items
+        const listItems = emotionOrderList.getElementsByTagName('li');
+        for (const listItem of listItems) {
+            listItem.classList.remove('recorded');
+        }
+    }
+
+    // Populate emotion list with initial state
+    for (const emotion in CONFIG.EMOTION_SMILEYS) {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${CONFIG.EMOTION_SMILEYS[emotion]} ${emotion.charAt(0).toUpperCase() + emotion.slice(1)}`;
+        
+        // Check if emotion is recorded
+        if (recordedEmotions.has(emotion)) {
+            listItem.classList.add('recorded'); 
+        }
+
+        emotionOrderList.appendChild(listItem);
+    }
 });
