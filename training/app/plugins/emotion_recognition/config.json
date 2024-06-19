@@ -1,0 +1,49 @@
+{
+  "categories": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "neutral",
+    "sad",
+    "surprise"
+  ],
+  "random_seed": 70,
+  "image_height": 48,
+  "image_width": 48,
+  "train_test_factor": 0.8,
+  "train_validation_factor": 0.75,
+  "learning_rate": 0.05,
+  "optimizer": "adam",
+  "epochs": 1,
+  "batch_size": 16,
+  "convolutional_layers": [
+    {
+      "filters": 64,
+      "kernel": [
+        3,
+        3
+      ],
+      "padding": "same",
+      "max_pooling": [
+        2,
+        2
+      ],
+      "activation": "relu",
+      "dropout": 0.25
+    }
+  ],
+  "dense_layers": [
+    {
+      "nodes": 256,
+      "activation": "relu",
+      "dropout": 0.25
+    }
+  ],
+  "early_stopping": {
+    "metric": "val_loss",
+    "mode": "min",
+    "min_delta": 0.001,
+    "patience": 10
+  }
+}
