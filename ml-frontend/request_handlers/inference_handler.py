@@ -96,7 +96,7 @@ def _process_video(data):
     os.remove(video_path)
    
     video_array = np.array(frames)
-    
+    #remove local storage in next commit --> instead send to datastore
     npy_path = f"{username}_{emotion}_{timestamp}_{user_id}_recording.npy"
     np.save(npy_path, video_array)
     print(f"NumPy array to {npy_path}")
@@ -171,7 +171,7 @@ def _calibrate():
     response = requests.request('POST',  url=url, data={"dataset_name" : calibration_dataset_name}, files=files)
     if response.status_code!=200:
         return response.json(), response.status_code
-        raise BadRequest("Could not upload dataset zip")
+        #raise BadRequest("Could not upload dataset zip")
         
     url = TRAINING_SERVER_URL + "/tasks/run/" + PLUGIN_NAME
     response = requests.request('POST',  url=url, data=form)
@@ -180,7 +180,7 @@ def _calibrate():
 
 
 def add_as_websocket_handler(socket_io: SocketIO, app):
-    global _on_connect, _on_disconnect, _process_image
+    global _on_connect, _on_disconnect, _process_image, _process_video
 
     _on_connect = socket_io.on('connect')(_on_connect)
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
