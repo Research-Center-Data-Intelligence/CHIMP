@@ -1,15 +1,23 @@
+import os
+import sys
+
+# This is required to make imports work consistently across different
+# machines. This needs to be executed before other imports
+basedir = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.abspath(os.path.join(basedir, "..")))
+
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_socketio import SocketIO
 from utils.logging_config import configure_logging
 from request_handlers import inference_handler
 from dotenv import load_dotenv
-import os
+
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for session management
 
 socket_io = SocketIO(app, always_connect=True, logger=False, engineio_logger=False)
-socket_io = inference_handler.add_as_websocket_handler(socket_io)
+socket_io = inference_handler.add_as_websocket_handler(socket_io, app)
 
 configure_logging(app)
 

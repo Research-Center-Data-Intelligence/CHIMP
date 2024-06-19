@@ -56,7 +56,7 @@ function init() {
 
     sock.on('update-data', (data) =>
         {
-            // console.log(data);
+            // console.log(`Updated data: ${data}`);
 
             if (!has_recently_updated_data) {
                 has_recently_updated_data = true;
@@ -149,7 +149,7 @@ function trainModel() {
 
     // Call training on experimentation server.
     $.ajax({
-        url: EXPERIMENTATION_SERVER_URL + '/model/train',
+        url: '/train',
         type: 'POST',
         success: function(result) {
             console.log('Training initiated.');
@@ -170,7 +170,7 @@ function trainModel() {
 function calibrateModel() {
     // Get socket id and prepare connection#
     id_in_progress_calibration = sock.id;
-    let url = EXPERIMENTATION_SERVER_URL + `/model/calibrate?user_id=${id_in_progress_calibration}`;
+    let url = `/calibrate?user_id=${id_in_progress_calibration}`;
     console.log(`uploading for id: ${id_in_progress_calibration}`);
 
     // Get zip file and add it to the form data
@@ -193,6 +193,7 @@ function calibrateModel() {
         },
         error: function(error) {
             // Notify the user of the error and re-enable the calibration button
+            console.log(error);
             console.log(`Error in calibration call: ${error}`);
             window.alert('Could not call for calibration at this time. Please try again later.');
             btn_model_calibrate.disabled = false;

@@ -81,7 +81,7 @@ class ModelGeneratorABC(ABC):
             dataframe, which might occur if the 'DataProcessorABC' is attuned to (for example) image data. Refer to the
             used 'DataProcessorABC' class if a type-related error seems to occur.
         """
-        assert(data is not None, "No data was passed into the model generator.")
+        assert data is not None, "No data was passed into the model generator."
 
         self._config = config
 
@@ -98,7 +98,7 @@ class ModelGeneratorABC(ABC):
         """
 
         generator = self._generate()
-        assert(generator is not None, "Implementation of the '_generate()' method does not return a value.")
+        assert generator is not None, "Implementation of the '_generate()' method does not return a value."
 
         for model in generator:
             self._models.append(model)

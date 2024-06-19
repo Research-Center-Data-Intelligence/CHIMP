@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@main
+
+    - name: Setup Python 3.11
+      uses: actions/setup-python@main
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies
+      run: |
+        pip install -r training/requirements.txt
+        pip install -r training/requirements-dev.txt
+        pip install -r training/plugin-requirements.txt
+        pip install -r serving_api/requirements.txt
+        pip install -r serving_api/requirements-dev.txt
+
+    - name: Test training module with pytest
+      working-directory: training
+      run: |
+        pytest -vv --cov=app -c /dev/null --junitxml=pytest.xml | tee pytest-coverage-training.txt
+
+    - name: Test serving module with pytest
+      working-directory: serving_api
+      run: |
+        pytest -vv --cov=app -c /dev/null --junitxml=pytest.xml | tee pytest-coverage-serving.txt
+
+    - name: Pytest coverage comment training
+      id: coverageCommentTraining
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: pytest-coverage-training.txt
+        title: Training Coverage
+
+    - name: Pytest coverage comment serving
+      id: coverageCommentServing
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: pytest-coverage-serving.txt
+        title: Serving Coverage
+        

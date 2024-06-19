@@ -1,0 +1,5 @@
+tensorflow
+image-slicer
+scikit-learn
+numpy
+pillow
