@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        const USERNAME = "{{ username }}";
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg" alt="Logo">
+            <span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is built to demonstrate its functionalities.">
+                Kalibratie session CHIMP
+            </span>
+        </div>
+        
+        <div class="banner"></div>
+        
+        <div class="model-kali">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/kali">Kalibratie lijst</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+        
+        <div class="camera">
+            <div class="title">Camera Feed</div>
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <div id="countdownOverlay">
+                    <span id="countdownText"></span>
+                </div>
+            </div>
+            <div class="info">
+                <div class="title">Emotions</div>
+                <hr class="info-divider" />
+                <div class="data-container">
+                    <table class="data-table">
+                        <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
+                        <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop Recording</button>
+                        <button id="pauseButton" disabled><i class="fas fa-pause"></i> Pause Recording</button>
+                        <button id="resumeButton" disabled><i class="fas fa-play"></i> Resume Recording</button>
+                        <button id="saveButton" disabled><i class="fas fa-save"></i> Save Recording</button>
+                    </table>
+                    
+                    <table>
+                        <button class="emotionButton" data-emotion="Angry">😡 Angry</button>
+                        <button class="emotionButton" data-emotion="Disgust">🤮 Disgust</button>
+                        <button class="emotionButton" data-emotion="Fear">😨 Fear</button>
+                        <button class="emotionButton" data-emotion="Happy">😊 Happy</button>
+                        <button class="emotionButton" data-emotion="Neutral">😐 Neutral</button>
+                        <button class="emotionButton" data-emotion="Sad">😢 Sad</button>
+                        <button class="emotionButton" data-emotion="Surprised">😲 Surprised</button>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <div class="title">Instructions</div>
+            <div class="content">
+                <p><strong>Start Recording:</strong> When you press <strong>Start Recording</strong> it wil strat to record the emtion in the order who is given under this tekst.</p>
+                <p><strong>Emotion buttons:</strong> buttons with the emtions are there to be able to record only that emtion.</p>
+                    <div class="title">Emotion Recording Order:</div>
+                    <ul id="emotionOrderList"></ul>
+                    
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+        <script src="../static/js/config.js"></script>
+        <script src="../static/js/kali.js"></script>
+        <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+        <link rel="stylesheet" href="../static/css/kali.css">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='../static/css/kali.css') }}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </div>
+</body>
+</html>

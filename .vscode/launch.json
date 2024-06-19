@@ -1,0 +1,41 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Experimentation",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/experimentation/main.py",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/experimentation/env/Scripts/python",
+            "cwd": "${workspaceFolder}/experimentation",
+            "gevent": true,
+        },
+        {
+            "name": "Serving",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/serving/main.py",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/serving/env/Scripts/python",
+            "cwd": "${workspaceFolder}/serving",
+            "gevent": true,
+        },
+        {
+            "name": "ML-Frontend",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ml-frontend/main.py",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/ml-frontend/env/Scripts/python",
+            "cwd": "${workspaceFolder}/ml-frontend",
+            "gevent": true,
+        },
+    ],
+    "compounds": [
+        {
+            "name": "Run all",
+            "configurations": ["Experimentation", "Serving", "ML-Frontend"]
+        }
+    ]
+} 

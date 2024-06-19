@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>Socket IO Camera Snapshots</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
 
@@ -10,9 +10,16 @@
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-	<script src="static/js/main.js" defer></script>
+	<!-- <script src="static/js/main.js" defer></script>
+	<script src="../static/js/main.js"></script> -->
+	<script>
+        const USERNAME = "{{ username }}";
+    </script>
 </head>
+
 <body onload="init()">
+	
+    
     <div class="container">
 		<div class="header">
 			<image class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg"></image>
@@ -20,7 +27,18 @@
 				Emotion Detection using CHIMP
 			</span>
 		</div>
+		
 		<div class="banner"></div>
+		
+		<div class="model-kali">
+			<ul>
+				<li><a href="/">Home</a></li>
+    			<li><a href="/kali">Kalibratie lijst</a></li>
+				<a href="{{ url_for('logout') }}">Logout</a>
+
+			</ul>
+		</div>
+		
 		<div class="camera">
 			<div class="title">Camera Feed</div>
 			<hr />
@@ -70,12 +88,13 @@
 				<input id="input_data_upload" class="model-update-input" type="file" name="zipfile" accept="application/zip" />
 				<br />
 				<button id="btn_model_training" class="model-update-button" onclick="trainModel()">Train New Model</button>
+				<button id="btn_action_list"class="model-update-button"type="submit">Action list</button>
 			</div>
 		</div>
 		<div class="footer">
 			<!-- Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion
 			 		recognition model and the frontend upon which CHIMP is build to demonstrate its functionalities. -->
-			<div class="footer-by">By Bryan Kroon</div>
+			<div class="footer-by">By Bryan Krooooooooooooooooooooooooooooooooon</div>
 			<div class="footer-owner">Lectoraat Data Intellligence Zuyd™</div>
 		</div>
     </div>
