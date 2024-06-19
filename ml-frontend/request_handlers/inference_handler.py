@@ -1,6 +1,4 @@
-
 import os
-import time
 import numpy as np
 import cv2
 from os import environ
@@ -185,7 +183,9 @@ def add_as_websocket_handler(socket_io: SocketIO, app):
     _on_connect = socket_io.on('connect')(_on_connect)
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
     _process_image = socket_io.on('process-image')(_process_image)
+    
     _process_video = socket_io.on('process-video')(_process_video)
+    print("added process video")
 
     app.route('/train', methods=['POST'])(_train)
     app.route('/calibrate', methods=['POST'])(_calibrate)
