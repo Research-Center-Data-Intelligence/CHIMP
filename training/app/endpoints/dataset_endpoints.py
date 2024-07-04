@@ -4,6 +4,7 @@ from flask import Blueprint, current_app, request, Request
 from tempfile import mkdtemp
 from werkzeug.exceptions import BadRequest
 from zipfile import ZipFile, BadZipFile
+import re
 
 bp = Blueprint("dataset", __name__)
 
@@ -68,9 +69,10 @@ def upload_dataset(passed_request: Request = None):
     dataset_name = current_request.form.get("dataset_name")
     if not dataset_name:
         raise BadRequest("Dataset name ('dataset_name') field missing")
-    if not dataset_name.isalnum():
+    invalid_chars = re.compile(r'[<>:"/\\|?*]')
+    if invalid_chars.search(dataset_name):
         raise BadRequest(
-            "Dataset name ('dataset_name') should only contain alphanumeric characters"
+            "Dataset name ('dataset_name') should only contain characters allowed in path strings"
         )
     datastore = current_app.extensions["datastore"]
     if dataset_name in [

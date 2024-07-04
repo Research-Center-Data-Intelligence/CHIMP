@@ -23,6 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let isQueuePaused = false; // Flag to indicate if the recording queue is paused
     const socket = io(CONFIG.SOCKET_URL); // Socket connection for sending recorded data
 
+    socket.on('connect',
+        function() {
+            console.log('Initialised SocketIO connection...');
+        });
+
+    socket.on('disconnect',
+        function() {
+            console.log('Terminated SocketIO connection.');
+        });
+
     const recordedEmotions = new Set(); // Set to track recorded emotions
 
     // Function to set up the webcam
@@ -154,21 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Generate a timestamp for the recorded sessions
         const timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(/[: ]/g, '-');
         const username = USERNAME;
+        
+        const blobs = recordedSessions.map(session => session.blob);
+        const emotions = recordedSessions.map(session => session.emotion);
+        const timestamps = recordedSessions.map((session, index) => `${timestamp}-${index}`);
 
-        // Emit each recorded session to the server
-        recordedSessions.forEach((session, index) => {
-            const blob = session.blob;
-            const emotion = session.emotion;
-
-            socket.emit('process-video', {
-                user_id: '',
-                username: username,
-                image_blob: blob,
-                emotion: emotion,
-                timestamp: `${timestamp}-${index}`
-            });
-            console.log(`Recording for ${emotion} saved.`);
-        });
+        const payload = {
+            user_id: '',
+            username: username,
+            image_blobs: blobs,
+            emotions: emotions,
+            timestamps: timestamps
+        };
+        socket.emit('process-video',payload)
+        console.log(`Recording for ${emotions} saved.`);
 
         recordedSessions = []; // Clear the recorded sessions array
         saveButton.disabled = true; // Disable the save button

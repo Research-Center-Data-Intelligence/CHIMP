@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y -q wget protobuf-compiler
 # Setup pip dependencies
 WORKDIR $CONTAINER_HOME
 COPY ./requirements.txt $CONTAINER_HOME/requirements.txt
+RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy project to container

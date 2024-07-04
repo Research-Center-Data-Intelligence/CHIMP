@@ -5,6 +5,9 @@ from os import environ
 import logging
 import requests
 import json
+import zipfile
+import re
+from PIL import Image
 
 from flask_socketio import SocketIO, emit
 from flask import request
@@ -13,6 +16,8 @@ from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from logic.image_processor import ImageProcessor
 from io import BytesIO
+
+import imageio.v3 as iio
 
 INFERENCE_INTERVAL = 0
 
@@ -52,61 +57,86 @@ def sanitize_timestamp(timestamp):
 
   
 def _process_video(data):
-    print("TEST")
+    print("Processing video blobs")
+    cascade_file = os.path.join(os.getcwd(), 'static', 'cascades', 'frontalface_default_haarcascade.xml')
+    face_cascade = cv2.CascadeClassifier(cascade_file)
+    
+    EXPERIMENT_NAME=environ.get("EXPERIMENT_NAME")
+    PLUGIN_NAME="Emotion+Recognition"
+    TRAINING_SERVER_URL=environ.get("TRAINING_SERVER_URL")
+    url = TRAINING_SERVER_URL + "/datasets"
+
     user_id = data['user_id'] if data['user_id'] != '' else request.sid
     username =data['username']
-    video_blob = data['image_blob']
-    emotion = data['emotion']
-    timestamp = sanitize_timestamp(data['timestamp'])
+    video_blobs = data['image_blobs']
+    emotions = data['emotions']
+    timestamps = data['timestamps']
     
-    # Save the video Blob to a temporary file
-    video_path = f"{username}_{emotion}_{timestamp}_{user_id}_recording.webm"
-    with open(video_path, "wb") as video_file:
-        video_file.write(video_blob)
-    
-    _logger.debug(f'Saved video for user {user_id} with emotion {emotion}.')
-    print(f"Video path: {video_path}")
-
-    # Display the video using OpenCV
-    cap = cv2.VideoCapture(video_path)
-    
-    if not cap.isOpened():
-        print("Error: Could not open video.")
-        return
-
-    frames = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    # send to datastore
+    # Create a BytesIO object to hold the zip file in memory, don't write to disk
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:    
+        for video_blob, emotion, timestamp in zip(video_blobs, emotions, timestamps):
+            timestamp = sanitize_timestamp(timestamp)
             
-        frames.append(frame)
-        cv2.imshow('Video Footage', frame)
+            video_stream = BytesIO(video_blob)
+            video_stream.seek(0)
+            video_array = iio.imread(video_stream, plugin='pyav')
 
-        # Press 'q' to quit the video window
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            recording_id = f"{username}_{emotion}_{timestamp}_{user_id}_recording"
+            cnt=0
+            for i, img in enumerate(video_array):
+                # Get gray-scale version of the image, detect each face, and get for each face an emotion prediction.
+                grey_frame = cv2.cvtColor(img, cv2.COLOR_RGBA2GRAY)
+                faces = face_cascade.detectMultiScale(grey_frame, 1.3, 5)
+                if len(faces) != 1:
+                    continue #only process if exactly one face is detected, other cases not supported
+                else:
+                    for index, (x, y, width, height) in enumerate(faces):
+                        image = cv2.resize(grey_frame[y:y+height, x:x+width], (96, 96))
 
-    #numpyframes = np.asarray(allframes)
-    cap.release()
+                        image = Image.fromarray(image.astype('uint8'))
+                        # Save the image to a BytesIO buffer
+                        buffer = BytesIO()
+                        image.save(buffer, format="PNG")
+                        buffer.seek(0)
+                        
+                        #define "file" name and data
+                        name = os.path.join(f'img_{emotion}_{i:04d}.png')
+                        zip_path = os.path.join(os.path.join("train", emotion), name)
+                        zipf.writestr(zip_path, buffer.getvalue())
+                        cnt=cnt+1
 
-    cv2.destroyAllWindows()
-    os.remove(video_path)
-   
-    video_array = np.array(frames)
-    #remove local storage in next commit --> instead send to datastore
-    npy_path = f"{username}_{emotion}_{timestamp}_{user_id}_recording.npy"
-    np.save(npy_path, video_array)
-    print(f"NumPy array to {npy_path}")
+            print("processing blob with emotion ", emotion, " detected 1 face in nframe: ", cnt)
     
-    # TEMP
-    np_array = np.load(npy_path)
-    if np.array_equal(video_array, np_array):
-        print("Successfully saved")
-    else:
-        print("Something went wrong")
-    # END OF TEMP
-  
+    zip_buffer.seek(0)
+
+    #clean the dataset name as non alphanumeric characters are not allowed by the training and minio modules
+    clean_id = re.sub(r'[<>:"/\\|?*]', '', f"calibration_{username}_{timestamp}_{user_id}")
+    zip_buffer.name=clean_id
+    files = {}
+    files["file"] = (clean_id + '.zip', zip_buffer.getvalue(), 'application/zip')
+
+    print("Sending image zip to dataset_name: ", clean_id)
+
+    response = requests.request('POST',  url=url, data={"dataset_name" : clean_id}, files=files)
+    print(response.json())
+    if response.status_code!=200:
+        return response.json(), response.status_code
+        #raise BadRequest("Could not upload dataset zip")
+
+    form = dict()
+    form["calibration_id"] = username + '_' + user_id
+    form["calibrate"] = True
+    form["experiment_name"] = EXPERIMENT_NAME
+    form["datasets"] = json.dumps({"train": "emotions", "calibration" : clean_id})
+
+    print("Requesting model calibrations: ", form)
+
+    url = TRAINING_SERVER_URL + "/tasks/run/" + PLUGIN_NAME
+    response = requests.request('POST',  url=url, data=form)
+    print(response.json())
+    return response.json(), response.status_code
 
 def _train():
     PLUGIN_NAME="Emotion+Recognition"
@@ -156,7 +186,7 @@ def _calibrate():
     calibration_dataset_name = secure_filename(
         f"calib_emotions{user_id}{timestamp}".replace("-", "").replace("_", "")
     )
-    #conver to bytes?
+    #convert to bytes?
     file_bytes = BytesIO()
     file.save(file_bytes)
     file_bytes.seek(0)
@@ -182,10 +212,8 @@ def add_as_websocket_handler(socket_io: SocketIO, app):
 
     _on_connect = socket_io.on('connect')(_on_connect)
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
-    _process_image = socket_io.on('process-image')(_process_image)
-    
     _process_video = socket_io.on('process-video')(_process_video)
-    print("added process video")
+    _process_image = socket_io.on('process-image')(_process_image)
 
     app.route('/train', methods=['POST'])(_train)
     app.route('/calibrate', methods=['POST'])(_calibrate)

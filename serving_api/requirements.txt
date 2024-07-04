@@ -3,5 +3,6 @@ flask-cors==4.0.0
 gevent==24.2.1
 gunicorn==21.2.0
 mlflow==2.11.3
-onnxruntime==1.17.1
+onnxruntime==1.17.3
+onnx
 python-dotenv==1.0.1

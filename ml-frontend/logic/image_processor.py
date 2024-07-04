@@ -56,7 +56,7 @@ class ImageProcessor:
             # Execute inference call if inference call has passed, else use previous results
             if do_new_inference_call:
                 def execute_inference():
-                    face = cv2.resize(grey_frame[y:y+height, x:x+width], (48, 48))
+                    face = cv2.resize(grey_frame[y:y+height, x:x+width], (96, 96))
                     prediction = self.emotion_inference.predict(face, user_id)
                     self._predictions[index] = prediction
 

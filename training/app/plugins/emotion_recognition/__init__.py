@@ -80,7 +80,7 @@ class EmotionRecognitionPlugin(BasePlugin):
 
             self.load_data(self.calibration_dir)
             #print("CALIBRATION NOT IMPLEMENTED! Creating new model instead")
-            model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="tensorflow")
+            model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="keras")
             print(model_path)
             emotion_calibrationmodel_generator = EmotionModelCalibrator(self.config, model_path, self.data)
             tf_model, history = emotion_calibrationmodel_generator.generate()[0]
@@ -96,25 +96,23 @@ class EmotionRecognitionPlugin(BasePlugin):
             tf_model, history = emotion_model_generator.generate()[0]
             run_name=kwargs["run_name"] = "base_" + kwargs["run_name"]
 
-        input_sig = [
-            tf.TensorSpec(
-                [None, self.config["image_height"], self.config["image_width"], 1],
-                tf.float32,
-            )
-        ]
+        input_sig = [tf.TensorSpec(tf_model.input_spec[0].shape,tf.float32)]
         tf_model.output_names = ["output"]
         # Upload  tensorflow version using temporary directory as artifact
         # Note: Important for calibration purposes. (assets folder does not get uploaded, as it is empty)
-        os.mkdir(os.path.join(kwargs["temp_dir"], "tensorflow"))
         tf_path = os.path.join(kwargs["temp_dir"], "tensorflow")
+        os.mkdir(tf_path)
         #tf_save_model(tf_model, tf_path) #does not work for keras 3
         tf_model.save(os.path.join(tf_path, "model.keras"))
+
         onnx_model, _ = tf2onnx.convert.from_keras(tf_model, input_sig, opset=13)
+
         metrics = {
             k: v[0]
             for k, v in history.history.items()
             if k in ("accuracy", "loss", "val_accuracy", "val_loss")
         }
+        
         hyperparameters = {
             k: v
             for k, v in self.config.items()
@@ -144,6 +142,27 @@ class EmotionRecognitionPlugin(BasePlugin):
         return run_name
 
     def load_data(self, data_dir):
+        """Loads the emotion image data from the data folder into memory. 
+        Do Not preprocess the data, leave this up to model.py"""
+        self.data = {"image_data": [], "class_": [], "category": []}
+
+        for class_, category in enumerate(self.config["categories"]):
+            directory = os.path.join(data_dir, "train", category)
+
+            for image in os.listdir(directory):
+                image_data = cv2.imread(os.path.join(directory, image))
+
+                self.data["image_data"].append(image_data)
+                self.data["class_"].append(class_)
+                self.data["category"].append(category)
+
+        self.data["image_data"] = np.array(self.data["image_data"])
+        self.data["class_"] = np.array(self.data["class_"])
+        self.data["category"] = np.array(self.data["category"])
+
+
+'''
+def load_data(self, data_dir):
         """Loads the emotion image data from the data folder into memory. Then process
         the data by reshaping the 'image_data' into a numpy array of (-1, <image height>,
         <image width>, <colours>), where image height and width are stored in the
@@ -158,6 +177,7 @@ class EmotionRecognitionPlugin(BasePlugin):
                 image_data = cv2.imread(
                     os.path.join(directory, image), cv2.IMREAD_GRAYSCALE
                 )
+                image_data = cv2.imread(os.path.join(directory, image))
                 image_data = cv2.resize(
                     image_data,
                     (self.config["image_height"], self.config["image_width"]),
@@ -169,6 +189,8 @@ class EmotionRecognitionPlugin(BasePlugin):
         reshaped_data = np.array(self.data["image_data"]).reshape(
             (-1, self.config["image_height"], self.config["image_width"], 1)
         )
+       
         self.data["image_data"] = reshaped_data / 255
         self.data["class_"] = np.array(self.data["class_"])
         self.data["category"] = np.array(self.data["category"])
+'''

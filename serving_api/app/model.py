@@ -115,7 +115,10 @@ class OnnxModel(BaseModel):
         try:
             model = self.get_model(stage=stage, model_id=model_id)
             data = np.asarray(data)
-            prediction = model.predict(data)
+            if 'float' in model._model_impl.inputs[0][1]:
+                prediction = model.predict(data.astype('float'))
+            else:
+                prediction = model.predict(data)
             return {k: v.tolist() for k, v in prediction.items()}
         except OnnxInvalidArgument:
             raise InvalidDataFormatError()

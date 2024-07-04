@@ -25,6 +25,9 @@ configure_logging(app)
 users = {
     'user1': 'banaan',
     'user2': 'password2',
+    'maarten' : 'maarten',
+    'eddy' : 'eddy',
+    'abdul' : 'abdul'
 }
 
 @app.route('/')

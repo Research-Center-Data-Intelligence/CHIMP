@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import glob
 from collections import Counter
 from numpy.random import RandomState
 from typing import Dict, List, Union
@@ -20,6 +21,7 @@ from tensorflow.keras.models import (
 from tensorflow.keras.optimizers import Adam, SGD
 #from tensorflow.python.keras.models import load_model as load_keras_model
 from tensorflow.keras.saving import load_model as load_keras_model
+import keras
 
 class EmotionModelGenerator:
     config: Dict
@@ -200,7 +202,9 @@ class EmotionModelCalibrator:
 
 
         # Load tensorflow model and fit new data to model
-        tf_model = load_keras_model(os.path.join(self.model_path,"model.keras"))
+        # find the name of the .keras file in the folder!!
+        file_path = glob.glob(os.path.join(self.model_path, '*.keras'))
+        tf_model = keras.models.load_model(file_path[0])
 
         # Define class weights for model training to account for under-sampled classes
         total_sample = len(self.train_data["class_"])

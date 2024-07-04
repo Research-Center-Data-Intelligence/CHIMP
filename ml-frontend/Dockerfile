@@ -17,7 +17,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN apt-get update && apt-get upgrade -y && apt-get install -y -q ffmpeg libsm6 libxext6
 
 # Copy project to container, then install requirements
-ADD . $CONTAINER_HOME
+COPY . $CONTAINER_HOME
 WORKDIR $CONTAINER_HOME
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir --upgrade -r $CONTAINER_HOME/requirements.txt

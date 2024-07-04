@@ -18,8 +18,9 @@ class FacialEmotionInference:
 
     def predict(self, image: np.ndarray, model_id: str = ''):
         # Reshape input, and preprocess pixel to value between 0 and 1
-        image = np.array(image).reshape((-1, 48, 48, 1)) / 255
-
+        #image = np.array(image).reshape((-1, 48, 48, 1)) / 255
+        image = np.array(image).reshape((-1, 96, 96, 1)) 
+        image = np.concatenate((image,image,image),3)
         # Post image to inference server
         exp_name = environ['EXPERIMENT_NAME']
         #url = environ['MODEL_INFERENCE_URL'] + f'/model/{exp_name}?id={model_id}&stage={self.stage}'

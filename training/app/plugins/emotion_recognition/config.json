@@ -9,14 +9,14 @@
     "surprise"
   ],
   "random_seed": 70,
-  "image_height": 48,
-  "image_width": 48,
+  "image_height": 96,
+  "image_width": 96,
   "train_test_factor": 0.8,
   "train_validation_factor": 0.75,
   "learning_rate": 0.05,
   "optimizer": "adam",
-  "epochs": 1,
-  "batch_size": 16,
+  "epochs": 15,
+  "batch_size": 64,
   "convolutional_layers": [
     {
       "filters": 64,
