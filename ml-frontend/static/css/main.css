@@ -174,3 +174,10 @@ hr {
     margin-left: 8px;
     width: 200px;
 }
+
+#status-message {
+    text-align: center;
+    font-size: 0.8em; /* Adjust the size as needed */
+    margin-top: 10px; /* Add some space above the message */
+    color: #555; /* Optional: Change color for better visibility */
+}

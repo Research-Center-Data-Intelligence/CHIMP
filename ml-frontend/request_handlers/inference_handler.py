@@ -47,7 +47,9 @@ def _process_image(data):
     img_processor.load_image(image_blob)
     img_processor.process(user_id)
 
-    emit('update-data', img_processor.predictions)
+    data_to_emit = {'predictions': img_processor.predictions, 'status': img_processor.status_msg}
+
+    emit('update-data', data_to_emit)
 
     return img_processor.get_image_blob()
 

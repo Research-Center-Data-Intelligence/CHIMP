@@ -199,8 +199,6 @@ class EmotionModelCalibrator:
 
         :return: Returns the training history and resulting model.
         """
-
-
         # Load tensorflow model and fit new data to model
         # find the name of the .keras file in the folder!!
         file_path = glob.glob(os.path.join(self.model_path, '*.keras'))

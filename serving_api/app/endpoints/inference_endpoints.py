@@ -27,7 +27,7 @@ def get_models() -> Response:
     curl
         `curl http://localhost:5254/model`
     curl with reloading models
-        `curl http://localhost:5254/models?reload_models=true`
+        `curl http://localhost:5254/model?reload_models=true`
     """
     update_models = request.args.get("reload_models", default=False, type=bool)
     if update_models:
@@ -102,7 +102,7 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
             f"data. Got '{current_request.json}'"
         )
     try:
-        predictions = current_app.extensions["inference_manager"].infer(
+        predictions, metadata = current_app.extensions["inference_manager"].infer(
             model_name, current_request.json.get("inputs"), stage, session_id
         )
     except ModelNotFoundError:
@@ -114,7 +114,7 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
 
     return jsonify(
         {
-            "status": f"inference from model {model_name} success",
+            "metadata": metadata,
             "predictions": predictions,
         }
     )

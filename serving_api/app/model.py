@@ -119,7 +119,10 @@ class OnnxModel(BaseModel):
                 prediction = model.predict(data.astype('float'))
             else:
                 prediction = model.predict(data)
-            return {k: v.tolist() for k, v in prediction.items()}
+            predictions = {k: v.tolist() for k, v in prediction.items()}
+            # add model meta data to te return struct so some metadata (run_id etc) can be returned to the caller
+            metadata = model.metadata.to_dict()
+            return predictions, metadata
         except OnnxInvalidArgument:
             raise InvalidDataFormatError()
 

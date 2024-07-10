@@ -43,8 +43,9 @@ class FacialEmotionInference:
                 predictions = list(text_response['predictions'].values())[0][0]  # Unpack response into list of predictions
                 class_responses = zip(self.EMOTIONS, predictions)
                 sorted_predictions = sorted(class_responses, key=lambda item: item[1], reverse=True)
+                status_msg = text_response["metadata"]["run_id"]
                 _logger.debug(f"Returning sorted predictions: {sorted_predictions}")
-                return sorted_predictions
+                return sorted_predictions, status_msg
             else:
                 _logger.debug(f"Failed to get inference with status code {response.status_code}: {response.text}")
                 pass

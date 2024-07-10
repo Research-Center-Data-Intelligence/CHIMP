@@ -57,14 +57,21 @@ function init() {
     sock.on('update-data', (data) =>
         {
             // console.log(`Updated data: ${data}`);
+            const predictions = data.predictions;
+            const status = data.status;
 
+            const statusElement = document.getElementById('status-message');
+            if (statusElement) {
+                statusElement.innerText = status;
+            }
+            
             if (!has_recently_updated_data) {
                 has_recently_updated_data = true;
 
-                data.forEach(face => {
+                predictions.forEach(face => {
                     // !! NOTE: Remove the line below to display the information of the last face instead.
                     // !! TODO: Create a multi-face information display
-                    face = data[0]
+                    face = predictions[0]
 
                     face.forEach(emotion => {
                         prediction_text = (emotion[1]*100).toFixed(2) + '%';

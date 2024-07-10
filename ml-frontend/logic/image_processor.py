@@ -15,10 +15,15 @@ class ImageProcessor:
     image: np.array
     emotion_inference: FacialEmotionInference = FacialEmotionInference()
     _predictions: dict = {}
+    _status: dict = {}
 
     @property
     def predictions(self):
         return list(self._predictions.values())
+    
+    @property
+    def status_msg(self):
+        return list(self._status.values())
 
     def __init__(self, inference_interval: int):
         self.is_processed = True
@@ -57,8 +62,9 @@ class ImageProcessor:
             if do_new_inference_call:
                 def execute_inference():
                     face = cv2.resize(grey_frame[y:y+height, x:x+width], (96, 96))
-                    prediction = self.emotion_inference.predict(face, user_id)
+                    prediction, status = self.emotion_inference.predict(face, user_id)
                     self._predictions[index] = prediction
+                    self._status[index] = status
 
                     # Set inference call time to current time
                     self._previous_inference_call = time()

@@ -54,8 +54,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=amqp://message-queue
             - CELERY_RESULTS_BACKEND=rpc://message-queue
-            - DATASTORE_ACCESS_KEY=m6I9ZZQuRQzoeqa9xMM0
-            - DATASTORE_SECRET_KEY=9v0tDjSUHlxnWpcSQu1KgzxZJvxn5cbxSh2ZmXnL
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
@@ -82,8 +82,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=amqp://message-queue
             - CELERY_RESULTS_BACKEND=rpc://message-queue
-            - DATASTORE_ACCESS_KEY=m6I9ZZQuRQzoeqa9xMM0
-            - DATASTORE_SECRET_KEY=9v0tDjSUHlxnWpcSQu1KgzxZJvxn5cbxSh2ZmXnL
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets:ro
@@ -116,8 +116,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=amqp://message-queue
             - CELERY_RESULTS_BACKEND=rpc://message-queue
-            - DATASTORE_ACCESS_KEY=m6I9ZZQuRQzoeqa9xMM0
-            - DATASTORE_SECRET_KEY=9v0tDjSUHlxnWpcSQu1KgzxZJvxn5cbxSh2ZmXnL
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
