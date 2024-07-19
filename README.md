@@ -135,3 +135,6 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
   - **description:** A description of the dataset. It is encouraged to give a detailed description of the dataset, the format, the hierarchy, etc. in this field.
   - **optional:** [OPTIONAL] This is an optional field to denote that a dataset is optional, if it is not present (or explicitly set to False), it is assumed that a dataset is not optional (i.e. required).
 - **model_return_type:** The type of model returned by the plugin. If no model is returned, it should be set to `None`
+
+## Security notes
+- If you host CHIMP in a publicly available manner, ensure that you replace the preconfigured datastore key and secret with your own key and secret.
