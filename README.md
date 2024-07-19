@@ -47,21 +47,22 @@ graph RL
 
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose.
-3. Run `docker-compose up` in the root of the repository
+3. [OPTIONAL] Download the docker-data.zip [here](https://drive.google.com/file/d/1ILWH1V4SOSCMbYuRBi4xylDAPRm3WG0B/view?usp=sharing) and extract it into the docker-data folder
+4. Run `docker-compose up` in the root of the repository
    - On some systems you need to run `docker-compose --profile '' up` instead to run the default profile
-4. Open your browser and navigate to the datastore dashboard on `http://localhost:9001`
-5. On the datastore dashboard, go to "Access Keys" and click on "Create access key"
-6. Add the access key and secret key created here to the `.env` file in the root of the CHIMP project
-7. Open your browser and navigate to `http://localhost:5252`
-8. Allow the CHIMP front-end to use your webcam.
-9. Click on browse and select the calibration-data.zip (which can be downloaded on Teams).
-10. Click on "Train New Model" and wait for the training to finish.
+5. Open your browser and navigate to the datastore dashboard on `http://localhost:9001`
+6. On the datastore dashboard, go to "Access Keys" and click on "Create access key"
+7. Add the access key and secret key created here to the `.env` file in the root of the CHIMP project
+8. Open your browser and navigate to `http://localhost:5252`
+9. Allow the CHIMP front-end to use your webcam.
+10. Click on browse and select the calibration-data.zip (which can be downloaded on Teams).
+11. Click on "Train New Model" and wait for the training to finish.
     - You can monitor the training progress in the terminal by running `docker logs -f experimentation-server`.
-11. Once the training is finished, navigate to `http://localhost:8999` (MLFlow).
-12. Click on "Models" and select "onnx emotion model".
-13. Click on the last model and set the model to "Production" by changing the "stage" setting at the top of the screen.  
+12. Once the training is finished, navigate to `http://localhost:8999` (MLFlow).
+13. Click on "Models" and select "onnx emotion model".
+14. Click on the last model and set the model to "Production" by changing the "stage" setting at the top of the screen.  
     - [OPTIONAL] Click on the second to last model and sit the model to "Staging" by changing the "stage" setting at the top of the screen.
-14. Refresh the CHIMP front-end. You should now see percentages of the detected emotions.
+15. Refresh the CHIMP front-end. You should now see percentages of the detected emotions.
 
 To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docker-compose --profile gpu up -d`. To only
 run the external services, such as MLFlow and RabbitMQ (e.g. when running the Python code directly on the host), use the "services" profile as
