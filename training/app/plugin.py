@@ -156,14 +156,15 @@ class PluginLoader:
         -------
         A list of loaded plugins.
         """
-        return [
-            (
-                self._loaded_plugins[p].info()
-                if include_details
-                else self._loaded_plugins[p].info()["name"]
-            )
-            for p in self._loaded_plugins
-        ]
+        plugins = []
+        for plugin in self._loaded_plugins:
+            if include_details:
+                plugin_dict = self._loaded_plugins[plugin].info()
+            else:
+                plugin_dict = {"name": self._loaded_plugins[plugin].info()["name"]}
+            plugin_dict["run_link"] = "/tasks/run/" + plugin_dict["name"].replace(" ", "+")
+            plugins.append(plugin_dict)
+        return plugins
 
     def get_plugin(self, name: str) -> Optional[BasePlugin]:
         """Get a plugin by name.
