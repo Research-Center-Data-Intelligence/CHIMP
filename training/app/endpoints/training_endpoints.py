@@ -1,5 +1,4 @@
 import json
-import os
 import warnings
 from datetime import datetime
 from flask import abort, Blueprint, current_app, request, Request
