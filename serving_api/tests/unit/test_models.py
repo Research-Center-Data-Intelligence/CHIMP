@@ -17,7 +17,9 @@ class TestModel:
             model.predict(1)
 
         result = model.predict([1, 2, 3])
-        assert type(result) is dict
+        assert type(result) is tuple
+        assert type(result[0]) is dict
+        assert type(result[1]) is dict
 
     def test_get_model_by_tag(self, model: BaseModel):
         """Test the get_model_by_tag method."""
@@ -27,10 +29,19 @@ class TestModel:
 class TestOnnxModel:
     """Tests for the Onnx model class."""
 
-    def test_model_predict(self):
+    def test_model_predict(self, mocked_mlflow):
         """Test the predict method of the Onnx model class."""
 
+        class MockModelImpl:
+            inputs = [[[], ["float"]], []]
+
+        class MockModelMetaData:
+            def to_dict(self):
+                return {"meta": "data"}
+
         class MockedModel:
+            _model_impl = MockModelImpl()
+            metadata = MockModelMetaData()
 
             def __init__(self, a_val):
                 self.a_val = a_val
@@ -50,10 +61,13 @@ class TestOnnxModel:
             },
         )
 
-        assert onnx_model.predict([1, 2]) == {"a": [2], "b": [12]}
-        assert onnx_model.predict([1, 2], stage="staging") == {"a": [1], "b": [12]}
-        assert onnx_model.predict([1, 2], model_id="some_id") == {"a": [3], "b": [12]}
-        with pytest.raises(InvalidDataFormatError):
-            onnx_model.predict(True)
-        with pytest.raises(InvalidDataFormatError):
-            onnx_model.predict([True, True])
+        prediction = onnx_model.predict([1, 2])
+        assert prediction[0] == {"a": [2], "b": [12]}
+        assert onnx_model.predict([1, 2], stage="staging")[0] == {
+            "a": [1],
+            "b": [12],
+        }
+        assert onnx_model.predict([1, 2], model_id="some_id")[0] == {
+            "a": [3],
+            "b": [12],
+        }

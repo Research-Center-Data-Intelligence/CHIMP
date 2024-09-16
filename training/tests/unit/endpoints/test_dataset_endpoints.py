@@ -83,13 +83,13 @@ class TestDatasetEndpoints:
                 "/datasets",
                 data={
                     "file": (zip_file, os.path.basename(zip_path)),
-                    "dataset_name": "Invalid-@#$_Name",
+                    "dataset_name": "Invalid-/_Name",
                 },
             )
         assert resp.status_code == 400
         assert (
             resp.get_json()["message"]
-            == "Dataset name ('dataset_name') should only contain alphanumeric characters"
+            == "Dataset name ('dataset_name') should only contain characters allowed in path strings"
         )
         assert "Invalid-@#$_Name" not in os.listdir(dataset_dir)
 

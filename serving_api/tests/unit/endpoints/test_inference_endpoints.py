@@ -57,10 +57,7 @@ class TestInferenceEndpoints:
         assert resp.status_code == 200
         assert resp.is_json
         data = resp.get_json()
-        assert (
-            "status" in data
-            and data["status"] == f"inference from model {global_model_name} success"
-        )
+        assert "metadata" in data
         assert "predictions" in data and type(data["predictions"]["dense_3"]) is list
 
         resp = client.post(
