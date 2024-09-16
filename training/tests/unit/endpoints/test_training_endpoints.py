@@ -14,11 +14,9 @@ class TestTrainingEndpoints:
         data = resp.get_json()
         assert "status" in data and data["status"] == "successfully retrieved plugins"
         assert "reloaded plugins" in data and data["reloaded plugins"]
-        assert (
-            "plugins" in data
-            and "Example Plugin" in data["plugins"]
-            and "Example 2 Plugin" in data["plugins"]
-        )
+        assert "plugins" in data
+        plugin_names = [p["name"] for p in data["plugins"]]
+        assert "Example Plugin" in plugin_names and "Example 2 Plugin" in plugin_names
 
     def test_start_task(self, client: FlaskClient, mocker):
         """Test the start task endpoint."""

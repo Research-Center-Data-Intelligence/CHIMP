@@ -53,13 +53,13 @@ class TestInferenceManager:
         calibrated_model_name: str,
     ):
         """Test for the infer method."""
-        result = inference_manager.infer(global_model_name, [1, 2, 3])
+        result = inference_manager.infer(global_model_name, [1, 2, 3])[0]
         assert "dense_3" in result
         assert type(result["dense_3"]) is list
         assert type(result["dense_3"][0]) is float
         result = inference_manager.infer(
             global_model_name, [1, 2, 3], model_id=global_model_name
-        )
+        )[0]
         assert "dense_3" in result
 
         with pytest.raises(ModelNotFoundError):

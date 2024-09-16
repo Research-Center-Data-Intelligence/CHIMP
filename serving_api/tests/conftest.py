@@ -44,7 +44,17 @@ def mocked_mlflow(
 ):
     from app import connector as original_connector, connectors
 
+    class MockModelImpl:
+        inputs = [[[], ["float"]], []]
+
+    class MockModelMetaData:
+        def to_dict(self):
+            return {"meta": "data"}
+
     class MockModel:
+        _model_impl = MockModelImpl()
+        metadata = MockModelMetaData()
+
         def predict(self, *args, **kwargs):
             return {"dense_3": np.array([0.53, 0.001, 0.04, 0.6, 0.02, 0.2, 0.12])}
 
