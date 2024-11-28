@@ -131,7 +131,7 @@ def _process_video(data):
     form["calibration_id"] = username + '_' + user_id
     form["calibrate"] = True
     form["experiment_name"] = EXPERIMENT_NAME
-    form["datasets"] = json.dumps({"train": "emotions", "calibration" : clean_id})
+    form["datasets"] = json.dumps({"train": "fer2013", "calibration" : clean_id})
 
     print("Requesting model calibrations: ", form)
 
