@@ -30,7 +30,7 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     # Initialize extensions
     connector.init_app(app, app.config["TRACKING_URI"])
     cors.init_app(app)
-    datastore.init_app(app, app.config["DATASTORE_URI"])
+    datastore.init_app(app, app.config["DATASTORE_URI"], app.config["DATABASE_URI"])
     plugin_loader.init_app(app, connector, datastore)
     plugin_loader.load_plugins()
     celery_app = create_celery_app(app)

@@ -57,11 +57,16 @@ services:
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+            - DATABASE_URI=postgres-db:5432
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - ''
             - 'gpu'
@@ -85,11 +90,16 @@ services:
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+            - DATABASE_URI=postgres-db:5432
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets:ro
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - ''
             - 'worker-only'
@@ -119,11 +129,16 @@ services:
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+            - DATABASE_URI=postgres-db:5432
+            - DATABASE_NAME=chimp_database
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - 'gpu'
             - 'worker-only-gpu'
@@ -233,6 +248,27 @@ services:
         networks:
             - public-network
             - backend-network
+        profiles:
+            - ''
+            - 'gpu'
+            - 'services'
+
+    # postgresql
+    # : database for managed datasets        
+    postgres-db:
+        image: postgres:17
+        container_name: chimp-postgres
+        restart: unless-stopped
+        networks:
+            - backend-network
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_USER: chimp_user
+            POSTGRES_PASSWORD: chimp_password
+            POSTGRES_DB: chimp_database
+        volumes:
+            - ./docker-data/postgres:/var/lib/postgresql/data
         profiles:
             - ''
             - 'gpu'

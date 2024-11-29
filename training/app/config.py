@@ -30,3 +30,8 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "rpc://localh
 DATASTORE_URI = os.environ.get("DATASTORE_URI") or "localhost:9000"
 DATASTORE_ACCESS_KEY = os.environ.get("DATASTORE_ACCESS_KEY") or ""
 DATASTORE_SECRET_KEY = os.environ.get("DATASTORE_SECRET_KEY") or ""
+
+DATABASE_URI = os.environ.get("DATABASE_URI") or "localhost:5432"
+DATABASE_NAME = os.environ.get("DATABASE_NAME") or ""
+DATABASE_USER = os.environ.get("DATABASE_USER") or ""
+DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD") or ""
