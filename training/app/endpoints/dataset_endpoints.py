@@ -219,6 +219,7 @@ def upload_dataset(passed_request: Request = None):
     --------
     curl
         `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/datasets`
+        `curl -X POST -F "file=@C:/CHIMP-data/calib_test_tiny.zip" -F "dataset_name=tiny_test" -F "labels=[\"angry\", \"disgusted\", \"disgusted\", \"neutral\"]"  -F "metadata=[{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"}]" http://localhost:5000/managed_datasets`
     """
     current_request = request
     if passed_request:
