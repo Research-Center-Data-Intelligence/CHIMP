@@ -9,7 +9,7 @@ from tempfile import mkdtemp
 from typing import Any, Optional
 from uuid import uuid4
 
-from app.datastore import BaseDatastore
+from app.datastore import ManagedBaseDatastore
 from app.errors import PluginNotFoundError
 from app.plugin import PluginLoader, PluginInfo
 
@@ -29,7 +29,7 @@ class WorkerManager:
     _plugin_loader: PluginLoader
     _app: Flask
     _celery_app: Celery
-    _datastore: BaseDatastore
+    _datastore: ManagedBaseDatastore
 
     @shared_task(ignore_result=False)
     def _run_task(self, *args, **kwargs) -> Optional[Any]:

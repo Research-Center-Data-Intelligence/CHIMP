@@ -7,7 +7,7 @@ from flask import Flask
 from typing import Any, Dict, List, Optional
 
 from app.connectors import BaseConnector
-from app.datastore import BaseDatastore
+from app.datastore import ManagedBaseDatastore
 
 
 @dataclass
@@ -58,7 +58,7 @@ class BasePlugin(ABC):
 
     _info: PluginInfo
     _connector: BaseConnector
-    _datastore: BaseDatastore
+    _datastore: ManagedBaseDatastore
 
     @abstractmethod
     def init(self) -> PluginInfo:
@@ -91,9 +91,9 @@ class PluginLoader:
     plugin_directory: str = ""
     _loaded_plugins: Dict[str, BasePlugin] = {}
     _connector: BaseConnector
-    _datastore: BaseDatastore
+    _datastore: ManagedBaseDatastore
 
-    def init_app(self, app: Flask, connector: BaseConnector, datastore: BaseDatastore):
+    def init_app(self, app: Flask, connector: BaseConnector, datastore: ManagedBaseDatastore):
         """Initialize a Flask application for use with this extension instance.
 
         Parameters
