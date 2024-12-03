@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             emotions: emotions,
             timestamps: timestamps
         };
-        socket.emit('process-video',payload)
+        socket.emit('upload_managed_calibration_data',payload)
         console.log(`Recording for ${emotions} saved.`);
 
         recordedSessions = []; // Clear the recorded sessions array

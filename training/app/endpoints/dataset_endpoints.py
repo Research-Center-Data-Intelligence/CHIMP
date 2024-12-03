@@ -53,6 +53,7 @@ def upload_managed_dataset(passed_request: Request = None):
     --------
     curl
         `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/managed_datasets`
+        `curl -X POST -F "file=@C:/CHIMP-data/calib_test_tiny.zip" -F "dataset_name=tiny_test" -F "labels=[\"angry\", \"disgusted\", \"disgusted\", \"neutral\"]"  -F "metadata=[{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"}]" http://localhost:5000/managed_datasets`
     """
     current_request = request
     if passed_request:
@@ -62,7 +63,7 @@ def upload_managed_dataset(passed_request: Request = None):
     if not labels:
         raise BadRequest("No labels in request")
     try:
-        labels = json.loads(labels)  # Convert string to list
+        labels = json.loads(labels)  
         if not isinstance(labels, list):
             raise BadRequest("Labels should be a list of strings")
     except json.JSONDecodeError:
@@ -73,7 +74,7 @@ def upload_managed_dataset(passed_request: Request = None):
     if not metadata:
         raise BadRequest("No metadata in request")
     try:
-        metadata = json.loads(metadata)  # Convert string to dict
+        metadata = json.loads(metadata)  
         if not isinstance(metadata, list):
             raise BadRequest("Metadata should be a list of dictionaries")
     except json.JSONDecodeError:
@@ -148,7 +149,6 @@ def upload_dataset(passed_request: Request = None):
     --------
     curl
         `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/datasets`
-        `curl -X POST -F "file=@C:/CHIMP-data/calib_test_tiny.zip" -F "dataset_name=tiny_test" -F "labels=[\"angry\", \"disgusted\", \"disgusted\", \"neutral\"]"  -F "metadata=[{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"}]" http://localhost:5000/managed_datasets`
     """
     current_request = request
     if passed_request:
