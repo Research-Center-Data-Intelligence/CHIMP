@@ -553,6 +553,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         #MV TODO: check minio path and url to munio in postgres
         object_name = secure_filename(file_name)  # Ensure safe file name
         minio_target_path = os.path.join(target_path, object_name)
+        minio_target_path = minio_target_path.replace("\\", "/") # WINDOWS OS FIX
         result = self._client.put_object('manageddataset', minio_target_path, x, length=len(x.getbuffer()))
 
         ourl= f"https://{self._datastore_uri}/{'manageddataset'}/{minio_target_path}"
