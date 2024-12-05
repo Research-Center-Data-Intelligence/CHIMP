@@ -255,7 +255,8 @@ services:
         environment:
             - POSTGRES_PASSWORD=postgr(b)es-t
             - POSTGRES_USER=superchimp
-            - POSTGRES_MULTIPLE_DATABASES=chimp_ml,chimp_data
+            - POSTGRES_DB=postgres
+            - POSTGRES_MULTIPLE_DATABASES=ml_user[ml_password]@chimp_ml data_user[data_password]@chimp_data
         volumes:
             - ./docker-data/database:/var/lib/postgresql/data
             - ./docker-init/database:/docker-entrypoint-initdb.d
@@ -278,6 +279,7 @@ services:
         environment:
             - PGADMIN_DEFAULT_EMAIL=pgadmin@pgadmin.pgadmin
             - PGADMIN_DEFAULT_PASSWORD=pgadminadmin
+            - PGADMIN_LISTEN_ADDRESS=0.0.0.0
         volumes:
             - ./docker-data/database-dashboard:/var/lib/pgadmin
         profiles:
