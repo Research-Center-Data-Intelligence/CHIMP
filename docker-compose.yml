@@ -62,6 +62,7 @@ services:
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - database
         profiles:
             - ''
             - 'gpu'
@@ -90,6 +91,7 @@ services:
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - database
         profiles:
             - ''
             - 'worker-only'
@@ -124,6 +126,7 @@ services:
             - ./training/app/plugins:/usr/src/app/app/plugins
         depends_on:
             - monitoring-server
+            - database
         profiles:
             - 'gpu'
             - 'worker-only-gpu'
@@ -182,7 +185,9 @@ services:
             - GID=1000
         volumes:
             - ./docker-data/monitoring:/data
-        command: mlflow server --backend-store-uri sqlite:///data/mlflow.db --artifacts-destination /data/mlruns --host 0.0.0.0 --port 8999 --serve-artifacts
+        depends_on:
+            - database
+        command: mlflow server --backend-store-uri postgresql://ml_user:ml_password@database:5432/chimp_ml --artifacts-destination /data/mlruns --host 0.0.0.0 --port 8999 --serve-artifacts
         profiles:
             - ''
             - 'gpu'

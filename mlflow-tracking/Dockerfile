@@ -16,4 +16,4 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y -q wget
 
 # Install dependencies
 RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir --upgrade mlflow==2.3.0 cryptography
+RUN pip3 install --no-cache-dir --upgrade mlflow==2.3.0 cryptography psycopg2-binary
