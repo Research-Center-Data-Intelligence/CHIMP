@@ -162,3 +162,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+docker-data/database-dashboard/pgadmin4.db

@@ -237,6 +237,52 @@ services:
             - ''
             - 'gpu'
             - 'services'
+    
+    database:
+        image: postgres:14.15-alpine
+        container_name: chimp_database
+        shm_size: 128mb
+        restart: unless-stopped
+        healthcheck:
+          test: []
+          interval: 5s
+          timeout: 5s
+          retries: 5
+        networks:
+            - backend-network
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_PASSWORD=postgr(b)es-t
+            - POSTGRES_USER=superchimp
+            - POSTGRES_MULTIPLE_DATABASES=chimp_ml,chimp_data
+        volumes:
+            - ./docker-data/database:/var/lib/postgresql/data
+            - ./docker-init/database:/docker-entrypoint-initdb.d
+        profiles:
+            - ''
+            - 'gpu'
+            - 'services'
+            - 'postgres'
+
+    database-dashboard:
+        user: "${UID}:${GID}"
+        image: dpage/pgadmin4
+        container_name: chimp_pgadmin
+        restart: unless-stopped
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "8888:80"
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=pgadmin@pgadmin.pgadmin
+            - PGADMIN_DEFAULT_PASSWORD=pgadminadmin
+        volumes:
+            - ./docker-data/database-dashboard:/var/lib/pgadmin
+        profiles:
+            - 'services'
+            - 'postgres'
 
 networks:
     public-network:
