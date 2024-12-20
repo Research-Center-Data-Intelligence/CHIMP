@@ -15,7 +15,7 @@
   "train_validation_factor": 0.75,
   "learning_rate": 0.05,
   "optimizer": "adam",
-  "epochs": 15,
+  "epochs": 1,
   "batch_size": 64,
   "convolutional_layers": [
     {

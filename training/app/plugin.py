@@ -30,14 +30,6 @@ class PluginInfo:
             - type (description of the type of the argument, as a string)
             - description (a description of the argument)
             - [OPTIONAL] optional (True if the argument is optional)
-    datasets : Dict[str, Dict[str, str]]
-        A dictionary with the datasets used by the plugin. Each dataset has a key, which is
-        the name of the dataset. The value is a dictionary containing two required fields and
-        can contain one optional field:
-            - name (a string with the name of the dataset)
-            - description (a description of the dataset. It is encouraged to give a detailed description
-                of the dataset, the format, the hierarchy, etc. in this field.)
-            - [OPTIONAL] optional (True if the dataset is optional)
     model_return_type : Optional[str]
         The type of model object returned by the plugin. Preferably, this should be the value
         of one of the ModelType types. If the plugin does not return anything (including
@@ -49,7 +41,6 @@ class PluginInfo:
     version: str
     description: str
     arguments: Dict[str, Dict[str, str]]
-    datasets: Dict[str, Dict[str, str]]
     model_return_type: Optional[str] = None
 
 

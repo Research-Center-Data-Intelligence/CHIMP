@@ -152,9 +152,10 @@ class MLFlowConnector(BaseConnector):
 
         models = self._client.search_model_versions("")
         for model in models:
-            available_models.add(model.name)
-            available_models.add(model.run_id)
             run_info = self._client.get_run(model.run_id)
-            available_models.add(run_info.info.run_name)
+            if run_info.info.lifecycle_stage == "active":
+                available_models.add(model.name)
+                # available_models.add(model.run_id)
+                # available_models.add(run_info.info.run_name)
 
         return available_models

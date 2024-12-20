@@ -84,18 +84,34 @@
 				</table>
 			</div>
 			<div class="model-update">
-				<button id="btn_model_calibrate" class="model-update-button" onclick="calibrateModel()">Calibrate Current Model</button>
-				<input id="input_data_upload" class="model-update-input" type="file" name="zipfile" accept="application/zip" />
+				<!-- input arguments are: 1) New model/Finetune; 2) Use base data; 3) Use all new data; 4) Use only personal data -->
+				<button id="btn_model_calibrate_new" class="model-update-button" onclick="calibrateModel('True', 'False', 'False', 'True')">
+					Train New Model: Personal data
+				</button>
 				<br />
-				<button id="btn_model_training" class="model-update-button" onclick="trainModel()">Train New Model</button>
-				<button id="btn_action_list"class="model-update-button"type="submit">Action list</button>
+				<button id="btn_model_calibrate_all" class="model-update-button" onclick="calibrateModel('True', 'True', 'False', 'True')">
+					Train New Model: Base + Personal data
+				</button>
+				<br />
+				<button id="btn_model_training" class="model-update-button" onclick="calibrateModel('True', 'True', 'True', 'True')">
+					Train New Model: Base + All new data
+				</button>
+				<br />
+				<button id="btn_model_calibrate_personal" class="model-update-button" onclick="calibrateModel('False', 'False', 'False', 'True')">
+					Finetune Model: Personal data
+				</button>
+				<br />
+				<button id="btn_model_finetune_all" class="model-update-button" onclick="calibrateModel('False', 'False', 'True', 'True')">
+					Finetune Model: All new data
+				</button>
+				<br />
 			</div>
 			<div id="status-message"></div>
 		</div>
 		<div class="footer">
 			<!-- Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion
 			 		recognition model and the frontend upon which CHIMP is build to demonstrate its functionalities. -->
-			<div class="footer-by">By Bryan Krooooooooooooooooooooooooooooooooon</div>
+			<div class="footer-by">By Bryan Krooo oooooooooooooooooooooooooooooon</div>
 			<div class="footer-owner">Lectoraat Data Intellligence Zuyd™</div>
 		</div>
     </div>

@@ -15,12 +15,12 @@ other. For this a CNN is trained using Tensorflow.
             version="1.0",
             description=description,
             arguments={},
-            datasets={
-                "dataset": {
-                    "name": "dataset",
-                    "description": "Game screenshots, divided into pixel and non-pixel folders.",
-                }
-            },
+            # datasets={
+            #     "dataset": {
+            #         "name": "dataset",
+            #         "description": "Game screenshots, divided into pixel and non-pixel folders.",
+            #     }
+            # },
             model_return_type="tensorflow",
         )
 

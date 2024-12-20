@@ -149,6 +149,7 @@ class MLFlowConnector(BaseConnector):
         if not run_name:
             run_name = uuid4().hex
         with mlflow.start_run(run_name=run_name):
+            run_id = mlflow.active_run().info.run_id
             if not model_name:
                 model_name = experiment_name
 
@@ -212,7 +213,7 @@ class MLFlowConnector(BaseConnector):
                 )
             if model_type == ModelType.OTHER:
                 pass
-        return run_name
+        return run_name, run_id
 
     def get_artifact(
         self,

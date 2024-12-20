@@ -43,7 +43,7 @@
                         <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop Recording</button>
                         <button id="pauseButton" disabled><i class="fas fa-pause"></i> Pause Recording</button>
                         <button id="resumeButton" disabled><i class="fas fa-play"></i> Resume Recording</button>
-                        <button id="saveButton" disabled><i class="fas fa-save"></i> Save Recording</button>
+                        <button id="saveButton" disabled><i class="fas fa-save"></i> Upload Recording</button>
                     </table>
                     
                     <table>
@@ -72,8 +72,8 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-        <script src="../static/js/config.js"></script>
-        <script src="../static/js/kali.js"></script>
+        <script src="../static/js/config.js" defer></script>
+        <script src="../static/js/kali.js" defer></script>
         <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
         <link rel="stylesheet" href="../static/css/kali.css">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='../static/css/kali.css') }}">

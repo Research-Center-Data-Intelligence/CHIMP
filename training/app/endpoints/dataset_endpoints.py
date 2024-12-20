@@ -123,9 +123,7 @@ def upload_managed_dataset(passed_request: Request = None):
                 file_content = extracted_file.read()
                 file_stream = io.BytesIO(file_content)
                 file_stream.seek(0)  # Ensure pointer is at the start
-                print("start uploading")
                 datastore.store_object(dataset_name, file_stream, labels[i], metadata[i], object_name)
-                print("done uploading")
 
     return {"status": "successfully uploaded dataset"}
 

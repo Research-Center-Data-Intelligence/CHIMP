@@ -24,14 +24,14 @@ class Example2Plugin(BasePlugin):
                     "optional": True,
                 },
             },
-            datasets={
-                "dataset": {"name": "dataset", "description": "Basic dataset"},
-                "optional_ds": {
-                    "name": "optional_ds",
-                    "description": "An optional dataset",
-                    "optional": True,
-                },
-            },
+            # datasets={
+            #     "dataset": {"name": "dataset", "description": "Basic dataset"},
+            #     "optional_ds": {
+            #         "name": "optional_ds",
+            #         "description": "An optional dataset",
+            #         "optional": True,
+            #     },
+            # },
             model_return_type=None,
         )
 

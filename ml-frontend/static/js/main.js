@@ -108,6 +108,7 @@ function init() {
             }
         });
 
+        
     // Disconnect before closing the window
     window.onunload = function() {
         sock.disconnect()
@@ -131,66 +132,60 @@ const capture = () => {
     });
 }
 
-// MODEL TRAINING AND CALIBRATION
-$(document).ready(function() {
-    let btn = $('#btn_model_calibrate');
-    let input = $('#input_data_upload');
+// // MODEL TRAINING AND CALIBRATION
+// $(document).ready(function() {
+//     let btn = $('#btn_model_calibrate');
+//     let input = $('#input_data_upload');
 
-    btn.attr('disabled', true);
-    input.change(function() {
-        if ($(this).val())
-            btn.removeAttr('disabled');
-        else
-            btn.attr('disabled', true);
-    });
-});
+//     btn.attr('disabled', true);
+//     input.change(function() {
+//         if ($(this).val())
+//             btn.removeAttr('disabled');
+//         else
+//             btn.attr('disabled', true);
+//     });
+// });
 
-function trainModel() {
-    // Only run if button is not disabled, then disable training button, can only request one model training per time.
-    // - Warning: should be given a time-out at server level in a production setting. Suffices for demonstration
-    //              purposes with CHIMP.
-    if (btn_model_training.getAttribute('disabled') !== null)
-        return;
+// function trainModel() {
+//     // Only run if button is not disabled, then disable training button, can only request one model training per time.
+//     // - Warning: should be given a time-out at server level in a production setting. Suffices for demonstration
+//     //              purposes with CHIMP.
+//     if (btn_model_training.getAttribute('disabled') !== null)
+//         return;
 
-    btn_model_training.disabled = true;
+//     btn_model_training.disabled = true;
 
-    // Call training on experimentation server.
-    $.ajax({
-        url: '/train',
-        type: 'POST',
-        success: function(result) {
-            console.log('Training initiated.');
-            window.alert('A training procedure has been initiated. This will take more than an hour to complete. ' +
-                'Do not await completion of model training. You can close this window at any time.');
-        },
-        error: function(error) {
-            console.log(`Error in training call: ${error}`);
-            window.alert('Could not call for a training procedure at this time. Please try again later.');
-            btn_model_training.disabled = false;
-        },
-    });
+//     // Call training on experimentation server.
+//     $.ajax({
+//         url: '/train',
+//         type: 'POST',
+//         success: function(result) {
+//             console.log('Training initiated.');
+//             window.alert('A training procedure has been initiated. This will take more than an hour to complete. ' +
+//                 'Do not await completion of model training. You can close this window at any time.');
+//         },
+//         error: function(error) {
+//             console.log(`Error in training call: ${error}`);
+//             window.alert('Could not call for a training procedure at this time. Please try again later.');
+//             btn_model_training.disabled = false;
+//         },
+//     });
 
-    // Can implement a websocket system as to give feedback when training has completed, but model training takes longer
-    //  than a user session would/should take.
-}
+//     // Can implement a websocket system as to give feedback when training has completed, but model training takes longer
+//     //  than a user session would/should take.
+// }
 
-function calibrateModel() {
+function calibrateModel(trainnew, basedata, newdata, personaldata) {
     // Get socket id and prepare connection#
-    id_in_progress_calibration = sock.id;
-    let url = `/calibrate?user_id=${id_in_progress_calibration}`;
-    console.log(`uploading for id: ${id_in_progress_calibration}`);
 
-    // Get zip file and add it to the form data
-    let formData = new FormData();
-    formData.append('zipfile', input_data_upload.files[0], input_data_upload.files[0].name);
+    id_in_progress_calibration = sock.id;
+    let url = `/calibrate?user_id=${id_in_progress_calibration}&trainnew=${trainnew}&basedata=${basedata}&newdata=${newdata}&personaldata=${personaldata}`;
+    console.log(`sending call with url: ${url}`);
 
     // Send request
     $.ajax({
         url: url,
         type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
         success: function(result) {
             console.log(`Successfully created a calibrated model.`);
             window.alert('Successfully created a personalised model. ' +
@@ -211,5 +206,5 @@ function calibrateModel() {
     console.log('Calibration initiated.');
     window.alert('A calibration procedure has been started. When the calibration process has finished, it will ' +
         'automatically be applied to this current session. You will be notified when the personalised model is ready.');
-    btn_model_calibrate.disabled = true;
+    // btn_model_calibrate.disabled = true;
 }
