@@ -556,6 +556,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         minio_target_path = minio_target_path.replace("\\", "/") # WINDOWS OS FIX
         result = self._client.put_object('manageddataset', minio_target_path, x, length=len(x.getbuffer()))
 
+        #MV TODO: store datastore type in postgres
         ourl= f"https://{self._datastore_uri}/{'manageddataset'}/{minio_target_path}"
 
         data = (ourl, y, json.dumps(metadata))

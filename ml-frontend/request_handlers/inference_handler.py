@@ -105,6 +105,7 @@ def _upload_managed_calibration_data(data):
                         buffer.seek(0)
                         
                         # Generate labels and metadata
+                        #MV TODO: change userid to generic id
                         labels.append(emotion)
                         metadata.append({"exp": "emotion_recognition",
                                          "user": username,
@@ -263,49 +264,28 @@ def _calibrate():
     url = TRAINING_SERVER_URL + "/tasks/run/" + PLUGIN_NAME
 
     form = dict()
-    files = {}
 
     # get user_id from request
     if "user_id" not in request.args:
         return BadRequest("No user specified.")
     
     user_id = request.args["user_id"]
-    form["calibration_id"] = user_id
-    form["calibrate"] = True
+    trainnew = request.args["trainnew"]
+    basedata = request.args["basedata"]
+    newdata = request.args["newdata"]
+    personaldata = request.args["personaldata"]
+
+    
+    form["user_id"] = user_id
+    form["trainnew"] = trainnew
+    form["basedata"] = basedata
+    form["newdata"] = newdata
+    form["personaldata"] = personaldata
     form["experiment_name"] = EXPERIMENT_NAME
 
-    # get zipfile from request
-    if len(request.files) == 0:
-        return BadRequest("No files uploaded.")
-    if "zipfile" not in request.files:
-        return BadRequest("Different file expected.")
-    file = request.files["zipfile"]
-    if file.filename == "":
-        return BadRequest("No file selected.")
-    if not (
-        "." in file.filename and file.filename.rsplit(".", 1)[1].lower() == "zip"
-    ):
-        return BadRequest("File type not allowed. Must be a zip.")
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    calibration_dataset_name = secure_filename(
-        f"calib_emotions{user_id}{timestamp}".replace("-", "").replace("_", "")
-    )
-    #convert to bytes?
-    file_bytes = BytesIO()
-    file.save(file_bytes)
-    file_bytes.seek(0)
-    file_bytes.name=file.filename
-    files["file"] = (file_bytes.name, file_bytes, 'application/zip')
-    
-    form["datasets"] = json.dumps({"train": "emotions", "calibration" : calibration_dataset_name})
-    print(calibration_dataset_name)
-    url = TRAINING_SERVER_URL + "/datasets"
-    response = requests.request('POST',  url=url, data={"dataset_name" : calibration_dataset_name}, files=files)
-    if response.status_code!=200:
-        return response.json(), response.status_code
-        #raise BadRequest("Could not upload dataset zip")
-        
+    #MV TODO: fill in the form correctly        
     url = TRAINING_SERVER_URL + "/tasks/run/" + PLUGIN_NAME
+    print(url, form)
     response = requests.request('POST',  url=url, data=form)
 
     return response.json(), response.status_code
