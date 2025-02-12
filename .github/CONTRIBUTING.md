@@ -1,5 +1,11 @@
 # How to contribute to CHIMP
 [Short collaboration and project management summary]
+- project type (open-source), application type, programming languages framework
+- contributions, documentation, bug reports, suggestions, no design improvements, new plugins are welcome.
+- contribution process described below for bug reports, suggestions and improvements.
+- contribution standards described below for coding conventions (ESLint, PEP8, Prettier, ...; unit testing, documentation needs, PRs), commit messages conventions, PR update conventions
+- Community discussion: GitHub Discussions, any other places are pending. Code of conduct still according to basic GitHub standard (small community type)
+- Licensing: open-source; CLA will might be drafted to ensure commited code is legible to be made open-source and us as project maintainers are granted license to use modify and distribute contributions. Mostly to clarify the projects relationship to Research Center Data Intelligence. -CLA.md will follow if required, possibly a CLA assistant too somewhen in the future-
 
 ## Reporting issues
 ### Bugs
