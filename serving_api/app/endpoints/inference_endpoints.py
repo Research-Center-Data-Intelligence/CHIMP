@@ -54,8 +54,6 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
     ----------
     model_name : str
         Name of the model to be used for inference from the request data.
-    passed_request
-        A overwrite to support the (deprecated) /invocation route.
     (optional query param) session_id : str
         Session ID that might denote a specific calibrated model.
     (optional query param) stage : str
@@ -118,27 +116,3 @@ def infer_from_model(model_name: str, passed_request: Request = None) -> Respons
             "predictions": predictions,
         }
     )
-
-
-@bp.route("/invocations", methods=["POST"])
-def invocations():  # pragma: no cover
-    """Legacy route to support the old style of inference.
-
-    WARNING: Calling the /invocations endpoint is deprecated, use the /model/<model_name>/infer endpoint instead
-
-    Returns
-    -------
-    json:
-        A json object containing the predictions from the model
-
-    Examples
-    --------
-    curl
-        ```curl -X POST http://localhost:5254/invocations -H 'Content-Type: application/json'\
-        -d '{"inputs": ENCODED_DATA}'```
-
-    """
-    warnings.warn(
-        "Calling the /invocations endpoint is deprecated, use the /model/<model_name>/infer endpoint instead"
-    )
-    return infer_from_model(current_app.config["LEGACY_MODEL_NAME"], request)
