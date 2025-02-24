@@ -59,7 +59,7 @@ def logout():
     return redirect(url_for('login'))
 
 def run_app():
-    return socket_io.run(app=app, host='0.0.0.0', port=5252, debug=False)
+    return socket_io.run(app=app, host='0.0.0.0', port=5252, debug=True)
 
 def get_app():
     load_dotenv()

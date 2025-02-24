@@ -85,7 +85,7 @@ class EmotionRecognitionPlugin(BasePlugin):
         #MV TODO: implement training and model storage, including inserting the dataset postgres table entries
         # return "training still needs to be implemented"
 
-        #MV TODO: built logic based on plugin info
+        #MV TODO: #36 built logic based on plugin info
         # 1) New Model Personal Data
         if kwargs["trainnew"] & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
                 pass
@@ -101,7 +101,7 @@ class EmotionRecognitionPlugin(BasePlugin):
         # 4) Fine tune on Personal Data
         if (not kwargs["trainnew"]) & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
             #TODO MV: add error checking to the retrieval
-            #MV TODO: for finetuning do not get the data from datapoints but from dataset and the current model id
+            #MV TODO: for finetuning do not get the data from datapoints but from dataset and the current model id --> where to get the current model_id???
             # Select query
             kwargs["user_id"] = 'MV' #MV TODO: get correct username from frontend
             select_query = f"""SELECT * FROM datapoints
@@ -192,6 +192,7 @@ class EmotionRecognitionPlugin(BasePlugin):
 
             # Print each row
             for row in rows:
+                #MV TODO: remove debug prints
                 print(f"ID: {row[0]}, X: {row[1]}, Y: {row[2]}, Metadata: {row[3]}")
                 opath = row[1]
                 parsed_url = urlparse(opath)
