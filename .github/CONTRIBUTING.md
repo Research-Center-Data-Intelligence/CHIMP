@@ -4,11 +4,11 @@ Thank you for your interest in contributing to CHIMP! Your contributions help im
 
 ## 💡 How You Can Contribute
 You can add value to CHIMP in several ways:
-- **Report issues** ([Bugs](#bugs), [Security Issues](#security-issues))
-- **Suggest features** ([Feature Requests](#feature-requests))
-- **Improve documentation** ([Documentation Updates](#documentation))
-- **Contribute code** ([Submitting Changes](#submitting-changes))
-- **Develop plugins** ([Writing Plugins](#writing-plugins))
+- **Report issues** ([Bugs](#-bugs), [Security Issues](#-security-issues))
+- **Suggest features** ([Feature Requests](#-feature-requests--questions))
+- **Improve documentation** ([Documentation Updates](#-documentation))
+- **Contribute code** ([Submitting Changes](#-submitting-changes))
+- **Develop plugins** ([Writing Plugins](#-writing-plugins))
 
 ## 🚀 Project Overview
 - **Type**: Open-source AI Ops framework
@@ -34,7 +34,7 @@ When reporting a bug, include:
 Use the [Bug Report Template](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main/.github/ISSUE_TEMPLATE/bug_report.md) for structured reporting.
 
 ### 🔒 Security Issues
-For now, security issues should be reported as **bug reports** and must pertain to CHIMP’s core services. Security concerns related to plugins or external applications are outside project maintenance scope. However, you are welcome to [submit a fix](#submitting-changes) for such issues.
+For now, security issues should be reported as **bug reports** and must pertain to CHIMP’s core services. Security concerns related to plugins or external applications are outside project maintenance scope. However, you are welcome to [submit a fix](#-submitting-changes) for such issues.
 
 ## 💡 Feature Requests & Questions
 Would you like to suggest a new feature or ask a question? Before submitting, check the [FAQ](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main?tab=readme-ov-file#FAQ).
@@ -60,17 +60,17 @@ If you'd like to contribute improvements, here’s the process:
 - Clone the repository and create a branch following naming conventions (e.g., `fix/issue-123` or `feature/new-ui`).
 
 ### 3️⃣ Follow Contribution Standards
-- Adhere to coding conventions (see [Coding Standards](#coding-standards)).
+- Adhere to coding conventions (see [Coding Standards](#-coding-standards--commit-conventions)).
 - Ensure proper documentation and unit tests.
 
 ### 4️⃣ Submit a Pull Request
 - Link the PR to the corresponding issue.
-- Ensure commits follow proper conventions (see [Commit Message Conventions](#commit-conventions)).
+- Ensure commits follow proper conventions (see [Commit Message Conventions](#coding-standards--commit-conventions)).
 
 ## 📖 Documentation
 Help improve documentation by:
 - Updating repository files
-- Suggesting improvements via [Feature Requests](#feature-requests)
+- Suggesting improvements via [Feature Requests](#-feature-requests)
 - Adding explanations where needed
 
 ## 🔍 Coding Standards & Commit Conventions
@@ -80,7 +80,7 @@ Help improve documentation by:
 Custom **plugin applications** extend CHIMP’s capabilities. While plugins may not be included in the repository, outstanding ones can receive a **shout-out** in the README.
 
 ### 📢 Submitting Your Plugin
-1. **Discuss First**: Open a [Feature Request](#feature-requests) before starting development.
+1. **Discuss First**: Open a [Feature Request](#-feature-requests) before starting development.
 2. **Develop Independently**: Fork the repo and build your plugin in your own repository.
 3. **Submit a PR**: Only fully developed, tested plugins will be considered.
 
