@@ -31,22 +31,22 @@ When reporting a bug, include:
 4. **Screenshots (if applicable)**
 5. **Device Information (if known)**
 
-Use the [Bug Report Template](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main/.github/ISSUE_TEMPLATE/bug_report.md) for structured reporting.
+Use the [Bug Report Template](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/.github/ISSUE_TEMPLATE/bug_report.md) for structured reporting.
 
 ### 🔒 Security Issues
 For now, security issues should be reported as **bug reports** and must pertain to CHIMP’s core services. Security concerns related to plugins or external applications are outside project maintenance scope. However, you are welcome to [submit a fix](#-submitting-changes) for such issues.
 
 ## 💡 Feature Requests & Questions
-Would you like to suggest a new feature or ask a question? Before submitting, check the [FAQ](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main?tab=readme-ov-file#FAQ).
+Would you like to suggest a new feature or ask a question? Before submitting, check the [FAQ](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/README.md#FAQ).
 
 ### Feature Requests
-Submit a [Feature Request](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main/.github/ISSUE_TEMPLATE/feature_request.md) and include:
+Submit a [Feature Request](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/.github/ISSUE_TEMPLATE/feature_request.md) and include:
 1. **Problem Statement** or **Added Value**
 2. **Feature Description**
 3. **Alternative Solutions Considered**
 
 ### Questions
-For questions, use the [Question Proposal Template](https://github.com/Research-Center-Data-Intelligence/CHIMP/tree/main/.github/ISSUE_TEMPLATE/question-proposal.md) and include:
+For questions, use the [Question Proposal Template](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/.github/ISSUE_TEMPLATE/question-proposal.md) and include:
 1. **Origin of the Question**
 2. **Detailed Question Statement**
 
