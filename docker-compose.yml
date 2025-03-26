@@ -52,8 +52,8 @@ services:
         environment:
             - LEGACY_PLUGIN_NAME=Emotion Recognition
             - TRACKING_URI=http://monitoring-server:8999
-            - CELERY_BROKER_URL=amqp://message-queue
-            - CELERY_RESULTS_BACKEND=rpc://message-queue
+            - CELERY_BROKER_URL=redis://message-queue:6379
+            - CELERY_RESULT_BACKEND=redis://message-queue:6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -80,8 +80,8 @@ services:
         environment:
             - LEGACY_PLUGIN_NAME=Emotion Recognition
             - TRACKING_URI=http://monitoring-server:8999
-            - CELERY_BROKER_URL=amqp://message-queue
-            - CELERY_RESULTS_BACKEND=rpc://message-queue
+            - CELERY_BROKER_URL=redis://message-queue:6379
+            - CELERY_RESULT_BACKEND=redis://message-queue:6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -114,8 +114,8 @@ services:
         environment:
             - LEGACY_PLUGIN_NAME=Emotion Recognition
             - TRACKING_URI=http://monitoring-server:8999
-            - CELERY_BROKER_URL=amqp://message-queue
-            - CELERY_RESULTS_BACKEND=rpc://message-queue
+            - CELERY_BROKER_URL=redis://message-queue:6379
+            - CELERY_RESULT_BACKEND=redis://message-queue:6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -193,20 +193,13 @@ services:
     # : serves as a message broker for the CHIMP system.
     message-queue:
         restart: unless-stopped
-        image: rabbitmq:3.13-management
+        image: redis:7.4.2
         container_name: message-queue
-        healthcheck:
-            test: rabbitmq-diagnosis check_port_connectivity
-            start_period: 30s
-            interval: 1m
-            timeout: 30s
-            retries: 5
         networks:
             - public-network
             - backend-network
         ports:
-            - "5672:5672"
-            - "15672:15672"
+            - "6379:6379"
         profiles:
             - ''
             - 'gpu'

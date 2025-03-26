@@ -12,6 +12,8 @@ a continual AI pipeline. It was originally part of a bachelor thesis project by 
   called "front-end", it also contains a back-end component in the form of a Flask API that communicates with the rest
   of the CHIMP system).
 - **mlflow-tracking:** MLFlow is used to track the different models and log metrics for these models.
+- **minio-datastore:** Minio is used as a centralized datastore for storing and managing datasets.
+- **message-queue:** Redis is used as a message queue to coordinate jobs between the APIs and the workers.
 
 The table below shows which ports are used by the different components. The "Local Dev Port" is the port that is used when a component is run on the host instead of in Docker.
 
@@ -22,6 +24,7 @@ The table below shows which ports are used by the different components. The "Loc
 | ml-frontend      | 5252           | 5252             | 8000                  |
 | mlflow-tracking  | n.a.           | 8999             | 8999                  |
 | minio-datastore  | n.a.           | 9000, 9001 (web) | 9000, 9001            |
+| message-queue    | n.a.           | 6379             | 6379                  |
 
 ```mermaid
 graph RL
@@ -29,10 +32,11 @@ graph RL
     subgraph Application
         afe[Emotion recognition front-end<br/>- HTML/CSS/JS] --> abe[Emotion recognition back-end<br/>- Python/Flask];
     end
-    abe --> tapi[Training service API<br/>- Python/Flask<br/>- TalosML/Tensorflow];
+    abe --> tapi[Training service API<br/>- Python/Flask];
     abe --> srv[Serving_api service<br/>- Python/Flask];
     subgraph Services
-        tapi --> twork[Training service worker<br/>- Python];
+        tapi --> mq[Redis message queue];
+        mq --> twork[Training service worker<br/>- Python];
         twork --> mlf[Tracking<br/>- MLFlow];
         srv --> mlf;
         mlf --> db[Database<br/>- SQLite];
@@ -68,6 +72,8 @@ To run the GPU enabled version of CHIMP use the "gpu" profile as follows: `docke
 run the external services, such as MLFlow and RabbitMQ (e.g. when running the Python code directly on the host), use the "services" profile as
 follows: `docker-compose --profile services up -d`. Please note that the `--profile <PROFILE_NAME>` should come before any
 further commands, such as `up -d`. On some setups, to use the default profile (denoted by an empty string, or ''), it should be explicitly included in the call, for example: `docker-compose --profile '' up -d`.
+
+To monitor and work with the Redis message queue during development, a tool like "Another Redis Desktop Manager" can be used.
 
 ### Local development setup (on host outside of Docker)
 To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
