@@ -138,3 +138,6 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
 
 ## Security notes
 - If you host CHIMP in a publicly available manner, ensure that you replace the preconfigured datastore key and secret with your own key and secret.
+
+## FAQ
+> **TBD:** Frequently asked questions will be added soon as questions are asked by the community ([Questions](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/.github/CONTRIBUTING.md#questions)).
