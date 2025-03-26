@@ -221,3 +221,5 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
 5. Once training is complete, visit the MLFlow service website to view the new model and publish it if needed.
 
 
+## FAQ
+> **TBD:** Frequently asked questions will be added soon as questions are asked by the community ([Questions](https://github.com/Research-Center-Data-Intelligence/CHIMP/blob/contribution-guide/.github/CONTRIBUTING.md#questions)).
