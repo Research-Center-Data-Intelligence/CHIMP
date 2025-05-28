@@ -8,13 +8,13 @@
     </script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg" alt="Logo">
-            <span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is built to demonstrate its functionalities.">
-                Kalibratie session CHIMP
-            </span>
-        </div>
+        <div class="container">
+            <div class="header">
+                <img class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg" alt="Logo">
+                <span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is built to demonstrate its functionalities.">
+                    Kalibratie session CHIMP
+                </span>
+            </div>
         
         <div class="banner"></div>
         
@@ -22,6 +22,7 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/kali">Kalibratie lijst</a></li>
+                <li><a href="/unlabeled">Unlabeled Data</a></li>
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
             </ul>
         </div>
@@ -40,10 +41,11 @@
                 <div class="data-container">
                     <table class="data-table">
                         <button id="startButton"><i class="fas fa-play"></i> Start Recording</button>
+                        <button id="poolButton"><i class="fas fa-play"></i> Unlabeled Data</button>
                         <button id="stopButton" disabled><i class="fas fa-stop"></i> Stop Recording</button>
                         <button id="pauseButton" disabled><i class="fas fa-pause"></i> Pause Recording</button>
                         <button id="resumeButton" disabled><i class="fas fa-play"></i> Resume Recording</button>
-                        <button id="saveButton" disabled><i class="fas fa-save"></i> Upload Recording</button>
+                        <button id="saveButton" disabled><i class="fas fa-save"></i> Save Recording</button>
                     </table>
                     
                     <table>
@@ -72,8 +74,8 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-        <script src="../static/js/config.js" defer></script>
-        <script src="../static/js/kali.js" defer></script>
+        <script src="../static/js/config.js"></script>
+        <script src="../static/js/kali.js"></script>
         <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
         <link rel="stylesheet" href="../static/css/kali.css">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='../static/css/kali.css') }}">

@@ -484,8 +484,8 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             "dbname": self._db_name,
             "user": self._db_user,
             "password": self._db_password,
-            #"host": self._database_uri,  # Use the Docker host's IP if not running locally
-            "host": "localhost",  
+            "host": self._database_uri,  # Use the Docker host's IP if not running locally
+            #"host": "localhost",  
             "port": "5432"
         }
         self._db_conn = psycopg2.connect(**self._db_config)
@@ -591,27 +591,29 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             save_path = None
 
         return save_path
-
+    
+    # Updated: added `bucket` argument to allow loading from different MinIO buckets.
     def load_folder_to_filesystem(
-        self, folder_path: str, save_path: str
-    ) -> Optional[str]:
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        objects = self._client.list_objects(
-            "datasets", prefix=folder_path, recursive=True
-        )
-        files_found = False
-        for obj in objects:
-            files_found = True
-            relative_path = os.path.relpath(obj.object_name, folder_path)
-            local_file_path = os.path.join(save_path, relative_path)
-            local_file_dir = os.path.dirname(local_file_path)
+            self, folder_path: str, save_path: str, bucket: str = "datasets"
+        ) -> Optional[str]:
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+            objects = self._client.list_objects(
+                bucket, prefix=folder_path, recursive=True
+            )
+            files_found = False
+            for obj in objects:
+                files_found = True
+                relative_path = os.path.relpath(obj.object_name, folder_path)
+                local_file_path = os.path.join(save_path, relative_path)
+                local_file_dir = os.path.dirname(local_file_path)
 
-            if not os.path.exists(local_file_dir):
-                os.makedirs(local_file_dir)
+                if not os.path.exists(local_file_dir):
+                    os.makedirs(local_file_dir)
 
-            self._client.fget_object("datasets", obj.object_name, local_file_path)
-        return save_path if files_found else None
+                self._client.fget_object(bucket, obj.object_name, local_file_path)
+            return save_path if files_found else None
+
 
     def load_folder_to_memory(self, folder_path: str) -> Optional[Dict[str, BytesIO]]:
         directory_contents = {}
