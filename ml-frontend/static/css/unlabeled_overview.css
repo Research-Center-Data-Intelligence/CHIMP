@@ -1,0 +1,104 @@
+.header {
+    position: relative;
+    background-color: hsl(352, 89%, 47%);
+    color: hsl(0, 0%, 95%);
+    font-size: 1.35rem;
+    line-height: 8.5vh;
+    text-align: center;
+    grid-area: header;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .5);
+}
+
+.header-logo {
+    display: block;
+    position: absolute;
+    background-color: hsl(0, 0%, 95%);
+    padding: 1rem .8rem .7rem 1rem;
+    box-sizing: border-box;
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: 0 0 1rem 1.1rem hsla(0, 0%, 95%, 100%);
+}
+
+.banner {
+    visibility: hidden;
+    background-color: hsl(60, 80%, 85%);
+    grid-area: banner;
+    box-shadow: 0 0 5px rgba(0, 0, 0, .5);
+}
+
+
+body {
+  font-family: sans-serif;
+  margin: 2rem;
+  background: #f9f9f9;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.table-container {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.responsive-table th,
+.responsive-table td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+  .responsive-table thead {
+    display: none;
+  }
+
+  .responsive-table tr {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .responsive-table td {
+    display: block;
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .responsive-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 50%;
+    padding-left: 1rem;
+    font-weight: bold;
+    text-align: left;
+  }
+}
+
+.progress {
+  background-color: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background-color: #4CAF50;
+  color: white;
+  padding: 2px 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
