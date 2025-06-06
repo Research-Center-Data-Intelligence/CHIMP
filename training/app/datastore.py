@@ -11,6 +11,7 @@ import zipfile
 from werkzeug.utils import secure_filename
 import json
 import psycopg2
+import datetime
 
 
 '''
@@ -527,6 +528,38 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         )'''
     
 
+    def store_labeling_task(
+        self,
+        dataset_id: str,
+        total_images: int,
+        labeled_percentage: float,
+        status: str,
+        selection: List[str]
+    ):
+        query = """
+            INSERT INTO labeling_tasks (
+                dataset_id,
+                total_images,
+                labeled_percentage,
+                status,
+                selection
+            ) VALUES (%s, %s, %s, %s, %s)
+        """
+        values = (
+            dataset_id,
+            total_images,
+            labeled_percentage,
+            status,
+            json.dumps(selection)
+        )
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(query, values)
+        self._db_conn.commit()
+
+        print(f"[INFO] Labeling task '{dataset_id}' saved in PostgreSQL.")
+
+
     def store_object(
         self, target_path: str, x: BytesIO, y: str, metadata: dict, file_name: str
     ):
@@ -627,3 +660,42 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             response.close()
             response.release_conn()
         return directory_contents if directory_contents else None
+    
+
+    def get_training_data_from_redis(self, redis_client, queue_name="labeled_image_queue") -> List[Dict]:
+        """Combines Redis info with PostgreSQL records and MinIO paths for training."""
+
+        items = redis_client.lrange(queue_name, 0, -1)
+        datapoint_ids = []
+        for item in items:
+            try:
+                parsed = json.loads(item)
+                datapoint_ids.append(parsed["datapoint_id"])
+            except json.JSONDecodeError:
+                continue
+
+        if not datapoint_ids:
+            return []
+
+        format_ids = ','.join(['%s'] * len(datapoint_ids))
+        query = f"""
+            SELECT id, x, y, metadata
+            FROM datapoints
+            WHERE id IN ({format_ids})
+        """
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(query, datapoint_ids)
+            results = cursor.fetchall()
+
+        output = []
+        for row in results:
+            output.append({
+                "id": row[0],
+                "x": row[1],  
+                "y": row[2],  
+                "metadata": json.loads(row[3])
+            })
+
+        return output
+

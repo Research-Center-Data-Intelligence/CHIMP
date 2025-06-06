@@ -4,13 +4,13 @@ async function loadTableData() {
     console.log("Fetched response:", response);
     const result = await response.json();
     console.log("Parsed JSON result:", result);
-    const data = result; 
+    const data = result;
 
     const tbody = document.querySelector("tbody");
     console.log("Selected tbody:", tbody);
     tbody.innerHTML = "";
 
-    data.sort((a, b) => new Date(b.received) - new Date(a.received));
+    data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     console.log("Sorted data:", data);
 
     for (const row of data) {
@@ -25,7 +25,7 @@ async function loadTableData() {
                     <div class="progress-bar" style="width: ${row.labeled_percentage}%;">${row.labeled_percentage}%</div>
                 </div>
             </td>`;
-        const timestampTd = `<td data-label="Received">${row.received}</td>`;
+        const timestampTd = `<td data-label="Received">${row.timestamp}</td>`;
 
         tr.innerHTML = userTd + totalTd + progressTd + timestampTd;
 
