@@ -222,6 +222,13 @@ def _upload_managed_pool_data(data):
 
 
 def _upload_managed_pool_data(data):
+    """
+    Handles the upload of 'pool' video blobs (unlabeled data) to the managed dataset storage.
+    - Extracts faces from video frames using OpenCV.
+    - Stores each detected face as a PNG image in a zip archive, labeled as 'unlabeled'.
+    - Uploads the zip archive and associated metadata to the datastore.
+    - Triggers the Active Learning plugin for further processing of the pool dataset.
+    """
     # Log the start of processing pool video blobs for upload
     print("Processing pool video blobs for upload to managed dataset")
 
@@ -232,7 +239,7 @@ def _upload_managed_pool_data(data):
     # Prepare URLs and experiment name from environment variables
     TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
     upload_url = f"{TRAINING_SERVER_URL}/managed_datasets"
-    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning"
+    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning" # Active Learning plugin in de backend triggeren!!!
     EXPERIMENT_NAME = environ.get("EXPERIMENT_NAME")
 
     # Extract user and video data from input

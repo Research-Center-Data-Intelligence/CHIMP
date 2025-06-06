@@ -9,6 +9,9 @@ from werkzeug.utils import secure_filename
 from app.endpoints.dataset_endpoints import upload_dataset
 from app.plugin import PluginLoader
 from app.worker import WorkerManager
+#from redis import Redis
+
+
 
 
 bp = Blueprint("training", __name__)
