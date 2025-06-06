@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Label Unlabeled Data</title>
+  <link rel="stylesheet" href="/static/css/label.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/css/splide.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4/dist/js/splide.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img class="header-logo" src="/static/images/Logo-ZUYD-Data-Intelligence.svg" alt="Logo">
+      <span title="Original credit to Dwayne Debets, Roald Janssen, Bryan Kroon and Gavin Melis for creating emotion recognition model and the frontend upon which CHIMP is built to demonstrate its functionalities.">
+        Label Unlabeled Data
+      </span>
+    </div>
+
+    <div class="banner"></div>
+
+    <div class="navigation">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/kali">Kalibratie lijst</a></li>
+        <li><a href="/logout">Logout</a></li>
+      </ul>
+    </div>
+
+    <div class="image-labeling">
+      <div class="title">Label Images</div>
+
+      <div class="splide" id="imageCarousel">
+        <div class="splide__track">
+          <ul class="splide__list" id="carouselList"></ul>
+        </div>
+      </div>
+
+      <div class="button-panel">
+        <button class="emotionButton" data-emotion="Angry">😡 Angry</button>
+        <button class="emotionButton" data-emotion="Disgust">🤮 Disgust</button>
+        <button class="emotionButton" data-emotion="Fear">😨 Fear</button>
+        <button class="emotionButton" data-emotion="Happy">😊 Happy</button>
+        <button class="emotionButton" data-emotion="Neutral">😐 Neutral</button>
+        <button class="emotionButton" data-emotion="Sad">😢 Sad</button>
+        <button class="emotionButton" data-emotion="Surprise">😲 Surprise</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.datasetId = "{{ dataset_id }}";
+  </script>
+
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="../static/js/config.js"></script>
+  <script src="/static/js/label.js"></script>
+
+</body>
+</html>

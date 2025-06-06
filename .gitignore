@@ -26,6 +26,7 @@ training/app/plugins/*
 !training/app/plugins/example2.py
 !training/app/plugins/game_art_style_detector
 !training/app/plugins/emotion_recognition
+!training/app/plugins/active_learning
 training/datasets/*
 
 ### Generic ignores

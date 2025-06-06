@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from app.endpoints.dataset_endpoints import upload_dataset
 from app.plugin import PluginLoader
 from app.worker import WorkerManager
-from redis import Redis
+#from redis import Redis
 
 
 
@@ -129,9 +129,10 @@ def poll(task_id: str):
         abort(404)
     return task_info.as_dict()
 
+
+"""
 @bp.route("/labeling_tasks")
 def get_labeling_tasks():
-    """Haal alle openstaande labeling taken op uit Redis."""
     print("Connecting to Redis...")
     redis_client = Redis(host="message-queue", port=6379, decode_responses=True)
 
@@ -162,6 +163,7 @@ def get_labeling_tasks():
 
     print(f"Returning tasks: {tasks}")
     return {"tasks": tasks}
+"""
 
 
 

@@ -270,6 +270,46 @@ services:
             - ''
             - 'gpu'
             - 'services'
+        
+        
+    training-beat:
+        container_name: training-beat
+        build:
+            context: ./training
+            dockerfile: Dockerfile.worker
+        entrypoint: [""]
+        command: >
+          sh -c "celery -A manage:celery_app worker --loglevel=info & 
+                 celery -A manage:celery_app beat --loglevel=info"
+        volumes:
+            - ./training:/usr/src/app
+        environment:
+            - CELERY_BROKER_URL=redis://message-queue:6379
+            - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - DATASTORE_URI=datastore:9000
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
+            - TRACKING_URI=http://monitoring-server:8999
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
+        depends_on:
+            message-queue:
+                condition: service_started
+            training-api:
+                condition: service_started
+            datastore:
+                condition: service_started
+        networks:
+            - backend-network
+        profiles:
+            - ''
+            - 'gpu'
+            - 'worker-only'
+
+
+
 
 networks:
     public-network:

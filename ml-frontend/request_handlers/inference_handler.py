@@ -10,12 +10,15 @@ import re
 from PIL import Image
 
 from flask_socketio import SocketIO, emit
-from flask import request
+from flask import request, jsonify
 from datetime import datetime
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 from logic.image_processor import ImageProcessor
 from io import BytesIO
+#import psycopg2
+
+
 
 import imageio.v3 as iio
 
@@ -63,7 +66,7 @@ def _upload_managed_calibration_data(data):
 
     TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
     upload_url = f"{TRAINING_SERVER_URL}/managed_datasets"
-
+ 
     user_id = data.get("user_id") or request.sid
     username = data["username"]
     video_blobs = data["image_blobs"]
@@ -136,6 +139,13 @@ def _upload_managed_calibration_data(data):
 
 
 def _upload_managed_pool_data(data):
+    """
+    Handles the upload of 'pool' video blobs (unlabeled data) to the managed dataset storage.
+    - Extracts faces from video frames using OpenCV.
+    - Stores each detected face as a PNG image in a zip archive, labeled as 'unlabeled'.
+    - Uploads the zip archive and associated metadata to the datastore.
+    - Triggers the Active Learning plugin for further processing of the pool dataset.
+    """
     # Log the start of processing pool video blobs for upload
     print("Processing pool video blobs for upload to managed dataset")
 
@@ -146,7 +156,7 @@ def _upload_managed_pool_data(data):
     # Prepare URLs and experiment name from environment variables
     TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
     upload_url = f"{TRAINING_SERVER_URL}/managed_datasets"
-    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning"
+    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning" # Active Learning plugin in de backend triggeren!!!
     EXPERIMENT_NAME = environ.get("EXPERIMENT_NAME")
 
     # Extract user and video data from input
@@ -233,7 +243,7 @@ def _upload_managed_pool_data(data):
     form = {
         "experiment_name": EXPERIMENT_NAME,
         "pool_dataset": dataset_name,
-        "query_size": str(32)  # Number of samples to query, can be made configurable
+        "query_size": str(100)  # Number of samples to query, can be made configurable
     }
 
     print(f"[TASK] Triggering Active Learning plugin for dataset '{dataset_name}'...")
@@ -335,6 +345,55 @@ def _process_video(data):
     print(response.json())
     return response.json(), response.status_code
 
+
+def _label_image(data):
+    """
+    Handles image labeling events received via Socket.
+    Receives dataset name, filename, and emotion label from the client,
+    sends a labeling request to the backend, and emits a response back to the client.
+    """
+    # Log the receipt of a labeling event via Socket.IO
+    print("[INFO] Received labeling event via Socket.IO:", data)
+
+    try:
+        # Extract required fields from the incoming data
+        dataset_id = data["dataset_name"]
+        filename = data["filename"]
+        label = data["emotion"]
+
+        # Check that all required fields are present
+        if not all([dataset_id, filename, label]):
+            emit("label_image_response", {"error": "Missing field(s)"}, room=request.sid)
+            return
+
+        # Prepare the URL for the backend labeling endpoint
+        TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
+        url = f"{TRAINING_SERVER_URL}/label_image"
+
+        # Prepare the form data for the POST request
+        form = {
+            "dataset_name": dataset_id,
+            "filename": filename,
+            "emotion": label
+        }
+
+        # Send the labeling request to the backend
+        response = requests.post(url, data=form)
+        response_data = response.json()
+
+        # Emit a response back to the client based on the backend response
+        if response.status_code == 200:
+            emit("label_image_response", {"status": "ok", "filename": filename}, room=request.sid)
+        else:
+            emit("label_image_response", {"error": response_data.get("error", "Unknown error")}, room=request.sid)
+
+    except Exception as e:
+        # Handle and log any exceptions that occur
+        print("[ERROR] during _label_image:", str(e))
+        emit("label_image_response", {"error": str(e)}, room=request.sid)
+
+
+
 def _train():
     PLUGIN_NAME="Emotion+Recognition"
     
@@ -384,14 +443,17 @@ def _calibrate():
 
 
 def add_as_websocket_handler(socket_io: SocketIO, app):
-    global _on_connect, _on_disconnect, _process_image, _process_video, _upload_managed_calibration_data, _upload_managed_pool_data
+    global _on_connect, _on_disconnect, _process_image, _process_video, _upload_managed_calibration_data, _upload_managed_pool_data, _label_image
 
     _on_connect = socket_io.on('connect')(_on_connect)
     _on_disconnect = socket_io.on('disconnect')(_on_disconnect)
     _process_video = socket_io.on('process-video')(_process_video)
     _process_image = socket_io.on('process-image')(_process_image)
+    _label_image = socket_io.on('label_image')(_label_image)
     _upload_managed_calibration_data = socket_io.on('upload_managed_calibration_data')(_upload_managed_calibration_data)
     _upload_managed_pool_data = socket_io.on('upload_managed_pool_data')(_upload_managed_pool_data)
+    
+
 
     app.route('/train', methods=['POST'])(_train)
     app.route('/calibrate', methods=['POST'])(_calibrate)
