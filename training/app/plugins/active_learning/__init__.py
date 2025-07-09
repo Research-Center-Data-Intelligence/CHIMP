@@ -66,7 +66,7 @@ class ActiveLearningPlugin(BasePlugin):
         with open(os.path.join(os.path.dirname(__file__), "config.json")) as f:
             self.config = json.load(f)
 
-        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="manageddataset")
+        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="datasets")
         pool_dir = temp_dir
 
         model_dir = self._connector.get_artifact(
@@ -117,7 +117,7 @@ class ActiveLearningPlugin(BasePlugin):
         self._datastore.store_labeling_task(
             dataset_id=dataset_name,
             total_images=len(selection_data["selected_filenames"]),
-            labeled_percentage=0.0,
+            num_labeled=0,
             status="pending",
             selection=selection_data["selected_filenames"]
         )

@@ -132,6 +132,12 @@ class EmotionRecognitionPlugin(BasePlugin):
 
         onnx_model, _ = tf2onnx.convert.from_keras(tf_model, input_sig, opset=13)
 
+        print("Registering model...")
+        print("Experiment:", kwargs["experiment_name"])
+        print("Model name:", kwargs["experiment_name"])
+        print("ONNX model type:", type(onnx_model))
+
+
         metrics = {
             k: v[0]
             for k, v in history.history.items()

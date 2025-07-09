@@ -23,9 +23,20 @@
       <ul>
         <li><a href="/">Home</a></li>
         <li><a href="/kali">Kalibratie lijst</a></li>
+        <li><a href="/unlabeled">Label Unlabeled Data</a></li>
         <li><a href="/logout">Logout</a></li>
       </ul>
     </div>
+
+    <div class="progress-container">
+      <div class="progress-label">
+        Gelabeld: <span id="labeledCount">0</span> / <span id="totalCount">0</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="labelProgress"></div>
+      </div>
+    </div>
+    
 
     <div class="image-labeling">
       <div class="title">Label Images</div>

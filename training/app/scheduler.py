@@ -159,6 +159,9 @@ def upload_curated_dataset(dataset_name, items):
                 x, y_label, meta = result
                 filename = item["filename"]
 
+                if x.startswith("https://datastore"):
+                     x = x.replace("https://datastore", "http://datastore", 1)
+
                 # Download the image from the URL and add it to the ZIP file
                 response = requests.get(x)
                 response.raise_for_status()

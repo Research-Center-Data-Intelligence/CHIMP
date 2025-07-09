@@ -490,7 +490,37 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             "port": "5432"
         }
         self._db_conn = psycopg2.connect(**self._db_config)
+        self._create_tables_if_not_exist() 
         # self._db_cursor = conn.cursor() #initialize / open when the SQL queries are excecuted?
+
+    def _create_tables_if_not_exist(self):
+        create_datapoints = """
+        CREATE TABLE IF NOT EXISTS datapoints (
+            id SERIAL PRIMARY KEY,
+            x TEXT NOT NULL,
+            y TEXT,
+            metadata JSONB
+        );
+        """
+
+        create_labeling_tasks = """
+        CREATE TABLE IF NOT EXISTS labeling_tasks (
+            id SERIAL PRIMARY KEY,
+            dataset_id TEXT NOT NULL,
+            total_images INTEGER,
+            num_labeled INTEGER,
+            status TEXT,
+            selection JSONB
+        );
+        """
+
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(create_datapoints)
+            cursor.execute(create_labeling_tasks)
+        self._db_conn.commit()
+
+        print("[INFO] Database tables ensured.")
 
     def list_from_datastore(
         self, target_path: str, recursive: bool = True
@@ -529,10 +559,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
     
 
     def store_labeling_task(
-        self,
+        self, 
         dataset_id: str,
         total_images: int,
-        labeled_percentage: float,
+        num_labeled: int,
         status: str,
         selection: List[str]
     ):
@@ -540,7 +570,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             INSERT INTO labeling_tasks (
                 dataset_id,
                 total_images,
-                labeled_percentage,
+                num_labeled,
                 status,
                 selection
             ) VALUES (%s, %s, %s, %s, %s)
@@ -548,7 +578,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         values = (
             dataset_id,
             total_images,
-            labeled_percentage,
+            num_labeled,
             status,
             json.dumps(selection)
         )
@@ -557,7 +587,8 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             cursor.execute(query, values)
         self._db_conn.commit()
 
-        print(f"[INFO] Labeling task '{dataset_id}' saved in PostgreSQL.")
+        print(f"[INFO] Labeling task '{dataset_id}' with {num_labeled} labeled items saved in PostgreSQL.")
+
 
 
     def store_object(
@@ -587,10 +618,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         object_name = secure_filename(file_name)  # Ensure safe file name
         minio_target_path = os.path.join(target_path, object_name)
         minio_target_path = minio_target_path.replace("\\", "/") # WINDOWS OS FIX
-        result = self._client.put_object('manageddataset', minio_target_path, x, length=len(x.getbuffer()))
+        result = self._client.put_object('datasets', minio_target_path, x, length=len(x.getbuffer()))
 
         #MV TODO: store datastore type in postgres
-        ourl= f"https://{self._datastore_uri}/{'manageddataset'}/{minio_target_path}"
+        ourl= f"https://{self._datastore_uri}/{'datasets'}/{minio_target_path}"
 
         data = (ourl, y, json.dumps(metadata))
         with self._db_conn.cursor() as cursor:
