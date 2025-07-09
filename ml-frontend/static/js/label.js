@@ -8,6 +8,7 @@ socket.on('disconnect', () => console.log('Terminated SocketIO connection.'));
 
 let imageData = [];
 let splide = null;
+let totalImages = 0;
 
 async function loadImages() {
   console.log("Loading images for dataset:", datasetName);
@@ -26,6 +27,11 @@ async function loadImages() {
     const base64 = hexToBase64(hexData);
     return { filename, data: base64 };
   });
+
+  totalImages = json.total_images;
+  const initialLabeled = json.num_labeled;
+
+  updateProgress(initialLabeled, totalImages);
 
   console.log("Loaded and converted image data:", imageData);
 
@@ -97,9 +103,9 @@ function setupButtons() {
 
   socket.on("label_image_response", (response) => {
     if (response.error) {
-      alert("Fout bij labelen: " + response.error);
+      alert("Error labeling image: " + response.error);
     } else {
-      console.log("Succesvol gelabeld:", response.filename);
+      console.log("Successfully labeled:", response.filename);
       labeledData.push({
         filename: response.filename,
         emotion: response.emotion
@@ -107,23 +113,33 @@ function setupButtons() {
 
       const index = imageData.findIndex(item => item.filename === response.filename);
       if (index !== -1) {
-        // Verwijder uit Splide en imageData
         splide.remove(index);
         imageData.splice(index, 1);
 
-        if (splide.length === 0) {
-          alert("Alle afbeeldingen zijn gelabeld!");
-          document.querySelector("#imageCarousel").style.display = "none";
+        const currentLabeled = labeledData.length;
+        updateProgress(currentLabeled, totalImages);
+
+        if (imageData.length === 0) {
+          setTimeout(() => {
+            window.location.href = "/unlabeled";  
+          }, 500); 
         } else {
           splide.go(">");
         }
 
-        console.log(`Voortgang: ${labeledData.length} / ${labeledData.length + imageData.length}`);
+        console.log(`Progress: ${currentLabeled} / ${totalImages}`);
       } else {
-        console.warn("Kon afbeelding niet vinden in imageData");
+        console.warn("Could not find image in imageData");
       }
     }
   });
+}
+
+function updateProgress(labeledCount, total) {
+  const percent = total === 0 ? 0 : Math.round((labeledCount / total) * 100);
+  document.getElementById("labeledCount").textContent = labeledCount;
+  document.getElementById("totalCount").textContent = total;
+  document.getElementById("labelProgress").style.width = percent + "%";
 }
 
 window.onload = async () => {

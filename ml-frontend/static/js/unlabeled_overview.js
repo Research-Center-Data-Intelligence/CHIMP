@@ -1,3 +1,11 @@
+function parseCustomTimestamp(ts) {
+    const parts = ts.split("-");
+    if (parts.length < 6) return new Date(""); 
+
+    const [year, month, day, hour, minute, second] = parts;
+    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+}
+
 async function loadTableData() {
     console.log("JavaScript werkt! loadTableData() wordt aangeroepen.");
     const response = await fetch("/api/labeling_tasks");
@@ -10,7 +18,7 @@ async function loadTableData() {
     console.log("Selected tbody:", tbody);
     tbody.innerHTML = "";
 
-    data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    data.sort((a, b) => parseCustomTimestamp(b.timestamp) - parseCustomTimestamp(a.timestamp));
     console.log("Sorted data:", data);
 
     for (const row of data) {
@@ -19,13 +27,27 @@ async function loadTableData() {
 
         const userTd = `<td data-label="User">${row.user}</td>`;
         const totalTd = `<td data-label="Total Images">${row.total_images}</td>`;
+        const labeledPercentage = Math.round((row.num_labeled / row.total_images) * 100);
+
         const progressTd = `
             <td data-label="Labeled %">
                 <div class="progress">
-                    <div class="progress-bar" style="width: ${row.labeled_percentage}%;">${row.labeled_percentage}%</div>
+                    <div class="progress-bar" style="width: ${labeledPercentage}%;">${labeledPercentage}%</div>
                 </div>
             </td>`;
-        const timestampTd = `<td data-label="Received">${row.timestamp}</td>`;
+
+        const date = parseCustomTimestamp(row.timestamp);
+        const formattedDate = isNaN(date)
+            ? "Onbekend"
+            : date.toLocaleString("nl-NL", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        const timestampTd = `<td data-label="Received">${formattedDate}</td>`;
+        console.log("Raw timestamp:", row.timestamp, "| Parsed:", date);
 
         tr.innerHTML = userTd + totalTd + progressTd + timestampTd;
 
