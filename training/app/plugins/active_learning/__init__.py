@@ -67,7 +67,7 @@ class ActiveLearningPlugin(BasePlugin):
         with open(os.path.join(os.path.dirname(__file__), "config.json")) as f:
             self.config = json.load(f)
 
-        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="manageddataset")
+        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="datasets")
         pool_dir = temp_dir
 
         model_dir = self._connector.get_artifact(

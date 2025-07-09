@@ -495,6 +495,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         }
         self._db_conn = psycopg2.connect(**self._db_config)
         self._create_tables_if_not_exist() 
+        self._create_tables_if_not_exist() 
         # self._db_cursor = conn.cursor() #initialize / open when the SQL queries are excecuted?
 
     def _create_tables_if_not_exist(self):

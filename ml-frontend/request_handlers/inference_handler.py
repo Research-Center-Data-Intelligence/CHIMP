@@ -222,27 +222,16 @@ def _upload_managed_pool_data(data):
 
 
 def _upload_managed_pool_data(data):
-    """
-    Handles the upload of 'pool' video blobs (unlabeled data) to the managed dataset storage.
-    - Extracts faces from video frames using OpenCV.
-    - Stores each detected face as a PNG image in a zip archive, labeled as 'unlabeled'.
-    - Uploads the zip archive and associated metadata to the datastore.
-    - Triggers the Active Learning plugin for further processing of the pool dataset.
-    """
-    # Log the start of processing pool video blobs for upload
     print("Processing pool video blobs for upload to managed dataset")
 
-    # Load the face detection cascade
     cascade_path = os.path.join(os.getcwd(), 'static', 'cascades', 'frontalface_default_haarcascade.xml')
     face_cascade = cv2.CascadeClassifier(cascade_path)
 
-    # Prepare URLs and experiment name from environment variables
     TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
     upload_url = f"{TRAINING_SERVER_URL}/managed_datasets"
-    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning" # Active Learning plugin in de backend triggeren!!!
+    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning"
     EXPERIMENT_NAME = environ.get("EXPERIMENT_NAME")
 
-    # Extract user and video data from input
     user_id = data.get("user_id") or request.sid
     username = data["username"]
     video_blobs = data["image_blobs"]
@@ -252,46 +241,41 @@ def _upload_managed_pool_data(data):
     metadata = []
     zip_buffer = BytesIO()
 
-    # Create a sanitized dataset name
+    
     timestamp_group = sanitize_timestamp(datetime.now().isoformat())
     dataset_name = re.sub(r'[<>:"/\\|?*]', '', f"pool_{username}_{timestamp_group}_{user_id}")
 
-    # Process each video blob and extract faces
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for video_blob, timestamp in zip(video_blobs, timestamps):
-            sanitized_ts = sanitize_timestamp(timestamp)
+        for video_blob, raw_timestamp in zip(video_blobs, timestamps):
+            
+            sanitized_ts = sanitize_timestamp(raw_timestamp)  
             video_stream = BytesIO(video_blob)
             video_array = iio.imread(video_stream, plugin="pyav")
 
             for i, frame in enumerate(video_array):
-                # Convert frame to grayscale and detect faces
                 gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY)
                 faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-                # Only process frames with exactly one detected face
                 if len(faces) != 1:
                     continue
 
                 for (x, y, w, h) in faces:
-                    # Crop and resize the face region
                     face_img = cv2.resize(gray[y:y + h, x:x + w], (96, 96))
                     img_pil = Image.fromarray(face_img)
                     img_buffer = BytesIO()
                     img_pil.save(img_buffer, format="PNG")
                     img_buffer.seek(0)
 
-                    # Define the filename and zip path
                     filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
                     zip_path = os.path.join("pool", "unlabeled", filename).replace("\\", "/")
                     zipf.writestr(zip_path, img_buffer.getvalue())
 
-                    # Add label and metadata for this image
                     labels.append("unlabeled")
                     metadata.append({
                         "exp": "emotion_recognition",
                         "user": username,
                         "userid": user_id,
-                        "timestamp": sanitized_ts,
+                        "timestamp": raw_timestamp,  
                         "filename": filename,
                         "type": "pool"
                     })
@@ -340,6 +324,7 @@ def _upload_managed_pool_data(data):
         "plugin_response": task_json
     }, 200
 '''
+
 
 
 def _process_video(data):
