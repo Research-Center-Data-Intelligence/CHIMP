@@ -248,6 +248,7 @@ def get_labeling_tasks():
     except Exception as e:
         print("[ERROR] Error while fetching labeling_tasks:", e)
         return {"tasks": []}, 500
+    
 @bp.route("/labeling_task_data/<dataset_id>", methods=["GET"])
 def get_labeling_task_data(dataset_id):
     try:

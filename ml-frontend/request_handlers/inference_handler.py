@@ -54,6 +54,7 @@ def _process_image(data):
     return img_processor.get_image_blob()
 
 
+
 def sanitize_timestamp(timestamp):
     return timestamp.replace("T", "_").replace(":", "-").replace(".", "-")
 
@@ -137,7 +138,111 @@ def _upload_managed_calibration_data(data):
     print(f"[SUCCESS] Uploaded dataset '{dataset_name}' successfully.")
     return response_data, response.status_code
 
+def _upload_managed_pool_data(data):
+    print("Processing pool video blobs for upload to managed dataset")
 
+    cascade_path = os.path.join(os.getcwd(), 'static', 'cascades', 'frontalface_default_haarcascade.xml')
+    face_cascade = cv2.CascadeClassifier(cascade_path)
+
+    TRAINING_SERVER_URL = environ.get("TRAINING_SERVER_URL")
+    upload_url = f"{TRAINING_SERVER_URL}/managed_datasets"
+    plugin_url = f"{TRAINING_SERVER_URL}/tasks/run/Active+Learning"
+    EXPERIMENT_NAME = environ.get("EXPERIMENT_NAME")
+
+    user_id = data.get("user_id") or request.sid
+    username = data["username"]
+    video_blobs = data["image_blobs"]
+    timestamps = data["timestamps"]
+
+    labels = []
+    metadata = []
+    zip_buffer = BytesIO()
+
+    
+    timestamp_group = sanitize_timestamp(datetime.now().isoformat())
+    dataset_name = re.sub(r'[<>:"/\\|?*]', '', f"pool_{username}_{timestamp_group}_{user_id}")
+
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for video_blob, raw_timestamp in zip(video_blobs, timestamps):
+            
+            sanitized_ts = sanitize_timestamp(raw_timestamp)  
+            video_stream = BytesIO(video_blob)
+            video_array = iio.imread(video_stream, plugin="pyav")
+
+            for i, frame in enumerate(video_array):
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+                faces = face_cascade.detectMultiScale(cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2GRAY), 1.3, 5)
+
+                if len(faces) != 1:
+                    continue
+
+                for (x, y, w, h) in faces:
+                    face_img = cv2.resize(rgb_frame[y:y + h, x:x + w], (96, 96))  # shape (96,96,3)
+                    img_pil = Image.fromarray(face_img)  # RGB image
+                    img_buffer = BytesIO()
+                    img_pil.save(img_buffer, format="PNG")
+                    img_buffer.seek(0)
+
+                    filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
+                    zip_path = os.path.join("pool", "unlabeled", filename).replace("\\", "/")
+                    zipf.writestr(zip_path, img_buffer.getvalue())
+
+                    labels.append("unlabeled")
+                    metadata.append({
+                        "exp": "emotion_recognition",
+                        "user": username,
+                        "userid": user_id,
+                        "timestamp": raw_timestamp,
+                        "filename": filename,
+                        "type": "pool"
+                    })
+
+
+    zip_buffer.seek(0)
+
+    files = {
+        "file": (dataset_name + ".zip", zip_buffer.getvalue(), "application/zip"),
+        "dataset_name": (None, dataset_name),
+        "labels": (None, json.dumps(labels)),
+        "metadata": (None, json.dumps(metadata))
+    }
+
+    print(f"[INFO] Uploading POOL dataset '{dataset_name}' with {len(labels)} images...")
+    response = requests.post(upload_url, files=files)
+
+    try:
+        response_data = response.json()
+    except Exception:
+        response_data = {"error": "Invalid JSON response from server"}
+
+    if response.status_code != 200:
+        print("[ERROR]", response_data)
+        return response_data, response.status_code
+
+    print(f"[SUCCESS] Uploaded POOL dataset '{dataset_name}' successfully.")
+
+    form = {
+        "experiment_name": EXPERIMENT_NAME,
+        "pool_dataset": dataset_name,
+        "query_size": str(100)
+    }
+
+    print(f"[TASK] Triggering Active Learning plugin for dataset '{dataset_name}'...")
+    try:
+        task_response = requests.post(plugin_url, data=form)
+        task_json = task_response.json()
+        print(f"[TASK RESPONSE] Status {task_response.status_code} | Response: {task_json}")
+    except Exception as e:
+        print(f"[ERROR] Failed to trigger Active Learning plugin: {e}")
+        return {"error": f"Failed to trigger plugin: {str(e)}"}, 500
+
+    return {
+        "status": "Dataset uploaded and plugin triggered",
+        "upload_response": response_data,
+        "plugin_response": task_json
+    }, 200
+
+'''
 def _upload_managed_pool_data(data):
     print("Processing pool video blobs for upload to managed dataset")
 
@@ -183,6 +288,7 @@ def _upload_managed_pool_data(data):
                     img_pil.save(img_buffer, format="PNG")
                     img_buffer.seek(0)
 
+                    #filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
                     filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
                     zip_path = os.path.join("pool", "unlabeled", filename).replace("\\", "/")
                     zipf.writestr(zip_path, img_buffer.getvalue())
@@ -240,7 +346,7 @@ def _upload_managed_pool_data(data):
         "upload_response": response_data,
         "plugin_response": task_json
     }, 200
-
+'''
 
 
 def _process_video(data):
