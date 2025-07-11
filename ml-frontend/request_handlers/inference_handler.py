@@ -170,31 +170,33 @@ def _upload_managed_pool_data(data):
             video_array = iio.imread(video_stream, plugin="pyav")
 
             for i, frame in enumerate(video_array):
-                gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY)
-                faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+                faces = face_cascade.detectMultiScale(cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2GRAY), 1.3, 5)
 
                 if len(faces) != 1:
                     continue
 
                 for (x, y, w, h) in faces:
-                    face_img = cv2.resize(gray[y:y + h, x:x + w], (96, 96))
-                    img_pil = Image.fromarray(face_img)
+                    face_img = cv2.resize(rgb_frame[y:y + h, x:x + w], (96, 96))  # shape (96,96,3)
+                    img_pil = Image.fromarray(face_img)  # RGB image
                     img_buffer = BytesIO()
                     img_pil.save(img_buffer, format="PNG")
                     img_buffer.seek(0)
 
-                    filename = f"img_{emotion}_{sanitized_ts}_{i:04d}.png"
-                    zip_path = os.path.join("train", emotion, filename).replace("\\", "/")
+                    filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
+                    zip_path = os.path.join("pool", "unlabeled", filename).replace("\\", "/")
                     zipf.writestr(zip_path, img_buffer.getvalue())
 
-                    labels.append(emotion)
+                    labels.append("unlabeled")
                     metadata.append({
                         "exp": "emotion_recognition",
                         "user": username,
                         "userid": user_id,
-                        "timestamp": sanitized_ts,
-                        "filename": filename
+                        "timestamp": raw_timestamp,
+                        "filename": filename,
+                        "type": "pool"
                     })
+
 
     zip_buffer.seek(0)
 
@@ -205,7 +207,7 @@ def _upload_managed_pool_data(data):
         "metadata": (None, json.dumps(metadata))
     }
 
-    print(f"[INFO] Uploading dataset '{dataset_name}' with {len(labels)} images...")
+    print(f"[INFO] Uploading POOL dataset '{dataset_name}' with {len(labels)} images...")
     response = requests.post(upload_url, files=files)
 
     try:
@@ -217,10 +219,30 @@ def _upload_managed_pool_data(data):
         print("[ERROR]", response_data)
         return response_data, response.status_code
 
-    print(f"[SUCCESS] Uploaded dataset '{dataset_name}' successfully.")
-    return response_data, response.status_code
+    print(f"[SUCCESS] Uploaded POOL dataset '{dataset_name}' successfully.")
 
+    form = {
+        "experiment_name": EXPERIMENT_NAME,
+        "pool_dataset": dataset_name,
+        "query_size": str(100)
+    }
 
+    print(f"[TASK] Triggering Active Learning plugin for dataset '{dataset_name}'...")
+    try:
+        task_response = requests.post(plugin_url, data=form)
+        task_json = task_response.json()
+        print(f"[TASK RESPONSE] Status {task_response.status_code} | Response: {task_json}")
+    except Exception as e:
+        print(f"[ERROR] Failed to trigger Active Learning plugin: {e}")
+        return {"error": f"Failed to trigger plugin: {str(e)}"}, 500
+
+    return {
+        "status": "Dataset uploaded and plugin triggered",
+        "upload_response": response_data,
+        "plugin_response": task_json
+    }, 200
+
+'''
 def _upload_managed_pool_data(data):
     print("Processing pool video blobs for upload to managed dataset")
 
@@ -266,6 +288,7 @@ def _upload_managed_pool_data(data):
                     img_pil.save(img_buffer, format="PNG")
                     img_buffer.seek(0)
 
+                    #filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
                     filename = f"img_pool_{sanitized_ts}_{i:04d}.png"
                     zip_path = os.path.join("pool", "unlabeled", filename).replace("\\", "/")
                     zipf.writestr(zip_path, img_buffer.getvalue())
