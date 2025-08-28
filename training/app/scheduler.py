@@ -13,10 +13,6 @@ import psycopg2
 import os
 
 from celery import Celery
-import requests
-from minio.error import S3Error
-
-from app.datastore import ManagedMinioDatastore
 
 from app.extensions import datastore
 
