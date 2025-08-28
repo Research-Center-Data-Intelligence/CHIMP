@@ -55,6 +55,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -65,7 +67,7 @@ services:
             - DATABASE_NAME=chimp_database
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
             - postgres-db
@@ -89,6 +91,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -97,9 +101,10 @@ services:
             - DATABASE_USER=chimp_user
             - DATABASE_PASSWORD=chimp_password
             - DATABASE_NAME=chimp_database
+            - TRAINING_SERVER_URL=http://training-api:8000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets:ro
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
             - postgres-db
@@ -129,6 +134,8 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
@@ -137,9 +144,10 @@ services:
             - DATABASE_NAME=chimp_database
             - DATABASE_USER=chimp_user
             - DATABASE_PASSWORD=chimp_password
+            - TRAINING_SERVER_URL=http://training-api:8000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
             - postgres-db
@@ -279,13 +287,14 @@ services:
             dockerfile: Dockerfile.worker
         entrypoint: [""]
         command: >
-          sh -c "celery -A manage:celery_app worker --loglevel=info & 
-                 celery -A manage:celery_app beat --loglevel=info"
+          sh -c "celery -A manage:celery_app beat --loglevel=info"
         volumes:
             - ./training:/usr/src/app
         environment:
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_URI=datastore:9000
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba

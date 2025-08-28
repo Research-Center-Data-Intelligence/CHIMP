@@ -43,50 +43,105 @@ def get_datasets():
     }
 
 
+
+def _load_json_from_request(req: Request, key: str):
+    """
+    Loads JSON data for a given key from either request.form or request.files.
+    
+    This function first checks the form data. If the key is not present, it
+    checks for an uploaded file with that key. This allows for flexibility in
+    how data is sent, especially for large JSON payloads that might exceed
+    form data size limits.
+
+    Parameters
+    ----------
+    req : Request
+        The Flask request object.
+    key : str
+        The key for the data (e.g., "labels", "metadata").
+
+    Returns
+    -------
+    A Python object (dict or list) parsed from the JSON data, or None if not found.
+
+    Raises
+    ------
+    BadRequest
+        If the JSON data is malformed.
+    """
+    data_source = None
+    # 1. Prioritize form data for backward compatibility and small payloads
+    if key in req.form:
+        data_source = req.form[key]
+    # 2. Fallback to file upload for large payloads
+    elif key in req.files:
+        # Read the entire file content and decode it from bytes to a string
+        data_source = req.files[key].read().decode('utf-8')
+    
+    if data_source:
+        try:
+            return json.loads(data_source)
+        except json.JSONDecodeError:
+            raise BadRequest(f"Invalid JSON format for '{key}'")
+    
+    # Return None if the key was not found in either form or files
+    return None
+
+
 @bp.route("/managed_datasets", methods=["POST"])
 def upload_managed_dataset(passed_request: Request = None):
-    """Upload a dataset from zip file. The datapoints in the zip should have list of labels (string) and a list of metadata (json / dict)
+    """Upload a dataset from zip file. The datapoints in the zip should have 
+    a list of labels (string) and a list of metadata (json / dict).
+
+    The 'labels' and 'metadata' can be provided either as form fields (for small
+    datasets) or as uploaded JSON files (for large datasets to avoid 413 errors).
 
     Parameters
     ----------
     passed_request : Request
-        A overwrite to support the (depricated) /model/train and /model/calibrate endpoints
+        An overwrite to support deprecated endpoints.
 
     Returns
     -------
-    Whether or not the upload was successful
-
+    Whether or not the upload was successful.
+    
     Examples
     --------
-    curl
-        `curl -X POST -F "file=@/path/to/zipfile.zip" -F "dataset_name=Example" http://localhost:5253/managed_datasets`
-        `curl -X POST -F "file=@C:/CHIMP-data/calib_test_tiny.zip" -F "dataset_name=tiny_test" -F "labels=[\"angry\", \"disgusted\", \"disgusted\", \"neutral\"]"  -F "metadata=[{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"},{\"exp\":\"tinytest\",\"usr\":\"maarten\"}]" http://localhost:5000/managed_datasets`
+    # Using form data (for smaller datasets)
+    curl -X POST \
+      -F "file=@/path/to/zipfile.zip" \
+      -F "dataset_name=Example" \
+      -F 'labels=["label1", "label2"]' \
+      -F 'metadata=[{"key":"value1"},{"key":"value2"}]' \
+      http://localhost:5000/managed_datasets
+
+    # Using file data (for larger datasets)
+    # First, create labels.json and metadata.json
+    # echo '["label1", "label2", ...]' > labels.json
+    # echo '[{"key":"value1"},{"key":"value2"}, ...]' > metadata.json
+    curl -X POST \
+      -F "file=@/path/to/zipfile.zip" \
+      -F "dataset_name=ExampleLarge" \
+      -F "labels=@labels.json" \
+      -F "metadata=@metadata.json" \
+      http://localhost:5000/managed_datasets
     """
+    print("[DEBUG] Entering upload managed dataset function")
     current_request = request
     if passed_request:
         current_request = passed_request  # pragma: no cover
 
-    labels = current_request.form.get("labels")
-    if not labels:
-        raise BadRequest("No labels in request")
-    try:
-        labels = json.loads(labels)  
-        if not isinstance(labels, list):
-            raise BadRequest("Labels should be a list of strings")
-    except json.JSONDecodeError:
-        raise BadRequest("Invalid format for labels")
+    labels = _load_json_from_request(current_request, "labels")
+    if labels is None:
+        raise BadRequest("No 'labels' found in request form or files")
+    if not isinstance(labels, list):
+        raise BadRequest("'labels' should be a list of strings")
 
-
-    metadata = current_request.form.get("metadata")
-    if not metadata:
-        raise BadRequest("No metadata in request")
-    try:
-        metadata = json.loads(metadata)  
-        if not isinstance(metadata, list):
-            raise BadRequest("Metadata should be a list of dictionaries")
-    except json.JSONDecodeError:
-        raise BadRequest("Invalid format for metadata")
-
+    metadata = _load_json_from_request(current_request, "metadata")
+    if metadata is None:
+        raise BadRequest("No 'metadata' found in request form or files")
+    if not isinstance(metadata, list):
+        raise BadRequest("'metadata' should be a list of dictionaries")
 
     if "file" not in current_request.files:
         raise BadRequest("No file in request")
@@ -114,19 +169,28 @@ def upload_managed_dataset(passed_request: Request = None):
 
     with zipfile.ZipFile(zip_buffer, 'r') as zip_archive:
         file_names = zip_archive.namelist()
+        # Exclude macOS resource fork files
+        file_names = [name for name in file_names if not name.startswith('__MACOSX/')]
         num_files = len(file_names)
 
         if len(labels) != num_files:
-            raise BadRequest(f"Number of labels ({len(labels)}) does not match number of files ({num_files})")
+            raise BadRequest(f"Number of labels ({len(labels)}) does not match number of files in zip ({num_files})")
         
         if len(metadata) != num_files:
-            raise BadRequest(f"Number of metadata entries ({len(metadata)}) does not match number of files ({num_files})")
+            raise BadRequest(f"Number of metadata entries ({len(metadata)}) does not match number of files in zip ({num_files})")
 
         for i, file_name in enumerate(file_names):
             with zip_archive.open(file_name) as extracted_file:
+                # Skip directories if they are in the zip
+                if file_name.endswith('/'):
+                    continue
 
                 object_name = secure_filename(file_name)
                 
+                # Ensure metadata is a dict before modification
+                if not isinstance(metadata[i], dict):
+                    raise BadRequest(f"Metadata entry at index {i} is not a valid JSON object (dictionary).")
+
                 metadata[i]["used_in_training"] = False
 
                 file_content = extracted_file.read()
@@ -135,7 +199,6 @@ def upload_managed_dataset(passed_request: Request = None):
                 datastore.store_object(dataset_name, file_stream, labels[i], metadata[i], object_name)
 
     return {"status": "successfully uploaded dataset"}
-
 
 
 
@@ -275,7 +338,7 @@ def get_labeling_task_data(dataset_id):
             object_path = f"{dataset_id}/{filename}"
             try:
                 print(f"[DEBUG] Fetching from MinIO: {object_path}")
-                image_bytes = datastore._client.get_object("datasets", object_path).read()
+                image_bytes = datastore._client.get_object("manageddataset", object_path).read()
                 images_data[filename] = image_bytes.hex()
             except Exception as e:
                 print(f"[WARNING] Could not fetch file: {object_path} | {e}")

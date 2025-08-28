@@ -83,4 +83,4 @@ class ImageProcessor:
 
     def get_image_blob(self) -> str:
         # Get a jpg blob of the image, in string format
-        return cv2.imencode('.jpg', self.image)[1].tostring()
+        return cv2.imencode('.jpg', self.image)[1].tobytes()

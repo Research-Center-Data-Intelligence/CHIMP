@@ -22,6 +22,7 @@ from tensorflow.keras.optimizers import Adam, SGD
 #from tensorflow.python.keras.models import load_model as load_keras_model
 from tensorflow.keras.saving import load_model as load_keras_model
 import keras
+import numpy as np
 
 class EmotionModelGenerator:
     config: Dict
@@ -202,6 +203,7 @@ class EmotionModelCalibrator:
         # Load tensorflow model and fit new data to model
         # find the name of the .keras file in the folder!!
         file_path = glob.glob(os.path.join(self.model_path, '*.keras'))
+        print("EmoRec plugin from model.py: model file name found: "+ file_path[0])
         tf_model = keras.models.load_model(file_path[0])
 
         # Define class weights for model training to account for under-sampled classes
@@ -224,16 +226,26 @@ class EmotionModelCalibrator:
             ),
         ]
 
+        ## TODO MV: dirty hack to solve the problem where the used model is trained on color images...
+        if tf_model.input_shape[-1] == 3:
+            train_images = np.expand_dims(self.train_data["image_data"], axis=-1)
+            validation_images = np.expand_dims(self.validation_data["image_data"], axis=-1)
+            train_images = np.repeat(train_images, repeats=3, axis=-1)
+            validation_images = np.repeat(validation_images, repeats=3, axis=-1)
+        else:
+            train_images = self.train_data["image_data"]
+            validation_images = self.validation_data["image_data"]
+
         # Fit model
         history = tf_model.fit(
             epochs=self.config["epochs"],
-            x=self.train_data["image_data"],
+            x=train_images,
             y=self.train_data["class_"],
             class_weight=class_weights,
             batch_size=self.config["batch_size"],
             shuffle=True,
             validation_data=(
-                self.validation_data["image_data"],
+                validation_images,
                 self.validation_data["class_"],
             ),
             callbacks=callbacks,
