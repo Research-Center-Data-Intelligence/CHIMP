@@ -9,6 +9,10 @@ from werkzeug.utils import secure_filename
 from app.endpoints.dataset_endpoints import upload_dataset
 from app.plugin import PluginLoader
 from app.worker import WorkerManager
+#from redis import Redis
+
+
+
 
 bp = Blueprint("training", __name__)
 
@@ -124,4 +128,44 @@ def poll(task_id: str):
     if not task_info:
         abort(404)
     return task_info.as_dict()
+
+
+"""
+@bp.route("/labeling_tasks")
+def get_labeling_tasks():
+    print("Connecting to Redis...")
+    redis_client = Redis(host="message-queue", port=6379, decode_responses=True)
+
+    print("Fetching labeling task keys from Redis...")
+    task_keys = redis_client.keys("labeling_task:*")
+    print(f"Found task keys: {task_keys}")
+    tasks = []
+
+    for key in task_keys:
+        try:
+            print(f"Processing key: {key}")
+            data = json.loads(redis_client.get(key))
+            print(f"Data for {key}: {data}")
+            dataset_id = key.split(":", 1)[1]
+            user = dataset_id.split("_")[1] if "_" in dataset_id else "unknown"
+            task = {
+                "dataset_id": dataset_id,
+                "total_images": data.get("total", 0),
+                "labeled_percentage": 0,  
+                "received": data.get("timestamp", "onbekend"),
+                "user": user
+            }
+            print(f"Task constructed: {task}")
+            tasks.append(task)
+        except Exception as e:
+            print(f"Error processing key {key}: {e}")
+            current_app.logger.warning(f"Kon Redis-entry {key} niet verwerken: {e}")
+
+    print(f"Returning tasks: {tasks}")
+    return {"tasks": tasks}
+"""
+
+
+
+
 

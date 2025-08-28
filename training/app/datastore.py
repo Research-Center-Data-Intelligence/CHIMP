@@ -11,6 +11,7 @@ import zipfile
 from werkzeug.utils import secure_filename
 import json
 import psycopg2
+import datetime
 
 
 '''
@@ -484,12 +485,42 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             "dbname": self._db_name,
             "user": self._db_user,
             "password": self._db_password,
-            #"host": self._database_uri,  # Use the Docker host's IP if not running locally
-            "host": "localhost",  
+            "host": self._database_uri,  # Use the Docker host's IP if not running locally
+            #"host": "localhost",  
             "port": "5432"
         }
         self._db_conn = psycopg2.connect(**self._db_config)
+        self._create_tables_if_not_exist() 
         # self._db_cursor = conn.cursor() #initialize / open when the SQL queries are excecuted?
+
+    def _create_tables_if_not_exist(self):
+        create_datapoints = """
+        CREATE TABLE IF NOT EXISTS datapoints (
+            id SERIAL PRIMARY KEY,
+            x TEXT NOT NULL,
+            y TEXT,
+            metadata JSONB
+        );
+        """
+
+        create_labeling_tasks = """
+        CREATE TABLE IF NOT EXISTS labeling_tasks (
+            id SERIAL PRIMARY KEY,
+            dataset_id TEXT NOT NULL,
+            total_images INTEGER,
+            num_labeled INTEGER,
+            status TEXT,
+            selection JSONB
+        );
+        """
+
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(create_datapoints)
+            cursor.execute(create_labeling_tasks)
+        self._db_conn.commit()
+
+        print("[INFO] Database tables ensured.")
 
     def list_from_datastore(
         self, target_path: str, recursive: bool = True
@@ -527,6 +558,39 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         )'''
     
 
+    def store_labeling_task(
+        self, 
+        dataset_id: str,
+        total_images: int,
+        num_labeled: int,
+        status: str,
+        selection: List[str]
+    ):
+        query = """
+            INSERT INTO labeling_tasks (
+                dataset_id,
+                total_images,
+                num_labeled,
+                status,
+                selection
+            ) VALUES (%s, %s, %s, %s, %s)
+        """
+        values = (
+            dataset_id,
+            total_images,
+            num_labeled,
+            status,
+            json.dumps(selection)
+        )
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(query, values)
+        self._db_conn.commit()
+
+        print(f"[INFO] Labeling task '{dataset_id}' with {num_labeled} labeled items saved in PostgreSQL.")
+
+
+
     def store_object(
         self, target_path: str, x: BytesIO, y: str, metadata: dict, file_name: str
     ):
@@ -554,10 +618,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         object_name = secure_filename(file_name)  # Ensure safe file name
         minio_target_path = os.path.join(target_path, object_name)
         minio_target_path = minio_target_path.replace("\\", "/") # WINDOWS OS FIX
-        result = self._client.put_object('manageddataset', minio_target_path, x, length=len(x.getbuffer()))
+        result = self._client.put_object('datasets', minio_target_path, x, length=len(x.getbuffer()))
 
         #MV TODO: store datastore type in postgres
-        ourl= f"https://{self._datastore_uri}/{'manageddataset'}/{minio_target_path}"
+        ourl= f"https://{self._datastore_uri}/{'datasets'}/{minio_target_path}"
 
         data = (ourl, y, json.dumps(metadata))
         with self._db_conn.cursor() as cursor:
@@ -591,27 +655,29 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             save_path = None
 
         return save_path
-
+    
+    # Updated: added `bucket` argument to allow loading from different MinIO buckets.
     def load_folder_to_filesystem(
-        self, folder_path: str, save_path: str
-    ) -> Optional[str]:
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        objects = self._client.list_objects(
-            "datasets", prefix=folder_path, recursive=True
-        )
-        files_found = False
-        for obj in objects:
-            files_found = True
-            relative_path = os.path.relpath(obj.object_name, folder_path)
-            local_file_path = os.path.join(save_path, relative_path)
-            local_file_dir = os.path.dirname(local_file_path)
+            self, folder_path: str, save_path: str, bucket: str = "datasets"
+        ) -> Optional[str]:
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+            objects = self._client.list_objects(
+                bucket, prefix=folder_path, recursive=True
+            )
+            files_found = False
+            for obj in objects:
+                files_found = True
+                relative_path = os.path.relpath(obj.object_name, folder_path)
+                local_file_path = os.path.join(save_path, relative_path)
+                local_file_dir = os.path.dirname(local_file_path)
 
-            if not os.path.exists(local_file_dir):
-                os.makedirs(local_file_dir)
+                if not os.path.exists(local_file_dir):
+                    os.makedirs(local_file_dir)
 
-            self._client.fget_object("datasets", obj.object_name, local_file_path)
-        return save_path if files_found else None
+                self._client.fget_object(bucket, obj.object_name, local_file_path)
+            return save_path if files_found else None
+
 
     def load_folder_to_memory(self, folder_path: str) -> Optional[Dict[str, BytesIO]]:
         directory_contents = {}
@@ -625,3 +691,42 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             response.close()
             response.release_conn()
         return directory_contents if directory_contents else None
+    
+
+    def get_training_data_from_redis(self, redis_client, queue_name="labeled_image_queue") -> List[Dict]:
+        """Combines Redis info with PostgreSQL records and MinIO paths for training."""
+
+        items = redis_client.lrange(queue_name, 0, -1)
+        datapoint_ids = []
+        for item in items:
+            try:
+                parsed = json.loads(item)
+                datapoint_ids.append(parsed["datapoint_id"])
+            except json.JSONDecodeError:
+                continue
+
+        if not datapoint_ids:
+            return []
+
+        format_ids = ','.join(['%s'] * len(datapoint_ids))
+        query = f"""
+            SELECT id, x, y, metadata
+            FROM datapoints
+            WHERE id IN ({format_ids})
+        """
+
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(query, datapoint_ids)
+            results = cursor.fetchall()
+
+        output = []
+        for row in results:
+            output.append({
+                "id": row[0],
+                "x": row[1],  
+                "y": row[2],  
+                "metadata": json.loads(row[3])
+            })
+
+        return output
+

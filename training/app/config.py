@@ -24,8 +24,8 @@ DATA_DIRECTORY = os.environ.get("DATA_DIRECTORY") or os.path.join(
     basedir, "../datasets"
 )
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "amqp://localhost"
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "rpc://localhost"
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL") or "redis://localhost"
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "redis://localhost"
 
 DATASTORE_URI = os.environ.get("DATASTORE_URI") or "localhost:9000"
 DATASTORE_ACCESS_KEY = os.environ.get("DATASTORE_ACCESS_KEY") or ""

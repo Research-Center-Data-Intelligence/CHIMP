@@ -1,5 +1,6 @@
 import os
 import shutil
+import redis, json, requests
 from celery import Celery, shared_task
 from celery.result import AsyncResult
 from dataclasses import asdict, dataclass
@@ -163,3 +164,31 @@ class WorkerManager:
                 successful=res.successful() if ready else None,
                 value=res.get() if ready else res.result,
             )
+
+
+    '''@shared_task(ignore_result=False)
+    def monitor_labeled_data_and_trigger_training(threshold=100):
+
+
+        redis_client = redis.StrictRedis(host="message-queue", port=6379, db=0)
+        queue_len = redis_client.llen("labeled_image_queue")
+
+        if queue_len < threshold:
+            print(f"[INFO] Threshold not reached: {queue_len}/{threshold}")
+            return "Waiting for more labeled data."
+
+        print("[INFO] Threshold reached. Triggering training...")
+
+        response = requests.post(
+            "http://localhost:5253/tasks/run/Emotion+Recognition",  
+            data={
+                "dataset": "emotions"  
+            }
+        )
+
+        print(f"[INFO] Training response: {response.status_code} - {response.text}")
+
+        redis_client.rename("labeled_image_queue", f"labeled_backup_{datetime.utcnow().timestamp()}")
+
+        return f"Training triggered. Response: {response.status_code}"'''
+

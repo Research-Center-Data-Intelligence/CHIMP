@@ -76,12 +76,30 @@ class EmotionRecognitionPlugin(BasePlugin):
         with open(os.path.join(plugin_dir, "config.json")) as f:
             self.config = json.load(f)
         
+
+        '''
         #convert to actual booleans
         for key, value in kwargs.items():
             if value == 'True':
                 kwargs[key] = True
             elif value == 'False':
                 kwargs[key] = False
+
+        '''
+        # Convert string booleans to actual booleans
+        for key in ["trainnew", "personaldata", "basedata", "newdata"]:
+            value = kwargs.get(key)
+            if isinstance(value, str):
+                if value.lower() == "true":
+                    kwargs[key] = True
+                elif value.lower() == "false":
+                    kwargs[key] = False
+
+
+        print("KWARGS DEBUG:", kwargs)
+
+
+
         #MV TODO: implement training and model storage, including inserting the dataset postgres table entries
         # return "training still needs to be implemented"
 
@@ -110,7 +128,14 @@ class EmotionRecognitionPlugin(BasePlugin):
             """
 
             rows = self.load_data(select_query)
-            model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="keras")
+            model_name = kwargs.get("base_model_name", "onnx_emo_datastore")  # fallback if not set
+            model_path = self._connector.get_artifact(
+                os.path.join(kwargs["temp_dir"], "basemodel"),
+                model_name=model_name,
+                experiment_name="base_mobilenetv2_128_64_fer2013",
+                artifact_path="keras"
+            )
+            # model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="keras")
             print(model_path)
             emotion_calibrationmodel_generator = EmotionModelCalibrator(self.config, model_path, self.data)
             tf_model, history = emotion_calibrationmodel_generator.generate()[0]
@@ -131,6 +156,12 @@ class EmotionRecognitionPlugin(BasePlugin):
         tf_model.save(os.path.join(tf_path, "model.keras"))
 
         onnx_model, _ = tf2onnx.convert.from_keras(tf_model, input_sig, opset=13)
+
+        print("Registering model...")
+        print("Experiment:", kwargs["experiment_name"])
+        print("Model name:", kwargs["experiment_name"])
+        print("ONNX model type:", type(onnx_model))
+
 
         metrics = {
             k: v[0]
@@ -177,6 +208,7 @@ class EmotionRecognitionPlugin(BasePlugin):
 
         return run_name
 
+    
     def load_data(self, select_query):
         """Loads the emotion image data from the data folder into memory. 
         Do Not preprocess the data, leave this up to model.py"""

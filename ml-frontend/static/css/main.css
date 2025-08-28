@@ -6,20 +6,50 @@ body {
 }
 
 .container {
-    height: 100vh;
-    width: 100vw;
+  display: grid;
+  grid-template-areas:
+    "header"
+    "navigation"
+    "banner"
+    "content"
+    "footer";
+  grid-template-rows: 8.5vh auto auto 1fr 25px;
+  justify-content: center;
+  row-gap: 20px;
+  padding: 0 1rem;
+  background-color: #f2f2f2;
+}
 
-    display: grid;
-    grid-template-columns: 1fr max-content max-content 1fr;
-    grid-template-rows: 8.5vh 5vh min-content 1fr 25px;
-    grid-template-areas:
-        "header header header header"
-        ".		banner banner ."
-        ". 		camera info   ."
-        ".		.	   .	  ."
-        "footer footer footer footer";
-    column-gap: 25px;
-    row-gap: 20px;
+.content {
+  grid-area: content;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navigation {
+    grid-area: navigation;
+    background-color: #e8e8e8;
+    box-shadow: 0 0 5px rgba(0,0,0,.2);
+}
+
+.navigation ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.5rem;
+    margin: 0;
+}
+
+.navigation li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
 }
 
 .header {
