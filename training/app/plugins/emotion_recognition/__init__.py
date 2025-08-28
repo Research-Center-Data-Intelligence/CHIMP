@@ -106,44 +106,41 @@ class EmotionRecognitionPlugin(BasePlugin):
         #MV TODO: #36 built logic based on plugin info
         # 1) New Model Personal Data
         if kwargs["trainnew"] & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
-                pass
+            return 'Not implemented yet'
 
         # 2) New Model Base data + Personal Data
         if kwargs["trainnew"] & kwargs["personaldata"] & kwargs["basedata"] & (not kwargs["newdata"]):
-            pass
+            return 'Not implemented yet'
 
         # 3) New Model Base data + All user Data
         if kwargs["trainnew"] & (not kwargs["personaldata"]) & kwargs["basedata"] & kwargs["newdata"]:
-            pass
+            return 'Not implemented yet'
 
         # 4) Fine tune on Personal Data
         if (not kwargs["trainnew"]) & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
             #TODO MV: add error checking to the retrieval
             #MV TODO: for finetuning do not get the data from datapoints but from dataset and the current model id --> where to get the current model_id???
             # Select query
-            kwargs["user_id"] = 'MV' #MV TODO: get correct username from frontend
-            select_query = f"""SELECT * FROM datapoints
-            WHERE metadata->>'user' = '{kwargs["user_id"]}'
-            LIMIT 30;
-            """
 
+            ## kwargs["user_id"] = 'MV' #MV TODO: get correct username from frontend
+            select_query = f"""
+                SELECT * FROM datapoints
+                WHERE metadata->>'user' = '{kwargs["user_id"]}'
+                AND y != 'unlabeled'
+                LIMIT 130;"""
+
+            
             rows = self.load_data(select_query)
-            model_name = kwargs.get("base_model_name", "onnx_emo_datastore")  # fallback if not set
-            model_path = self._connector.get_artifact(
-                os.path.join(kwargs["temp_dir"], "basemodel"),
-                model_name=model_name,
-                experiment_name="base_mobilenetv2_128_64_fer2013",
-                artifact_path="keras"
-            )
-            # model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="keras")
-            print(model_path)
+            # print(os.path.join(kwargs["temp_dir"],"basemodel"), kwargs["experiment_name"])
+            model_path = self._connector.get_artifact(os.path.join(kwargs["temp_dir"],"basemodel"), model_name=kwargs["experiment_name"], experiment_name=kwargs["experiment_name"], artifact_path="keras")
+            # print(model_path)
             emotion_calibrationmodel_generator = EmotionModelCalibrator(self.config, model_path, self.data)
             tf_model, history = emotion_calibrationmodel_generator.generate()[0]
             run_name=kwargs["run_name"] = "calib_" + kwargs["run_name"]
         
         # 5) Fine tune on all user Data
         if (not kwargs["trainnew"]) & (not kwargs["personaldata"]) & (not kwargs["basedata"]) & kwargs["newdata"]:
-            pass
+            return 'Not implemented yet'
 
 
         input_sig = [tf.TensorSpec(tf_model.input_spec[0].shape,tf.float32)]
@@ -191,7 +188,8 @@ class EmotionRecognitionPlugin(BasePlugin):
             model_type="onnx",
             hyperparameters=hyperparameters,
             metrics=metrics,
-            artifacts= {'tensorflow' : tf_path}, #save the tensorflow version as well
+            ## TODO MV: use consistent folder name, the init script uses keras, not tensorflow
+            artifacts= {'keras' : tf_path}, #save the tensorflow version as well, 
         )
 
         with self._datastore._db_conn.cursor() as cursor:
@@ -222,10 +220,10 @@ class EmotionRecognitionPlugin(BasePlugin):
             # Fetch all rows
             rows = cursor.fetchall()
 
-            # Print each row
+            print('EmoRec plugin: Found '+ str(len(rows)) + ' datapoints to retrieve')
             for row in rows:
                 #MV TODO: remove debug prints
-                print(f"ID: {row[0]}, X: {row[1]}, Y: {row[2]}, Metadata: {row[3]}")
+                #print(f"ID: {row[0]}, X: {row[1]}, Y: {row[2]}, Metadata: {row[3]}")
                 opath = row[1]
                 parsed_url = urlparse(opath)
 
@@ -240,7 +238,7 @@ class EmotionRecognitionPlugin(BasePlugin):
                 response.close()
                 response.release_conn()
                 self.data["image_data"].append(image)
-                self.data["class_"].append(label_idx[row[2]])
+                self.data["class_"].append(label_idx[row[2].lower()])
                 self.data["category"].append(row[2])
 
         self.data["image_data"] = np.array(self.data["image_data"])

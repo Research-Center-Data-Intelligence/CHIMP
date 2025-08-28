@@ -68,7 +68,7 @@ def create_celery_app(app: Flask):
         "check-labeled-image-queue-every-5-minutes": {
             "task": "app.scheduler.check_and_trigger_training",
             "schedule": crontab(minute="*/1"),
-            "args": (50,),  
+            "args": (40,),  
         }
     }
 

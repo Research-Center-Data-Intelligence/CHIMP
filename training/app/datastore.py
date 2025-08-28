@@ -454,6 +454,7 @@ class ManagedBaseDatastore(ABC):
         app.extensions["datastore"] = self
 
 
+##TODO: MV make sure the bucket names are handles correctly
 class ManagedMinioDatastore(ManagedBaseDatastore):
     _client: Minio
     _access_key: str
@@ -462,6 +463,8 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
     _db_config: dict
     _db_conn: any
     _db_cursor: any
+
+    _bucketname: str
 
     def __init__(self, access_key: str, secret_key: str, db_name: str, db_user: str, db_password: str):
         self._access_key = access_key
@@ -477,9 +480,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
             secret_key=self._secret_key,
             secure=False,
         )
-        if not self._client.bucket_exists("datasets"):
-            self._client.make_bucket("datasets")
+        if not self._client.bucket_exists("manageddataset"):
+            self._client.make_bucket("manageddataset")
 
+        self._bucketname = "manageddataset"
     def _init_database(self):
         self._db_config = {
             "dbname": self._db_name,
@@ -526,7 +530,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         self, target_path: str, recursive: bool = True
     ) -> List[str]:
         objects = self._client.list_objects(
-            "datasets", prefix=target_path, recursive=recursive
+            self._bucketname, prefix=target_path, recursive=recursive
         )
         return [obj.object_name for obj in objects]
 
@@ -539,9 +543,9 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
                     minio_target_path = os.path.join(
                         target_path, relative_path
                     ).replace("\\", "/")
-                    self._client.fput_object("datasets", minio_target_path, file_path)
+                    self._client.fput_object(self._bucketname, minio_target_path, file_path)
         else:
-            self._client.fput_object("datasets", target_path, src_path)
+            self._client.fput_object(self._bucketname, target_path, src_path)
 
     '''def store_object(
         self, target_path: str, data: BytesIO, file_name: str, mime_type: str = None
@@ -618,10 +622,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         object_name = secure_filename(file_name)  # Ensure safe file name
         minio_target_path = os.path.join(target_path, object_name)
         minio_target_path = minio_target_path.replace("\\", "/") # WINDOWS OS FIX
-        result = self._client.put_object('datasets', minio_target_path, x, length=len(x.getbuffer()))
+        result = self._client.put_object(self._bucketname, minio_target_path, x, length=len(x.getbuffer()))
 
         #MV TODO: store datastore type in postgres
-        ourl= f"https://{self._datastore_uri}/{'datasets'}/{minio_target_path}"
+        ourl= f"https://{self._datastore_uri}/{self._bucketname}/{minio_target_path}"
 
         data = (ourl, y, json.dumps(metadata))
         with self._db_conn.cursor() as cursor:
@@ -636,7 +640,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
 
     def load_object_to_memory(self, target_path: str) -> Optional[bytes]:
         try:
-            response = self._client.get_object("datasets", target_path)
+            response = self._client.get_object(self._bucketname, target_path)
             data = BytesIO(response.read())
             response.close()
             response.release_conn()
@@ -648,7 +652,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
 
     def load_object_to_file(self, object_path: str, save_path: str) -> Optional[str]:
         try:
-            self._client.fget_object("datasets", object_path, save_path)
+            self._client.fget_object(self._bucketname, object_path, save_path)
         except S3Error as err:
             if err.code != "NoSuchKey":
                 raise err
@@ -658,7 +662,7 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
     
     # Updated: added `bucket` argument to allow loading from different MinIO buckets.
     def load_folder_to_filesystem(
-            self, folder_path: str, save_path: str, bucket: str = "datasets"
+            self, folder_path: str, save_path: str, bucket: str = "manageddataset"
         ) -> Optional[str]:
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
@@ -682,10 +686,10 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
     def load_folder_to_memory(self, folder_path: str) -> Optional[Dict[str, BytesIO]]:
         directory_contents = {}
         objects = self._client.list_objects(
-            "datasets", prefix=folder_path, recursive=True
+            self._bucketname, prefix=folder_path, recursive=True
         )
         for obj in objects:
-            response = self._client.get_object("datasets", obj.object_name)
+            response = self._client.get_object(self._bucketname, obj.object_name)
             data = BytesIO(response.read())
             directory_contents[obj.object_name] = data
             response.close()

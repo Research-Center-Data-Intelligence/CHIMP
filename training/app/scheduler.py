@@ -2,20 +2,25 @@ from redis import Redis
 from datetime import datetime
 from collections import defaultdict
 import json
-import zipfile
-import psycopg2
+
+from urllib.parse import urlparse
 from io import BytesIO
 from PIL import Image
-from celery import Celery
-import requests
-from minio.error import S3Error
 
-from app.datastore import ManagedMinioDatastore
+import requests
+import zipfile
+import psycopg2
+import os
+
+from celery import Celery
+
+from app.extensions import datastore
+
 
 # Redis config
 redis_client = Redis(
-    host="message-queue",
-    port=6379,
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=os.getenv("REDIS_PORT", "6379"),
     decode_responses=True
 )
 
@@ -73,7 +78,7 @@ def register_tasks(celery_app: Celery):
 def get_user_from_db(datapoint_id):
     try:
         conn = psycopg2.connect(
-            host="postgres-db",
+            host=os.getenv("DATABASE_URI", "localhost"),
             dbname="chimp_database",
             user="chimp_user",
             password="chimp_password"
@@ -97,7 +102,7 @@ def upload_curated_dataset(dataset_name, items):
     metadata = []
 
     conn = psycopg2.connect(
-        host="postgres-db",
+        host=os.getenv("DATABASE_URI", "localhost"),
         dbname="chimp_database",
         user="chimp_user",
         password="chimp_password"
@@ -117,30 +122,20 @@ def upload_curated_dataset(dataset_name, items):
                 x, y_label, meta = result
                 filename = item["filename"]
 
-                object_path = x.split("/datasets/")[-1]
-                try:
-                    response = datastore._client.get_object("datasets", object_path)
-                    content = response.read()
-                except S3Error as s3e:
-                    print(f"[SCHEDULER][ERROR] Failed to fetch {object_path} from MinIO: {s3e}")
-                    continue
+                # Extract bucket name and object path
+                parsed_url = urlparse(x)
+                path_parts = parsed_url.path.lstrip('/').split('/', 1)  # Remove leading slash and split into bucket and object path
+                bucket_name = path_parts[0]  # First part is the bucket name
+                object_path = path_parts[1]
 
-                try:
-                    # Open de afbeelding en converteer expliciet naar RGB
-                    img = Image.open(BytesIO(content)).convert("RGB")
-                    print(f"[DEBUG IMG] {filename} - size: {img.size}, mode: {img.mode}")
+                # Download the image from the URL and add it to the ZIP file
+                response = datastore._client.get_object(bucket_name,object_path)
+         
+                zip_file.writestr(filename, response.read())
 
-                    # Sla de geconverteerde afbeelding op naar een buffer
-                    img_buffer = BytesIO()
-                    img.save(img_buffer, format="PNG")
-                    img_buffer.seek(0)
+                ## TODO MV add error catch for retrieval
 
-                    # Voeg de RGB-afbeelding toe aan de zip
-                    zip_file.writestr(filename, img_buffer.read())
-
-                except Exception as img_debug_e:
-                    print(f"[DEBUG IMG][ERROR] Cannot inspect or convert image {filename}: {img_debug_e}")
-
+                # Collect the label and metadata for this datapoint
                 y.append(y_label)
                 metadata.append({
                     "user": meta.get("user", "unknown"),
@@ -164,7 +159,8 @@ def upload_curated_dataset(dataset_name, items):
 
     print(f"[SCHEDULER] Uploading curated dataset '{dataset_alias}' with {len(y)} items...")
     try:
-        r = requests.post("http://training-api:8000/managed_datasets", files=files)
+        # Upload the curated dataset to the training API
+        r = requests.post(os.getenv("TRAINING_SERVER_URL") + "/managed_datasets", files=files)
         print(f"[SCHEDULER] Upload response: {r.status_code} - {r.text}")
         return dataset_alias if r.status_code == 200 else None
     except Exception as e:
@@ -174,20 +170,21 @@ def upload_curated_dataset(dataset_name, items):
 def trigger_training(dataset_name: str, user_id: str):
     print(f"[SCHEDULER] Triggering training for curated dataset '{dataset_name}'")
 
+    ## TODO MV: sent dataset_alias with request iso user_id
     try:
         experiment_name = f"retrain_{dataset_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
 
         form = {
             "user_id": user_id,
-            "trainnew": "false",
-            "basedata": "false",
-            "newdata": "false",
-            "personaldata": "true",
-            "experiment_name": experiment_name,
-            "base_model_name": "onnx_emo_datastore"
+            "trainnew": "False",
+            "basedata": "False",
+            "newdata": "False",
+            "personaldata": "True",
+            "experiment_name": "onnx_emo_datastore"
         }
 
-        r = requests.post("http://training-api:8000/tasks/run/Emotion+Recognition", data=form)
+        r = requests.post(os.getenv("TRAINING_SERVER_URL") + "/tasks/run/Emotion+Recognition", data=form)
+        print(r)
         print(f"[SCHEDULER] Trigger response: {r.status_code} - {r.text}")
 
     except Exception as e:

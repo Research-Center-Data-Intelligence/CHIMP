@@ -14,10 +14,11 @@ COPY ./requirements.txt $CONTAINER_HOME/requirements.txt
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Install plugin dependencies
-COPY ./plugin-requirements.txt $CONTAINER_HOME/plugin-requirements.txt
-RUN pip3 install --no-cache-dir -r plugin-requirements.txt
+#COPY ./plugin-requirements.txt $CONTAINER_HOME/plugin-requirements.txt
+#RUN pip3 install --no-cache-dir -r plugin-requirements.txt
 
-# Copy project to container
+
+# Copy project to container1
 COPY . $CONTAINER_HOME
 
 # Entrypoint

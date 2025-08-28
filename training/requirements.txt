@@ -5,5 +5,17 @@ gunicorn==21.2.0
 python-dotenv==1.0.1
 celery[redis]==5.4.0
 mlflow==2.11.3
+protobuf==3.20.3 
 minio==7.2.7
 psycopg2-binary>=2.9
+
+
+# --- Plugin Dependencies ---
+numpy==1.26.4
+
+# ML/AI Libraries that depend on NumPy
+tensorflow
+opencv-python
+tf2onnx
+onnxruntime
+scikit-learn

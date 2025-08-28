@@ -15,8 +15,9 @@ from redis import Redis
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
+##TODO: MV Make sure the Redis queue credentials work both in docker setup awa local debug
 redis_client = Redis(
-    host=os.getenv("REDIS_HOST", "message-queue"),
+    host=os.getenv("REDIS_HOST", "localhost"),
     port=int(os.getenv("REDIS_PORT", 6379)),
     decode_responses=True
 )
@@ -66,7 +67,7 @@ class ActiveLearningPlugin(BasePlugin):
         with open(os.path.join(os.path.dirname(__file__), "config.json")) as f:
             self.config = json.load(f)
 
-        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="datasets")
+        self._datastore.load_folder_to_filesystem(dataset_name, temp_dir, bucket="manageddataset")
         pool_dir = temp_dir
 
         model_dir = self._connector.get_artifact(
@@ -104,11 +105,13 @@ class ActiveLearningPlugin(BasePlugin):
         with open(os.path.join(selection_dir, "selection.json"), "w") as f:
             json.dump(selection_data, f)
 
+        # TODO: MV check if still needed
         self._datastore.store_file_or_folder(
             target_path=os.path.join(dataset_name, "selection"),
             src_path=selection_dir
         )
 
+        # TODO: MV check if still needed
         # Redis caching
         redis_key = f"labeling_task:{dataset_name}"
         redis_client.set(redis_key, json.dumps(selection_data))

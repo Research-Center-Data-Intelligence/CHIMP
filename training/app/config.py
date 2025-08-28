@@ -8,6 +8,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, "../../.env"))
 load_dotenv(os.path.join(basedir, "../.env"))
 
+MAX_CONTENT_LENGTH = 1000 * 1024 * 1024  # 1000 MB
+
 TESTING = os.environ.get("TESTING")
 DEVELOPMENT = os.environ.get("DEVELOPMENT") or False
 DEV = DEVELOPMENT
