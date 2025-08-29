@@ -1,3 +1,4 @@
+// TODO: Update launch profiles to allow local debugging when necessary. The to-do can be part a larger refactoring effort.
 {
     "version": "0.2.0",
     "configurations": [
