@@ -4,7 +4,8 @@ logs/*
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 docker-data/datastore/*
-docker-data/postgres/
+docker-data/postgres/*
+docker-data/files/*
 experimentation/
 ml-frontend/logs
 serving/mlruns
