@@ -24,18 +24,18 @@ redis_client = Redis(
     decode_responses=True
 )
 
-# MinIO datastore correct initialiseren
-datastore = ManagedMinioDatastore(
-    access_key="minioadmin",
-    secret_key="minioadmin",
-    db_name="chimp_database",
-    db_user="chimp_user",
-    db_password="chimp_password"
-)
-datastore._datastore_uri = "datastore:9000"
-datastore._database_uri = "postgres-db"
-datastore._init_datastore()
-datastore._init_database()
+# # MinIO datastore correct initialiseren
+# datastore = ManagedMinioDatastore(
+#     access_key="minioadmin",
+#     secret_key="minioadmin",
+#     db_name="chimp_database",
+#     db_user="chimp_user",
+#     db_password="chimp_password"
+# )
+# datastore._datastore_uri = "datastore:9000"
+# datastore._database_uri = "postgres-db"
+# datastore._init_datastore()
+# datastore._init_database()
 
 def register_tasks(celery_app: Celery):
     @celery_app.task(name="app.scheduler.check_and_trigger_training")
@@ -77,6 +77,7 @@ def register_tasks(celery_app: Celery):
 
 def get_user_from_db(datapoint_id):
     try:
+        ## TODO MV: dont hardcode login here
         conn = psycopg2.connect(
             host=os.getenv("DATABASE_URI", "localhost"),
             dbname="chimp_database",
@@ -101,6 +102,7 @@ def upload_curated_dataset(dataset_name, items):
     y = []
     metadata = []
 
+    ## TODO MV: dont hardcode login here
     conn = psycopg2.connect(
         host=os.getenv("DATABASE_URI", "localhost"),
         dbname="chimp_database",
@@ -132,8 +134,6 @@ def upload_curated_dataset(dataset_name, items):
                 response = datastore._client.get_object(bucket_name,object_path)
          
                 zip_file.writestr(filename, response.read())
-
-                ## TODO MV add error catch for retrieval
 
                 # Collect the label and metadata for this datapoint
                 y.append(y_label)
@@ -170,7 +170,7 @@ def upload_curated_dataset(dataset_name, items):
 def trigger_training(dataset_name: str, user_id: str):
     print(f"[SCHEDULER] Triggering training for curated dataset '{dataset_name}'")
 
-    ## TODO MV: sent dataset_alias with request iso user_id
+    ## TODO MV: sent dataset_alias with request iso user_id, this call now traines on all data from user_id as defined in the plugin. the plugin should have functionality to train on a specific dataset?
     try:
         experiment_name = f"retrain_{dataset_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
 

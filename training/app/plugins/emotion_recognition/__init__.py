@@ -76,16 +76,6 @@ class EmotionRecognitionPlugin(BasePlugin):
         with open(os.path.join(plugin_dir, "config.json")) as f:
             self.config = json.load(f)
         
-
-        '''
-        #convert to actual booleans
-        for key, value in kwargs.items():
-            if value == 'True':
-                kwargs[key] = True
-            elif value == 'False':
-                kwargs[key] = False
-
-        '''
         # Convert string booleans to actual booleans
         for key in ["trainnew", "personaldata", "basedata", "newdata"]:
             value = kwargs.get(key)
@@ -97,11 +87,6 @@ class EmotionRecognitionPlugin(BasePlugin):
 
 
         print("KWARGS DEBUG:", kwargs)
-
-
-
-        #MV TODO: implement training and model storage, including inserting the dataset postgres table entries
-        # return "training still needs to be implemented"
 
         #MV TODO: #36 built logic based on plugin info
         # 1) New Model Personal Data
@@ -118,11 +103,11 @@ class EmotionRecognitionPlugin(BasePlugin):
 
         # 4) Fine tune on Personal Data
         if (not kwargs["trainnew"]) & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
-            #TODO MV: add error checking to the retrieval
-            #MV TODO: for finetuning do not get the data from datapoints but from dataset and the current model id --> where to get the current model_id???
+            ## TODO MV: add error checking to the retrieval
+            ## TODO MV: for finetuning do not get the data from datapoints but from dataset and the current model id --> where to get the current model_id???
             # Select query
 
-            ## kwargs["user_id"] = 'MV' #MV TODO: get correct username from frontend
+            ## kwargs["user_id"] = 'MV' #MV TODO: get correct username from frontend, this not works for active learning pipeline but probably not for the frontend direct call
             select_query = f"""
                 SELECT * FROM datapoints
                 WHERE metadata->>'user' = '{kwargs["user_id"]}'
@@ -188,13 +173,11 @@ class EmotionRecognitionPlugin(BasePlugin):
             model_type="onnx",
             hyperparameters=hyperparameters,
             metrics=metrics,
-            ## TODO MV: use consistent folder name, the init script uses keras, not tensorflow
             artifacts= {'keras' : tf_path}, #save the tensorflow version as well, 
         )
 
         with self._datastore._db_conn.cursor() as cursor:
             insert_data = []
-            #MV TODO: log the used data and run_id to the dataset table.
             for row in rows:
                 datapoint_id = row[0]
                 insert_data.append((datapoint_id, run_id)) 
@@ -222,8 +205,6 @@ class EmotionRecognitionPlugin(BasePlugin):
 
             print('EmoRec plugin: Found '+ str(len(rows)) + ' datapoints to retrieve')
             for row in rows:
-                #MV TODO: remove debug prints
-                #print(f"ID: {row[0]}, X: {row[1]}, Y: {row[2]}, Metadata: {row[3]}")
                 opath = row[1]
                 parsed_url = urlparse(opath)
 

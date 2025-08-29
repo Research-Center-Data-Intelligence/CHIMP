@@ -520,7 +520,7 @@ def _calibrate():
     form["personaldata"] = personaldata
     form["experiment_name"] = EXPERIMENT_NAME
 
-    #MV TODO: fill in the form correctly        
+    #MV TODO: fill in the form correctly. probably is correct, but the plugin needs to be functionally completed        
     url = TRAINING_SERVER_URL + "/tasks/run/" + PLUGIN_NAME
     print(url, form)
     response = requests.request('POST',  url=url, data=form)
