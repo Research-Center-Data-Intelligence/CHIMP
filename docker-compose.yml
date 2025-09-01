@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
     # application
     # : sandbox application that enables emotion recognition from facial features
