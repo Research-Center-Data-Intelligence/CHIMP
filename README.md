@@ -50,7 +50,7 @@ graph RL
 ## Development setup
 
 1. Fork this repository and clone the fork to your local machine.
-2. Install Docker and Docker Compose.
+2. Install Docker and Docker Compose. Use this [manual](https://docs.docker.com/desktop/features/wsl/) for Windows install.
 3. [OPTIONAL] Download the docker-data.zip [here](https://drive.google.com/file/d/1ILWH1V4SOSCMbYuRBi4xylDAPRm3WG0B/view?usp=sharing) and extract it into the docker-data folder
 4. Run `docker-compose up` in the root of the repository
    - On some systems you need to run `docker-compose --profile '' up` instead to run the default profile
