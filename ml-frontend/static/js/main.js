@@ -178,7 +178,7 @@ const capture = () => {
 function calibrateModel(trainnew, basedata, newdata, personaldata) {
     // Get socket id and prepare connection#
 
-    id_in_progress_calibration = sock.id;
+    id_in_progress_calibration = USERNAME;
     let url = `/calibrate?user_id=${id_in_progress_calibration}&trainnew=${trainnew}&basedata=${basedata}&newdata=${newdata}&personaldata=${personaldata}`;
     console.log(`sending call with url: ${url}`);
 
