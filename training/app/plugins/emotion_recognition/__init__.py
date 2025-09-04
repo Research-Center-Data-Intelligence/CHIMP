@@ -216,6 +216,9 @@ class EmotionRecognitionPlugin(BasePlugin):
                 response = self._datastore._client.get_object(bucket_name,object_path)
                 image = Image.open(BytesIO(response.read()))
 
+                # debug
+                print(image);
+
                 response.close()
                 response.release_conn()
                 self.data["image_data"].append(image)
