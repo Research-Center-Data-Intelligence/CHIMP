@@ -60,11 +60,11 @@
         </div>
 
         <div class="model-update">
-          <button class="model-update-button" onclick="calibrateModel('True', 'False', 'False', 'True')">Train New Model: Personal data</button><br />
-          <button class="model-update-button" onclick="calibrateModel('True', 'True', 'False', 'True')">Train New Model: Base + Personal data</button><br />
-          <button class="model-update-button" onclick="calibrateModel('True', 'True', 'True', 'True')">Train New Model: Base + All new data</button><br />
+          <button class="model-update-button" onclick="calibrateModel('True', 'False', 'False', 'True')" disabled>Train New Model: Personal data</button><br />
+          <button class="model-update-button" onclick="calibrateModel('True', 'True', 'False', 'True')" disabled>Train New Model: Base + Personal data</button><br />
+          <button class="model-update-button" onclick="calibrateModel('True', 'True', 'True', 'True')" disabled>Train New Model: Base + All new data</button><br />
           <button class="model-update-button" onclick="calibrateModel('False', 'False', 'False', 'True')">Finetune Model: Personal data</button><br />
-          <button class="model-update-button" onclick="calibrateModel('False', 'False', 'True', 'True')">Finetune Model: All new data</button><br />
+          <button class="model-update-button" onclick="calibrateModel('False', 'False', 'True', 'True')" disabled>Finetune Model: All new data</button><br />
         </div>
 
         <div id="status-message"></div>

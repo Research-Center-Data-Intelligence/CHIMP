@@ -33,7 +33,8 @@ users = {
     'maarten' : 'maarten',
     'eddy' : 'eddy',
     'abdul' : 'abdul', 
-    'silas' : 'silas'
+    'silas' : 'silas',
+    'rob' : 'rob',
 }
 
 @app.route('/')
