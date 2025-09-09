@@ -227,7 +227,7 @@ class EmotionModelCalibrator:
         ]
 
         ## TODO MV: dirty hack to solve the problem where the used model is trained on color images...
-        if tf_model.input_shape[-1] == 3 and self.train_data["image_data"].shape != 3:            
+        if tf_model.input_shape[-1] == 3 and self.train_data["image_data"].shape != 3:
             train_images = np.expand_dims(self.train_data["image_data"], axis=-1)
             validation_images = np.expand_dims(self.validation_data["image_data"], axis=-1)
             train_images = np.repeat(train_images, repeats=3, axis=-1)
@@ -235,7 +235,7 @@ class EmotionModelCalibrator:
         else:
             train_images = self.train_data["image_data"]
             validation_images = self.validation_data["image_data"]
-
+ 
         # Fit model
         history = tf_model.fit(
             epochs=self.config["epochs"],
@@ -250,5 +250,5 @@ class EmotionModelCalibrator:
             ),
             callbacks=callbacks,
         )
-
+ 
         return ((tf_model, history),)
