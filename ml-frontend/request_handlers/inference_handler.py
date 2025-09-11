@@ -349,6 +349,7 @@ def _upload_managed_pool_data(data):
 '''
 
 
+
 def _process_video(data):
     print("Processing video blobs")
     cascade_file = os.path.join(os.getcwd(), 'static', 'cascades', 'frontalface_default_haarcascade.xml')
