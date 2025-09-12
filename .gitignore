@@ -1,7 +1,11 @@
 ### Custom ignores
+logs/*
+!logs/.gitkeep
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 docker-data/datastore/*
+docker-data/postgres/*
+docker-data/files/*
 experimentation/
 ml-frontend/logs
 serving/mlruns
@@ -25,6 +29,7 @@ training/app/plugins/*
 !training/app/plugins/example2.py
 !training/app/plugins/game_art_style_detector
 !training/app/plugins/emotion_recognition
+!training/app/plugins/active_learning
 training/datasets/*
 
 ### Generic ignores

@@ -8,6 +8,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, "../../.env"))
 load_dotenv(os.path.join(basedir, "../.env"))
 
+MAX_CONTENT_LENGTH = 1000 * 1024 * 1024  # 1000 MB
+
 TESTING = os.environ.get("TESTING")
 DEVELOPMENT = os.environ.get("DEVELOPMENT") or False
 DEV = DEVELOPMENT
@@ -30,3 +32,8 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND") or "redis://loca
 DATASTORE_URI = os.environ.get("DATASTORE_URI") or "localhost:9000"
 DATASTORE_ACCESS_KEY = os.environ.get("DATASTORE_ACCESS_KEY") or ""
 DATASTORE_SECRET_KEY = os.environ.get("DATASTORE_SECRET_KEY") or ""
+
+DATABASE_URI = os.environ.get("DATABASE_URI") or "localhost:5432"
+DATABASE_NAME = os.environ.get("DATABASE_NAME") or ""
+DATABASE_USER = os.environ.get("DATABASE_USER") or ""
+DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD") or ""

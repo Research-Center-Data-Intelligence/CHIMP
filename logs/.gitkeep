@@ -1,0 +1,1 @@
+# Keeps folder used for log files. Should always be empty on git. Folder was used by someone, so as to prevent any possible write problems it will be kept until certain that removing this folder wil not break anything.

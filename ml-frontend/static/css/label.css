@@ -1,0 +1,142 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+}
+
+.container {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr;
+    row-gap: 1rem;
+    padding: 1rem;
+}
+
+.header {
+    position: relative;
+    background-color: hsl(352, 89%, 47%);
+    color: white;
+    font-size: 1.35rem;
+    line-height: 8.5vh;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .5);
+}
+
+.header-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: white;
+    padding: 1rem;
+    max-height: 100%;
+    box-shadow: 0 0 1rem 1rem white;
+}
+
+.navigation ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.5rem;
+    margin: 0;
+    background-color: #e8e8e8;
+}
+
+.navigation li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.image-labeling {
+    background-color: white;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.image-labeling .title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: hsl(352, 89%, 47%);
+}
+
+/* Splide Carousel Styling */
+.splide {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+.splide__slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+}
+
+.splide__slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+/* Label Buttons */
+.button-panel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.button-panel button {
+    font-size: 1rem;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 6px;
+    background-color: #efefef;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.button-panel button:hover {
+    background-color: #ddd;
+}
+
+.button-panel button.selected {
+    background-color: #bde0fe;
+    border: 2px solid #007BFF;
+}
+
+.progress-container {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.progress-label {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.progress-bar-outer {
+    width: 100%;
+    height: 20px;
+    background-color: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background-color: hsl(352, 89%, 47%);
+    transition: width 0.4s ease;
+}

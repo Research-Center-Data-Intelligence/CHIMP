@@ -7,6 +7,7 @@
     grid-template-rows: 8.5vh 5vh auto 1fr 20px;
     grid-template-areas:
         "header header header header"
+        "navigation navigation navigation navigation"
         ". banner banner ."
         ". camera camera explanation"
         ". . . ."
@@ -186,4 +187,26 @@ hr {
 }
 .recorded {
     color: #999; 
+}
+
+.navigation ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.5rem;
+    margin: 0 auto; 
+    max-width: 1000px; 
+}
+
+.navigation li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.navigation {
+    grid-area: navigation;
+    background-color: #e8e8e8;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }

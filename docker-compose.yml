@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
     # application
     # : sandbox application that enables emotion recognition from facial features
@@ -17,6 +15,7 @@ services:
             - UID=1000
             - GID=1000
             - EXPERIMENT_NAME=onnx_emo_datastore
+            - MODEL_NAME=onnx_emo_datastore
             - MODEL_INFERENCE_URL=http://serving-api:8000
             - TRAINING_SERVER_URL=http://training-api:8000
         #volumes:
@@ -54,14 +53,22 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+           # - DATABASE_URI=postgres-db:5432
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - ''
             - 'gpu'
@@ -82,14 +89,23 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+           # - DATABASE_URI=postgres-db:5432
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
+            - TRAINING_SERVER_URL=http://training-api:8000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets:ro
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - ''
             - 'worker-only'
@@ -116,14 +132,23 @@ services:
             - TRACKING_URI=http://monitoring-server:8999
             - CELERY_BROKER_URL=redis://message-queue:6379
             - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000
+          #  - DATABASE_URI=postgres-db:5432
+            - DATABASE_URI=postgres-db
+            - DATABASE_NAME=chimp_database
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - TRAINING_SERVER_URL=http://training-api:8000
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
-            - ./training/app/plugins:/usr/src/app/app/plugins
+            - ./training:/usr/src/app
         depends_on:
             - monitoring-server
+            - postgres-db
         profiles:
             - 'gpu'
             - 'worker-only-gpu'
@@ -230,6 +255,68 @@ services:
             - ''
             - 'gpu'
             - 'services'
+
+    # postgresql
+    # : database for managed datasets        
+    postgres-db:
+        image: postgres:17
+        container_name: chimp-postgres
+        restart: unless-stopped
+        networks:
+            - backend-network
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_USER: chimp_user
+            POSTGRES_PASSWORD: chimp_password
+            POSTGRES_DB: chimp_database
+        volumes:
+            - ./docker-data/postgres:/var/lib/postgresql/data
+        profiles:
+            - ''
+            - 'gpu'
+            - 'services'
+        
+        
+    training-beat:
+        container_name: training-beat
+        build:
+            context: ./training
+            dockerfile: Dockerfile.worker
+        entrypoint: [""]
+        command: >
+          sh -c "celery -A manage:celery_app beat --loglevel=info"
+        volumes:
+            - ./training:/usr/src/app
+        environment:
+            - CELERY_BROKER_URL=redis://message-queue:6379
+            - CELERY_RESULT_BACKEND=redis://message-queue:6379
+            - REDIS_HOST=message-queue
+            - REDIS_PORT=6379
+            - DATASTORE_URI=datastore:9000
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
+            - TRACKING_URI=http://monitoring-server:8999
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
+        depends_on:
+            message-queue:
+                condition: service_started
+            training-api:
+                condition: service_started
+            datastore:
+                condition: service_started
+        networks:
+            - backend-network
+        profiles:
+            - ''
+            - 'gpu'
+            - 'worker-only'
+
+
+
 
 networks:
     public-network:

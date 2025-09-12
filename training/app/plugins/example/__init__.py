@@ -11,7 +11,6 @@ class ExamplePlugin(BasePlugin):
             version="1.0",
             description="This example plugin uses a folder (module) instead of a single py file.",
             arguments={},
-            datasets={},
             model_return_type="tensorflow",
         )
 

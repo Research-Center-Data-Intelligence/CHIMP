@@ -8,14 +8,18 @@ ENV CONTAINER_HOME=/usr/src/app
 # Setup dependencies
 RUN apt-get update && apt-get upgrade -y && apt-get install -y -q wget git ffmpeg build-essential
 
-# Setup pip dependencies
+# Import pip constraints
 WORKDIR $CONTAINER_HOME
+COPY ./constraints.txt $CONTAINER_HOME/constraints.txt
+
+# Setup pip dependencies
 COPY ./requirements.txt $CONTAINER_HOME/requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # Install plugin dependencies
 COPY ./plugin-requirements.txt $CONTAINER_HOME/plugin-requirements.txt
-RUN pip3 install --no-cache-dir -r plugin-requirements.txt
+RUN pip3 install --no-cache-dir -r plugin-requirements.txt -c constraints.txt
+
 
 # Copy project to container
 COPY . $CONTAINER_HOME

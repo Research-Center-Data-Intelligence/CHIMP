@@ -1,0 +1,11 @@
+numpy
+tqdm
+requests
+minio
+mlflow
+tensorflow
+keras
+tf2onnx
+psycopg2
+gdown
+onnxruntime

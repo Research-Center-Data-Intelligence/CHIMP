@@ -1,3 +1,4 @@
+# training/app/__init__.py
 import os.path
 
 from celery import Celery, Task
@@ -8,7 +9,8 @@ from app.endpoints import dataset_endpoints, health_endpoints, training_endpoint
 from app.errors import bp as errors_bp
 from app.extensions import connector, cors, datastore, plugin_loader, worker_manager
 from app.plugin import PluginLoader
-
+from app.scheduler import register_tasks
+from celery.schedules import crontab
 
 def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     app = Flask(__name__)
@@ -30,7 +32,7 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     # Initialize extensions
     connector.init_app(app, app.config["TRACKING_URI"])
     cors.init_app(app)
-    datastore.init_app(app, app.config["DATASTORE_URI"])
+    datastore.init_app(app, app.config["DATASTORE_URI"], app.config["DATABASE_URI"])
     plugin_loader.init_app(app, connector, datastore)
     plugin_loader.load_plugins()
     celery_app = create_celery_app(app)
@@ -61,6 +63,21 @@ def create_celery_app(app: Flask):
             task_ignore_result=True,
         )
     )
+
+    celery_app.conf.beat_schedule = {
+        "check-labeled-image-queue-every-5-minutes": {
+            "task": "app.scheduler.check_and_trigger_training",
+            "schedule": crontab(minute="*/1"),
+            "args": (40,),  
+        }
+    }
+
+    register_tasks(celery_app)
+
     celery_app.set_default()
     app.extensions["celery"] = celery_app
+
+
     return celery_app
+
+celery = create_celery_app(create_app())

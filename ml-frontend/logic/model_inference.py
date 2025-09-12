@@ -22,9 +22,10 @@ class FacialEmotionInference:
         image = np.array(image).reshape((-1, 96, 96, 1)) 
         image = np.concatenate((image,image,image),3)
         # Post image to inference server
+        model_name = environ['MODEL_NAME']
         exp_name = environ['EXPERIMENT_NAME']
         #url = environ['MODEL_INFERENCE_URL'] + f'/model/{exp_name}?id={model_id}&stage={self.stage}'
-        url = environ['MODEL_INFERENCE_URL'] + f'/model/{exp_name}/infer'
+        url = environ['MODEL_INFERENCE_URL'] + f'/model/{model_name}/infer?id={exp_name}'
         print(url)
         headers = {
             'Content-Type': 'application/json'
