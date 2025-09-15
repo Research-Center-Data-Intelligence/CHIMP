@@ -134,7 +134,7 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
 - If you host CHIMP in a publicly available manner, ensure that you replace the preconfigured datastore key and secret with your own key and secret.
 
 
-## Usage
+## Usage of the demonstrator app
 
 ### Using the Model
 1. Open the frontend demonstrator app and go to the "Home" page.
