@@ -49,6 +49,8 @@ graph RL
 
 ## Development setup
 
+### Local setup (on host in Docker)
+
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose. Use this [manual](https://docs.docker.com/desktop/features/wsl/) for Windows install.
 3. Run `docker-compose build` in the root of the repository and on success `docker-compose up`
@@ -62,6 +64,67 @@ follows: `docker-compose --profile services up -d`. Please note that the `--prof
 further commands, such as `up -d`. On some setups, to use the default profile (denoted by an empty string, or ''), it should be explicitly included in the call, for example: `docker-compose --profile '' up -d`.
 
 To monitor and work with the Redis message queue during development, a tool like "Another Redis Desktop Manager" can be used.
+
+
+### Remote setup (Remote Linux host on Docker)
+
+#### Remote Setup (Linux Host with Docker)
+1. Create an Ubuntu server (or another Linux distribution).
+2. Log in using a terminal client such as PuTTY. Define and save your session.
+3. Enable certificate-based login and disable password login on the server (refer to your cloud provider's documentation; this is often pre-configured).
+4. Update system packages:
+  ```
+  sudo apt-get update && sudo apt-get upgrade
+  ```
+5. Install Docker by following the [official Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
+6. Retrieve the code from GitHub:
+  ```
+  sudo mkdir -p /opt/CHIMP
+  sudo chown $USER:$USER /opt/CHIMP
+  cd /opt/CHIMP
+  git clone --branch robOnlineInstall https://github.com/Research-Center-Data-Intelligence/CHIMP.git
+  ```
+7. Build and start the containers:
+  ```
+  cd CHIMP
+  docker compose build
+  docker compose up
+  ```
+
+#### Setting Up SSH Tunnels with PuTTY
+To securely access services without exposing ports to the internet, set up SSH tunnels in PuTTY:
+1. Open PuTTY and go to the Session screen.
+2. Enter the IP address or hostname of your remote server.
+3. In the left menu, navigate to: Connection → SSH → Tunnels.
+4. For each required port:
+  - Enter the local port in the Source port field (e.g., 5252).
+  - Enter the destination as `localhost:5252` (replace with the appropriate port for each service).
+  - Select "Local" and click Add.
+5. Return to the Session screen, save your session, and click Open to start the SSH connection.
+6. In your local browser, go to `http://localhost:5252/login` to access the frontend running on the remote server.
+
+Repeat the above steps for any additional ports you need (e.g., 9000 for Minio, 5432 for PostgresDB, 8999 for MLflow, 5253 for the API).
+
+#### Initialization (WIP)
+
+To initialize the database:
+1. While connected to the server with SSH tunnels configured, perform the following steps on your local machine:
+  - Create and activate a Python virtual environment.
+  - Navigate to the `initialize_empty_CHIMP` folder.
+  - Run:
+    ```
+    pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt
+    ```
+2. Use [this manual](https://code.visualstudio.com/docs/containers/ssh#:~:text=Use%20the%20Command%20Palette%20(Ctrl,install%20the%20Container%20Tools%20extension.) to connect to remote Docker Context over SSH
+
+
+WIP werkt nog niet
+
+  - Once successful, execute `initialize_populate_empty_CHIMP.ipynb` (e.g., in VS Code).
+
+
+
+
 
 ### Local development setup (on host outside of Docker)
 To run the Python/Flask based CHIMP components outside of Docker (for example, when you want to run a component with a debugger attached), you can use the following steps:
