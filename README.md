@@ -52,7 +52,7 @@ graph RL
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose. Use this [manual](https://docs.docker.com/desktop/features/wsl/) for Windows install.
 3. Run `docker-compose build` in the root of the repository and on success `docker-compose up`
-4. [OPTIONAL] Initialize the database. Create a Python venv. Navigate to folder `initialize_empty_CHIMP` and execute `pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt` and on success execute  `initialize_populate_empty_CHIMP.ipynb`
+4. [OPTIONAL] Initialize the database (this can take a while). Create a Python venv ([Python environments in VS Code](https://code.visualstudio.com/docs/python/environments)). Navigate to folder `initialize_empty_CHIMP` and execute `pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt` and on success execute  `initialize_populate_empty_CHIMP.ipynb`
 5. Open your browser and navigate to `http://localhost:5252`
 6. Allow the CHIMP front-end to use your webcam.
 
@@ -132,3 +132,25 @@ Every plugin has a `_info` attribute, which should be filled with a `app.plugin.
 
 ## Security notes
 - If you host CHIMP in a publicly available manner, ensure that you replace the preconfigured datastore key and secret with your own key and secret.
+
+
+## Usage
+
+### Using the Model
+1. Open the frontend demonstrator app and go to the "Home" page.
+2. If your camera is enabled, the model will automatically start working. Please note that it may take a few seconds before the model begins recognizing emotions.
+
+### Training a New Model
+1. Go to the "Kalibratie lijst" menu and click "Start recording". The system will prompt you with the emotion to record.
+2. When recording is finished, click "Save recording". The images will be extracted and uploaded. This process may take some time, and you might not immediately see an error or success message in the frontend. To verify if the upload was successful, check the Docker logs.
+3. Next, navigate to "Home" > "Finetune Model: Personal data". The training API will start training a new model using the training worker. The frontend will display a message that training was successful right away, but in reality, it may take some time for training to actually start and complete, depending on your hardware resources. Again, monitor the logs to track the training progress and confirm success.
+4. Once training is complete, visit the MLFlow service website to view the new model and publish it if needed.
+
+### Training a New Model using "Unlabeled Data" (active learning)
+1. Navigate to the "Kalibratie lijst" menu and click "Unlabeled Data". The system will start recording, and you can use any emotion you prefer during the recording.
+2. When recording is finished, click "Save Recording". The system will analyze the video for emotions, but will not label the data automatically. This analysis may take some time, and there is no immediate feedback in the frontend. To check if the analysis has finished, monitor the Docker logs.
+3. Go to the "Label Unlabeled Data" section. You will see a row containing images that need to be labeled. Manually label the data as required.
+4. Next, navigate to "Home" > "Finetune Model: Personal data". The training API will start training a new model using the training worker. The frontend will display a message that training was successful right away, but in reality, it may take some time for training to actually start and complete, depending on your hardware resources. Again, monitor the logs to track the training progress and confirm success.
+5. Once training is complete, visit the MLFlow service website to view the new model and publish it if needed.
+
+
