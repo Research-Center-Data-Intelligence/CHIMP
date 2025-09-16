@@ -49,6 +49,8 @@ graph RL
 
 ## Development setup
 
+When planning to change code, please take notice of the guidelines in [Git guidelines](./GIT_GUIDELINES.md).
+
 ### Local setup (on host in Docker)
 
 1. Fork this repository and clone the fork to your local machine.
