@@ -10,7 +10,7 @@
    flowchart LR
          A[Your feature branch] -- many changes --> B[Merge hell]
          B -- responsibility --> C[You fix it]
-         style B fill:#ffcccc,stroke:#d33,stroke-width:2px
+         style B fill:#ffcccc,stroke:#d33,stroke-width:2px,color:#000
          style C fill:#ccffcc,stroke:#393,stroke-width:2px
    ```
 
