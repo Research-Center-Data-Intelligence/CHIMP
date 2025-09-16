@@ -1,72 +1,95 @@
+
+---
+<div align="center">
+   <strong style="font-size:1.2em;">"If you create merge hell, you fix merge hell."</strong>
+</div>
+
+<div align="center">
+  
+   ```mermaid
+   flowchart TD
+         A[Your feature branch] -- many changes --> B[Merge hell]
+         B -- responsibility --> C[You fix it]
+         style B fill:#ffcccc,stroke:#d33,stroke-width:2px
+         style C fill:#ccffcc,stroke:#393,stroke-width:2px
+   ```
+
+</div>
+
+---
+
+(so here are some guidelines...)
+
 ## Branching Strategy
 
-Voor dit project hanteren we een branching strategy die aansluit bij open source development:
+For this project, we use a branching strategy that fits open source development:
 
-- **Main branch:** De `main` branch is de basis branch van de repository. Hier staat altijd de meest stabiele en actuele versie van de code.
-- **Feature branches:** Medewerkers werken aan nieuwe features, bugfixes of verbeteringen in een eigen feature branch. Deze branches worden aangemaakt vanaf de `main` branch en na afronding via een pull request samengevoegd.
-- **Forks voor studenten:** Studenten maken een fork van de repository in hun eigen GitHub omgeving. Zij werken in hun eigen fork en kunnen via pull requests bijdragen aan het hoofdproject.
+- **Main branch:** The `main` branch is the base branch of the repository. It always contains the most stable and up-to-date version of the code.
+- **Feature branches:** Staff members work on new features, bug fixes, or improvements in their own feature branch. These branches are created from the `main` branch and, once finished, are merged back via a pull request.
+- **Forks for students:** Students create a fork of the repository in their own GitHub environment. They work in their own fork and can contribute to the main project via pull requests.
 
-Deze aanpak zorgt voor een duidelijke scheiding tussen stabiele code, actieve ontwikkeling door medewerkers en externe bijdragen door studenten.
+This approach ensures a clear separation between stable code, active development by staff, and external contributions by students.
 
-## Voorkom lang openstaande branches
+## Avoid long-lived branches
 
-Het is belangrijk om wijzigingen in een feature branch of fork tijdig terug te brengen naar de `main` branch via een pull request. Lang openstaande branches met veel wijzigingen die niet in `main` terechtkomen, vergroten de kans op merge-conflicten en maken het lastiger om nieuwe functionaliteit te integreren. Door regelmatig een pull request aan te maken en je werk samen te voegen met `main`:
+It is important to bring changes from a feature branch or fork back to the `main` branch in a timely manner via a pull request. Long-lived branches with many changes that do not reach `main` increase the risk of merge conflicts and make it harder to integrate new functionality. By regularly creating a pull request and merging your work with `main`:
 
-- Blijft de codebase overzichtelijk en up-to-date.
-- Voorkom je dat je werk veroudert of moeilijk te integreren wordt.
-- Draag je sneller bij aan het gezamenlijke projectresultaat.
+- The codebase remains organized and up-to-date.
+- You prevent your work from becoming outdated or difficult to integrate.
+- You contribute more quickly to the overall project result.
 
-Kortom: houd branches kort en merge ze tijdig om een gezonde en samenwerkende ontwikkelomgeving te behouden.
+In short: keep branches short and merge them in time to maintain a healthy and collaborative development environment.
 
-## Sync regelmatig met main?
+## Regularly sync with main
 
-Het is essentieel om je feature branch of fork regelmatig te synchroniseren met de `main` branch. Hierdoor voorkom je dat je achterloopt op recente wijzigingen, bugfixes of nieuwe features die door anderen zijn toegevoegd. Door frequent te syncen:
+It is essential to regularly synchronize your feature branch or fork with the `main` branch. This prevents you from falling behind on recent changes, bug fixes, or new features added by others. By syncing frequently:
 
-- Minimaliseer je merge-conflicten bij het samenvoegen van je werk.
-- Zorg je dat je ontwikkelt op basis van de meest actuele en stabiele code.
-- Kun je sneller inspelen op veranderingen in het project.
+- You minimize merge conflicts when merging your work.
+- You ensure you are developing based on the most current and stable code.
+- You can respond more quickly to changes in the project.
 
-## Hoe sync je met main?
-Hieronder volgend de commandline opties, het is ook mogelijk dit te doen in de VSCode GUI.
+## How to sync with main?
+Below are the command line options; it is also possible to do this in the VSCode GUI.
 
-### In een feature branch (zelfde repository)
-1. Zorg dat je lokale repository up-to-date is:
-	```
-	git fetch origin
-	```
-2. Checkout je feature branch:
-	```
-	git checkout <jouw-feature-branch>
-	```
-3. Merge de laatste wijzigingen van main:
-	```
-	git merge origin/main
-	```
-4. Los eventuele merge-conflicten op, commit en push je branch indien nodig.
+### In a feature branch (same repository)
+1. Make sure your local repository is up-to-date:
+   ```
+   git fetch origin
+   ```
+2. Checkout your feature branch:
+   ```
+   git checkout <your-feature-branch>
+   ```
+3. Merge the latest changes from main:
+   ```
+   git merge origin/main
+   ```
+4. Resolve any merge conflicts, commit, and push your branch if needed.
 
-### In een fork (eigen repository)
-1. Voeg het originele project toe als remote (indien nog niet gedaan):
-	```
-	git remote add upstream https://github.com/Research-Center-Data-Intelligence/CHIMP.git
-	```
-2. Haal de laatste wijzigingen van het hoofdproject op:
-	```
-	git fetch upstream
-	```
-3. Checkout je eigen branch:
-	```
-	git checkout <jouw-branch>
-	```
-4. Merge de wijzigingen van main uit het hoofdproject:
-	```
-	git merge upstream/main
-	```
-5. Los eventuele merge-conflicten op, commit en push je branch indien nodig.
+### In a fork (own repository)
+1. Add the original project as a remote (if not already done):
+   ```
+   git remote add upstream https://github.com/Research-Center-Data-Intelligence/CHIMP.git
+   ```
+2. Fetch the latest changes from the main project:
+   ```
+   git fetch upstream
+   ```
+3. Checkout your own branch:
+   ```
+   git checkout <your-branch>
+   ```
+4. Merge the changes from main in the main project:
+   ```
+   git merge upstream/main
+   ```
+5. Resolve any merge conflicts, commit, and push your branch if needed.
+
 
 
 ## Pull request guidelines
 
-TODO: aanvullen door Bryan.
+TODO: to be completed by Bryan.
 
 
 
