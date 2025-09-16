@@ -7,7 +7,7 @@
 <div align="center">
   
    ```mermaid
-   flowchart TD
+   flowchart LR
          A[Your feature branch] -- many changes --> B[Merge hell]
          B -- responsibility --> C[You fix it]
          style B fill:#ffcccc,stroke:#d33,stroke-width:2px
