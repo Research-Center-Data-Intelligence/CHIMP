@@ -67,8 +67,6 @@ To monitor and work with the Redis message queue during development, a tool like
 
 
 ### Remote setup (Remote Linux host on Docker)
-
-#### Remote Setup (Linux Host with Docker)
 1. Create an Ubuntu server (or another Linux distribution).
 2. Log in using a terminal client such as PuTTY. Define and save your session.
 3. Enable certificate-based login and disable password login on the server (refer to your cloud provider's documentation; this is often pre-configured).
@@ -105,25 +103,29 @@ To securely access services without exposing ports to the internet, set up SSH t
 
 Repeat the above steps for any additional ports you need (e.g., 9000 for Minio, 5432 for PostgresDB, 8999 for MLflow, 5253 for the API).
 
-#### Initialization (WIP)
+#### Database Initialization (Work In Progress)
 
-To initialize the database:
-1. While connected to the server with SSH tunnels configured, perform the following steps on your local machine:
-  - Create and activate a Python virtual environment.
-  - Navigate to the `initialize_empty_CHIMP` folder.
-  - Run:
-    ```
-    pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt
-    ```
-2. Use [this manual](https://code.visualstudio.com/docs/containers/ssh#:~:text=Use%20the%20Command%20Palette%20(Ctrl,install%20the%20Container%20Tools%20extension.) to connect to remote Docker Context over SSH
+To initialize the database, follow these steps:
 
+1. Ensure you are connected to the server with SSH tunnels configured. On your local machine:
+   - Create and activate a Python virtual environment.
+   - Navigate to the `initialize_empty_CHIMP` directory.
+   - Install the required packages:
+     ```
+     pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt
+     ```
 
-WIP werkt nog niet
+2. To connect to the remote Docker context over SSH, use [this manual](https://code.visualstudio.com/docs/containers/ssh#:~:text=Use%20the%20Command%20Palette%20(Ctrl,install%20the%20Container%20Tools%20extension.).
+   - If you encounter errors such as "Failed to connect. Is Docker running?", this is likely a user rights issue. Your SSH user must be able to run Docker commands (usually by being in the `docker` group).
+   - On the remote server, run:
+     ```
+     sudo usermod -aG docker $USER
+     ```
+     Then log out and log back in to apply the changes.
 
-  - Once successful, execute `initialize_populate_empty_CHIMP.ipynb` (e.g., in VS Code).
+3. Once the above steps are successful, open and execute `initialize_populate_empty_CHIMP.ipynb` step by step in VS Code.
 
-
-
+**Note:** Step 3 currently fails; this initialization process is still a work in progress.
 
 
 ### Local development setup (on host outside of Docker)
