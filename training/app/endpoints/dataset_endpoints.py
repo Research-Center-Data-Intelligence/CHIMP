@@ -271,6 +271,7 @@ def upload_dataset(passed_request: Request = None):
 
 @bp.route("/labeling_tasks", methods=["GET"])
 def get_labeling_tasks():
+    ## TODO MV: do not use postgress access directly here, but make use of the connectors and datastore interfaces.
     DB_CONFIG = {
         "dbname": os.getenv("DATABASE_NAME", "chimp_database"),
         "user": os.getenv("DATABASE_USER", "chimp_user"),
