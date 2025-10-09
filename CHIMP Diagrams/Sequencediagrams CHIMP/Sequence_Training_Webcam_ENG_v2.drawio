@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" version="28.2.5">
+  <diagram name="Pagina-1" id="-8aGOuzfHynz8xdtp_JJ">
+    <mxGraphModel dx="1097" dy="597" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--5" value="User" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="160" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--6" value="ml-frontend" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="400" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--7" value="Training API" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="640" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--11" value="MinIO Object Store" style="html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="880" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--13" value="" style="endArrow=none;html=1;rounded=0;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="TsKVhTA5dAb4zA3UKI7--15" target="TsKVhTA5dAb4zA3UKI7--5" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="220" y="270" as="sourcePoint" />
+            <mxPoint x="220" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--14" value="Start training" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="1" source="TsKVhTA5dAb4zA3UKI7--15" target="TsKVhTA5dAb4zA3UKI7--16" edge="1">
+          <mxGeometry y="10" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="330" />
+              <mxPoint x="390" y="330" />
+            </Array>
+            <mxPoint as="offset" />
+            <mxPoint x="450" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--15" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="210" y="280" width="20" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--17" value="Provide instructions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="1" edge="1">
+          <mxGeometry y="10" relative="1" as="geometry">
+            <mxPoint x="450" y="370" as="sourcePoint" />
+            <mxPoint x="230" y="370" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="370" />
+              <mxPoint x="400" y="370" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--16" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="450" y="320" width="20" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--20" value="Training images containing emotion" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="1" edge="1">
+          <mxGeometry x="0.0048" y="10" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="430" />
+              <mxPoint x="390" y="430" />
+            </Array>
+            <mxPoint as="offset" />
+            <mxPoint x="450" y="430" as="targetPoint" />
+            <mxPoint x="230" y="430" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--21" value="" style="endArrow=none;html=1;rounded=0;dashed=1;" parent="1" source="TsKVhTA5dAb4zA3UKI7--16" target="TsKVhTA5dAb4zA3UKI7--6" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="459.71000000000004" y="290" as="sourcePoint" />
+            <mxPoint x="459.71000000000004" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--22" value="" style="endArrow=none;html=1;rounded=0;dashed=1;" parent="1" source="TsKVhTA5dAb4zA3UKI7--23" target="TsKVhTA5dAb4zA3UKI7--7" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="699.58" y="340" as="sourcePoint" />
+            <mxPoint x="699.58" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--23" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="690" y="460" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--24" value="Provide training images containing emotion" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="1" edge="1">
+          <mxGeometry x="0.0048" y="10" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="630" y="470" />
+              <mxPoint x="630" y="470" />
+            </Array>
+            <mxPoint as="offset" />
+            <mxPoint x="690" y="470" as="targetPoint" />
+            <mxPoint x="470" y="470" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--25" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="930" y="500" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--26" value="Save training images containing emotion" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="1" target="TsKVhTA5dAb4zA3UKI7--25" edge="1">
+          <mxGeometry y="10" relative="1" as="geometry">
+            <Array as="points" />
+            <mxPoint as="offset" />
+            <mxPoint x="1650" y="510" as="targetPoint" />
+            <mxPoint x="710" y="510" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TsKVhTA5dAb4zA3UKI7--27" value="" style="endArrow=none;html=1;rounded=0;dashed=1;" parent="1" source="TsKVhTA5dAb4zA3UKI7--25" target="TsKVhTA5dAb4zA3UKI7--11" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="939.5799999999999" y="490" as="sourcePoint" />
+            <mxPoint x="939.5799999999999" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6FmbVJUS7KDVjiL1LIt4-3" value="" style="endArrow=none;html=1;rounded=0;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="TsKVhTA5dAb4zA3UKI7--15" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="220" y="560" as="sourcePoint" />
+            <mxPoint x="270" y="710" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6FmbVJUS7KDVjiL1LIt4-6" value="" style="endArrow=none;html=1;rounded=0;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" target="TsKVhTA5dAb4zA3UKI7--16" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="460" y="560" as="sourcePoint" />
+            <mxPoint x="480" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6FmbVJUS7KDVjiL1LIt4-40" value="Model training - Emotions via webcam" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=120;height=60;" parent="1" vertex="1">
+          <mxGeometry x="120" y="80" width="920" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="qRKJQR37ORC1aHLorgBi-1" value="" style="endArrow=none;html=1;rounded=0;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="560" as="sourcePoint" />
+            <mxPoint x="699.63" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qRKJQR37ORC1aHLorgBi-2" value="" style="endArrow=none;html=1;rounded=0;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="940" y="560" as="sourcePoint" />
+            <mxPoint x="939.63" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
