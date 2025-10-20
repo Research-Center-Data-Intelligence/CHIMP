@@ -38,7 +38,7 @@ When planning to change code, please take notice of the guidelines in [Git guide
 1. Fork this repository and clone the fork to your local machine.
 2. Install Docker and Docker Compose. Use this [manual](https://docs.docker.com/desktop/features/wsl/) for Windows install.
 3. Run `docker-compose build` in the root of the repository and on success `docker-compose up`
-4. [OPTIONAL] Initialize the database (this can take a while). Create a Python venv ([Python environments in VS Code](https://code.visualstudio.com/docs/python/environments)). Navigate to folder `initialize_empty_CHIMP` and execute `pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt` and on success execute  `initialize_populate_empty_CHIMP.ipynb`
+4. Initialize the database (this can take a while). Install Python 3.11.9. Create a Python venv ([Python environments in VS Code](https://code.visualstudio.com/docs/python/environments)) based on Python 3.11.9. Navigate to folder `initialize_empty_CHIMP` and execute `pip3 install --no-cache-dir -r initialize_requirements.txt -c constraints.txt` and on success execute  `initialize_populate_empty_CHIMP.ipynb`
 5. Open your browser and navigate to `http://localhost:5252`
 6. Allow the CHIMP front-end to use your webcam.
 
