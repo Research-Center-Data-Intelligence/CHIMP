@@ -26,26 +26,8 @@ The table below shows which ports are used by the different components. The "Loc
 | minio-datastore  | n.a.           | 9000, 9001 (web) | 9000, 9001            |
 | message-queue    | n.a.           | 6379             | 6379                  |
 
-```mermaid
-graph RL
-;
-    subgraph Application
-        afe[Emotion recognition front-end<br/>- HTML/CSS/JS] --> abe[Emotion recognition back-end<br/>- Python/Flask];
-    end
-    abe --> tapi[Training service API<br/>- Python/Flask];
-    abe --> srv[Serving_api service<br/>- Python/Flask];
-    subgraph Services
-        tapi --> mq[Redis message queue];
-        mq --> twork[Training service worker<br/>- Python];
-        twork --> mlf[Tracking<br/>- MLFlow];
-        srv --> mlf;
-        mlf --> db[Database<br/>- SQLite];
-        mlf --> fs[File storage<br/>- Filesystem];
-        srv --> ds[Datastore<br/>- Minio];
-        tapi --> ds;
-        twork --> ds;
-    end
-```
+## CHIMP flow
+![chimp_flow_diagram](chimp_diagrams/diagram_github_chimp.svg)
 
 ## Development setup
 
