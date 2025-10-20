@@ -87,7 +87,7 @@ class EmotionRecognitionPlugin(BasePlugin):
 
 
         print("KWARGS DEBUG:", kwargs)
-
+        ##TODO MV: do not access prostgress direclty here, but use the connector and datastore interfaces
         #MV TODO: #36 built logic based on plugin info
         # 1) New Model Personal Data
         if kwargs["trainnew"] & kwargs["personaldata"] & (not kwargs["basedata"]) & (not kwargs["newdata"]):
@@ -176,6 +176,8 @@ class EmotionRecognitionPlugin(BasePlugin):
             artifacts= {'keras' : tf_path}, #save the tensorflow version as well, 
         )
 
+
+        ##TODO MV: do not access prostgress direclty here, but use the connector and datastore interfaces
         with self._datastore._db_conn.cursor() as cursor:
             insert_data = []
             for row in rows:
@@ -197,6 +199,7 @@ class EmotionRecognitionPlugin(BasePlugin):
         label_idx = {category : class_ for class_, category in enumerate(self.config["categories"])}
         self.data = {"image_data": [], "class_": [], "category": []}
 
+        ##TODO MV: do not access prostgress direclty here, but use the connector and datastore interfaces
         with self._datastore._db_conn.cursor() as cursor:
             cursor.execute(select_query)
 

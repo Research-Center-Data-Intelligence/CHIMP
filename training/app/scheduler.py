@@ -114,6 +114,7 @@ def upload_curated_dataset(dataset_name, items):
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for item in items:
             try:
+                ##TODO MV: do we want direct access to postgress here, or hide it behind the connectors interface?
                 datapoint_id = item["datapoint_id"]
                 cursor.execute("SELECT x, y, metadata FROM datapoints WHERE id = %s", (datapoint_id,))
                 result = cursor.fetchone()
