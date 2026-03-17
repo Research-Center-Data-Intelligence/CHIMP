@@ -113,11 +113,12 @@ services:
     # Training Worker - GPU
     # : worker for the training service that does the actual training with GPU.
     training-worker-gpu:
-        container_name: training-worker
+        container_name: training-worker-gpu
         restart: unless-stopped
         build:
             context: ./training
             dockerfile: Dockerfile.worker
+        gpus: all
         deploy:
             resources:
                 reservations:
@@ -143,6 +144,8 @@ services:
             - DATABASE_USER=chimp_user
             - DATABASE_PASSWORD=chimp_password
             - TRAINING_SERVER_URL=http://training-api:8000
+            - NVIDIA_VISIBLE_DEVICES=all
+            - NVIDIA_DRIVER_CAPABILITIES=compute,utility
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
             - ./training:/usr/src/app

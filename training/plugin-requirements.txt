@@ -5,12 +5,12 @@
 # removed).
 
 # Emotion Recognition
-tensorflow
+tensorflow[and-cuda]
 opencv-python
 tf2onnx
 onnxruntime
 
 # Game Art Style Detector
-tensorflow
+tensorflow[and-cuda]
 scikit-learn
 numpy

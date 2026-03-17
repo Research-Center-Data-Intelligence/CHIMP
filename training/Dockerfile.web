@@ -25,4 +25,4 @@ RUN pip3 install --no-cache-dir -r plugin-requirements.txt -c constraints.txt
 COPY . $CONTAINER_HOME
 
 # Entrypoint
-ENTRYPOINT ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=8", "--threads=4", "manage:app"]
+ENTRYPOINT ["gunicorn", "--worker-class=gunicorn.workers.ggevent.GeventWorker", "--bind=0.0.0.0:8000", "--workers=4", "--threads=2", "manage:app"]
