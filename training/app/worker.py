@@ -32,6 +32,19 @@ class WorkerManager:
     _celery_app: Celery
     _datastore: ManagedBaseDatastore
 
+    @staticmethod
+    def _last_successful_key(plugin_name: str) -> str:
+        return f"chimp:tasks:last_successful:{plugin_name}"
+
+    @staticmethod
+    def _redis_client() -> redis.StrictRedis:
+        return redis.StrictRedis(
+            host=os.getenv("REDIS_HOST", "message-queue"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            db=0,
+            decode_responses=True,
+        )
+
     @shared_task(ignore_result=False)
     def _run_task(self, *args, **kwargs) -> Optional[Any]:
         """Celery task for running a plugin.
@@ -74,6 +87,21 @@ class WorkerManager:
         # Starting plugin
         print(f"Starting plugin '{plugin_name}' (directory: '{plugin_tmp_dir}')")
         run_id = plugin.run(*args, **kwargs)
+
+        if run_id:
+            try:
+                payload = {
+                    "plugin_name": plugin_name,
+                    "value": str(run_id),
+                    "updated_at": datetime.utcnow().isoformat() + "Z",
+                }
+                WorkerManager._redis_client().set(
+                    WorkerManager._last_successful_key(plugin_name), json.dumps(payload)
+                )
+            except Exception as ex:
+                print(
+                    f"Warning: could not persist last successful run for plugin '{plugin_name}': {ex}"
+                )
 
         # Cleanup
         shutil.rmtree(plugin_tmp_dir)
@@ -142,6 +170,19 @@ class WorkerManager:
             return plugin.info()
         return None
 
+    @classmethod
+    def get_last_successful_run(cls, plugin_name: str) -> Optional[dict]:
+        payload = cls._redis_client().get(cls._last_successful_key(plugin_name))
+        if not payload:
+            return None
+        try:
+            data = json.loads(payload)
+            if isinstance(data, dict):
+                return data
+            return {"plugin_name": plugin_name, "value": str(data)}
+        except json.JSONDecodeError:
+            return {"plugin_name": plugin_name, "value": payload}
+
     @staticmethod
     def get_task_status(task_id: str) -> Optional[TaskResult]:
         """Poll the status of a task given a task ID.
@@ -159,10 +200,13 @@ class WorkerManager:
         res = AsyncResult(task_id)
         if res:
             ready = res.ready()
+            value = res.result
+            if isinstance(value, Exception):
+                value = str(value)
             return TaskResult(
                 ready=ready,
                 successful=res.successful() if ready else None,
-                value=res.get() if ready else res.result,
+                value=value,
             )
 
 

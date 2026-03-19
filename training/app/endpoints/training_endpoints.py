@@ -130,6 +130,34 @@ def poll(task_id: str):
     return task_info.as_dict()
 
 
+@bp.route("/tasks/last_successful/<plugin_name>")
+def last_successful_task(plugin_name: str):
+    """Get the latest successful run value for a plugin.
+
+    Parameters
+    ----------
+    plugin_name : str
+        The plugin name as used in the URL (spaces encoded as '+').
+    """
+    plugin_name = plugin_name.replace("+", " ")
+    worker_manager: WorkerManager = current_app.extensions["worker_manager"]
+    if not worker_manager.get_plugin_info(plugin_name):
+        abort(404)
+
+    data = worker_manager.get_last_successful_run(plugin_name)
+    if not data:
+        return {
+            "plugin_name": plugin_name,
+            "status": "no successful run stored yet",
+            "data": None,
+        }
+    return {
+        "plugin_name": plugin_name,
+        "status": "successfully retrieved last successful run",
+        "data": data,
+    }
+
+
 """
 @bp.route("/labeling_tasks")
 def get_labeling_tasks():
