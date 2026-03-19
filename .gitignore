@@ -25,6 +25,7 @@ serving_api_env
 
 # Training module plugins and datasets
 training/app/plugins/*
+!training/app/plugins/yolo_pose
 !training/app/plugins/example
 !training/app/plugins/example2.py
 !training/app/plugins/game_art_style_detector
