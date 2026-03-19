@@ -14,3 +14,7 @@ onnxruntime
 tensorflow[and-cuda]
 scikit-learn
 numpy
+
+# YOLO Pose
+ultralytics
+onnx
