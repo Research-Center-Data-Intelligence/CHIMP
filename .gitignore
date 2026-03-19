@@ -22,6 +22,7 @@ serving_venv
 serving_env
 serving_api_venv
 serving_api_env
+.venvs
 
 # Training module plugins and datasets
 training/app/plugins/*
