@@ -73,6 +73,7 @@ services:
             - ''
             - 'gpu'
             - 'external-worker'
+            - 'hpe-dev'
 
     # Training Worker
     # : worker for the training service that does the actual training.
@@ -109,6 +110,7 @@ services:
         profiles:
             - ''
             - 'worker-only'
+            - 'hpe-dev'
 
     # Training Worker - GPU
     # : worker for the training service that does the actual training with GPU.
@@ -183,6 +185,7 @@ services:
             - ''
             - 'gpu'
             - 'external-worker'
+            - 'hpe-dev'
 
     # monitoring
     # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local
@@ -216,6 +219,7 @@ services:
             - 'gpu'
             - 'services'
             - 'external-worker'
+            - 'hpe-dev'
 
     # message queue
     # : serves as a message broker for the CHIMP system.
@@ -233,6 +237,7 @@ services:
             - 'gpu'
             - 'services'
             - 'external-worker'
+            - 'hpe-dev'
 
     # datastore
     # : storage for datasets and MLFlow
@@ -258,6 +263,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'hpe-dev'
 
     # postgresql
     # : database for managed datasets        
@@ -279,6 +285,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'hpe-dev'
         
         
     training-beat:
