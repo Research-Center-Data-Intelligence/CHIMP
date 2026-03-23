@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 
 from app import connectors
 from app.connectors import BaseConnector
-from app.datastore import BaseDatastore
+from app.datastore import ManagedBaseDatastore
 from app.plugin import BasePlugin, PluginLoader
 from app.worker import WorkerManager
 
@@ -60,7 +60,7 @@ def app(mocked_mlflow: None, minio_mock: None) -> Flask:
     app = create_app(config)
     test_data = BytesIO("test data".encode())
     app.extensions["datastore"].store_object(
-        "TestingDataset/test.txt", test_data, "test.txt"
+        "TestingDataset", test_data, "", {}, "test.txt"
     )
 
     ctx = app.app_context()
@@ -137,5 +137,5 @@ def sklearn_model() -> svm.SVC:
 
 
 @pytest.fixture
-def datastore(app: Flask) -> BaseDatastore:
+def datastore(app: Flask) -> ManagedBaseDatastore:
     return app.extensions["datastore"]

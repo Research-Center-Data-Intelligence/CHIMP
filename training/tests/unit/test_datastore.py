@@ -1,16 +1,16 @@
 import os
 from io import BytesIO
 
-from app.datastore import BaseDatastore
+from app.datastore import ManagedBaseDatastore
 
 
 class TestMinioDatastore:
-    def test_list_from_datastore(self, datastore: BaseDatastore):
+    def test_list_from_datastore(self, datastore: ManagedBaseDatastore):
         """Test the list_from_datastore method."""
         # Single file and no prefix
         file = BytesIO("this is testfile1".encode())
         datastore._client.put_object(
-            "datasets",
+            datastore._bucketname,
             "test/testfile1.txt",
             file,
             len(file.getbuffer()),
@@ -27,7 +27,7 @@ class TestMinioDatastore:
         result = datastore.list_from_datastore("does_not_exist")
         assert result == []
 
-    def test_store_file_or_folder(self, datastore: BaseDatastore, tmpdir):
+    def test_store_file_or_folder(self, datastore: ManagedBaseDatastore, tmpdir):
         """Test the store_file_or_folder method."""
         # Store folder
         tmpdir.join("file1.txt").write("this if file1")
@@ -43,25 +43,25 @@ class TestMinioDatastore:
         result = datastore.list_from_datastore("test_save_file")
         assert result == ["test_save_file/file3.txt"]
 
-    def test_store_object(self, datastore: BaseDatastore):
+    def test_store_object(self, datastore: ManagedBaseDatastore):
         """Test the store_object method."""
         data = BytesIO("this is testfile1".encode())
-        datastore.store_object("testfile1.txt", data, "testfile1.txt")
+        datastore.store_object("", data, "", {}, "testfile1.txt")
         result = datastore.list_from_datastore("")
         assert "testfile1.txt" in result
 
-    def test_load_object_to_memory(self, datastore: BaseDatastore):
+    def test_load_object_to_memory(self, datastore: ManagedBaseDatastore):
         """Test the load_object_to_memory method."""
         # Non-existing object
         assert not datastore.load_object_to_memory("testfile1.txt")
 
         # Load file
         data = BytesIO("this is file1".encode())
-        datastore.store_object("file1.txt", data, "file1.txt")
+        datastore.store_object("", data, "", {}, "file1.txt")
         result = datastore.load_object_to_memory("file1.txt")
         assert data.read() == result.read()
 
-    def test_load_object_to_file(self, datastore: BaseDatastore, tmpdir):
+    def test_load_object_to_file(self, datastore: ManagedBaseDatastore, tmpdir):
         """Test the load_object_to_file method."""
         # Non-existing object
         assert not datastore.load_object_to_file(
@@ -70,12 +70,12 @@ class TestMinioDatastore:
 
         # Load file to filesystem
         data = BytesIO("this is file1".encode())
-        datastore.store_object("file1.txt", data, "file1.txt")
+        datastore.store_object("", data, "", {}, "file1.txt")
         result = datastore.load_object_to_file("file1.txt", tmpdir.join("file1.txt"))
         assert result == tmpdir.join("file1.txt")
         assert os.path.exists(tmpdir.join("file1.txt"))
 
-    def test_load_folder_to_filesystem(self, datastore: BaseDatastore, tmpdir):
+    def test_load_folder_to_filesystem(self, datastore: ManagedBaseDatastore, tmpdir):
         """Test the load_folder_to_filesystem method."""
         # Setup
         src_dir = tmpdir.mkdir("src")
@@ -97,7 +97,7 @@ class TestMinioDatastore:
         test2_dir = tmpdir.join("test2")
         assert not datastore.load_folder_to_filesystem("does-not-exist", test2_dir)
 
-    def test_load_folder_to_memory(self, datastore: BaseDatastore, tmpdir):
+    def test_load_folder_to_memory(self, datastore: ManagedBaseDatastore, tmpdir):
         """Test the load_folder_to_memory method."""
         # Setup
         src_dir = tmpdir.mkdir("src")
