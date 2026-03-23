@@ -38,6 +38,15 @@ def mocked_mlflow(monkeypatch):
         with open(dst_path, "w") as f:
             f.write("test")
 
+    class MockedActiveRun:
+        class Info:
+            run_id = "TestRunId"
+
+        info = Info()
+
+    def mocked_active_run(*args, **kwargs):
+        return MockedActiveRun()
+
     monkeypatch.setattr(connectors.mlflow, "start_run", MockedStartRun)
     monkeypatch.setattr(connectors.mlflow, "log_params", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow, "log_metric", mocked_log_things)
@@ -46,6 +55,7 @@ def mocked_mlflow(monkeypatch):
     monkeypatch.setattr(connectors.mlflow.onnx, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow.tensorflow, "log_model", mocked_log_things)
     monkeypatch.setattr(connectors.mlflow, "set_experiment", mocked_log_things)
+    monkeypatch.setattr(connectors.mlflow, "active_run", mocked_active_run)
     monkeypatch.setattr(
         connectors.mlflow.artifacts, "download_artifacts", mocked_download_artifact
     )
@@ -99,7 +109,6 @@ class TestingPlugin(BasePlugin):
             name="Testing Plugin",
             version="1.0",
             description="test description",
-            datasets={},
             arguments={"arg1": {"name": "test", "type": "str", "description": "testing arg1"}}
         )
         
