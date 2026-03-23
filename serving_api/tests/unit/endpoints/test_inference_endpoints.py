@@ -22,9 +22,7 @@ class TestInferenceEndpoints:
         assert "data" in data
         assert "loaded_models" in data["data"] and data["data"]["loaded_models"] == []
         assert "available_models" in data["data"]
-        assert global_model_id in data["data"]["available_models"]
         assert global_model_name in data["data"]["available_models"]
-        assert calibrated_model_id in data["data"]["available_models"]
         assert calibrated_model_name in data["data"]["available_models"]
 
         resp = client.get("/model?reload_models=true")

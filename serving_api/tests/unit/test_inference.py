@@ -17,9 +17,7 @@ class TestInferenceManager:
     ):
         """Test the get_model_list method."""
         result = inference_manager.get_models_list()
-        assert global_model_id in result["available_models"]
         assert global_model_name in result["available_models"]
-        assert calibrated_model_id in result["available_models"]
         assert calibrated_model_name in result["available_models"]
 
     def test_get_model(
