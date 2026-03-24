@@ -63,10 +63,13 @@ class YoloPosePlugin(BasePlugin):
         export_dir: str,
     ) -> str:
         # Run export in a child process to isolate potential native-lib crashes.
+        worker_script = os.path.join(
+            os.path.dirname(__file__),
+            "export_onnx_worker.py",
+        )
         cmd = [
             sys.executable,
-            "-m",
-            "app.plugins.yolo_pose.export_onnx_worker",
+            worker_script,
             "--model-variant",
             model_variant,
             "--imgsz",
