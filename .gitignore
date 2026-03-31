@@ -10,6 +10,7 @@ experimentation/
 ml-frontend/logs
 serving/mlruns
 .env
+hpe/notebooks/datasets
 
 # Custom venv
 experimentation_venv
