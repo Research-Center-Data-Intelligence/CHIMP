@@ -3,11 +3,13 @@ import subprocess
 import shutil
 import sys
 import json
-from typing import Any, Optional
+from typing import Optional
 
 import onnx
 
 from app.plugin import BasePlugin, PluginInfo
+from .dataset import prepare_finetune_dataset
+from .model import fine_tune_model
 
 
 class YoloPosePlugin(BasePlugin):
@@ -23,28 +25,10 @@ class YoloPosePlugin(BasePlugin):
                     "description": "MLflow experiment name and registered model name.",
                     "optional": False,
                 },
-                "model_variant": {
-                    "name": "model_variant",
+                "dataset_name": {
+                    "name": "dataset_name",
                     "type": "str",
-                    "description": "Ultralytics model identifier or local path (for example: yolo11n-pose.pt).",
-                    "optional": True,
-                },
-                "imgsz": {
-                    "name": "imgsz",
-                    "type": "int",
-                    "description": "Export image size used for ONNX graph creation.",
-                    "optional": True,
-                },
-                "opset": {
-                    "name": "opset",
-                    "type": "int",
-                    "description": "ONNX opset version.",
-                    "optional": True,
-                },
-                "device": {
-                    "name": "device",
-                    "type": "str",
-                    "description": "Export device for Ultralytics (cpu or cuda:0).",
+                    "description": "Managed dataset folder used for fine-tuning. If omitted, plugin exports baseline model.",
                     "optional": True,
                 },
             },
@@ -119,24 +103,63 @@ class YoloPosePlugin(BasePlugin):
             raise RuntimeError(f"Exported ONNX file was not found at {exported_path}")
         return exported_path
 
-    def run(self, *args, **kwargs) -> Optional[Any]:
+    def _prepare_finetune_dataset(self, dataset_name: str, temp_dir: str) -> str:
+        return prepare_finetune_dataset(
+            datastore=self._datastore,
+            dataset_name=dataset_name,
+            temp_dir=temp_dir,
+        )
+
+    @staticmethod
+    def _fine_tune_model(
+        model_variant: str,
+        data_yaml_path: str,
+        epochs: int,
+    ) -> str:
+        return fine_tune_model(
+            model_variant=model_variant,
+            data_yaml_path=data_yaml_path,
+            epochs=epochs,
+        )
+
+    def run(self, *args, **kwargs) -> Optional[str]:
         experiment_name = kwargs["experiment_name"]
         run_name = kwargs.get("run_name")
         temp_dir = kwargs["temp_dir"]
 
-        model_variant = kwargs.get("model_variant") or "yolo11n-pose.pt"
-        imgsz = int(kwargs.get("imgsz") or 640)
-        opset = int(kwargs.get("opset") or 13)
-        device = kwargs.get("device") or "cpu"
+        # Hardcoded defaults keep POC invocation minimal and deterministic.
+        model_variant = "yolo11n-pose.pt"
+        imgsz = 640
+        opset = 13
+        device = "cpu"
+        dataset_name = kwargs.get("dataset_name")
+        fine_tune_enabled = bool(dataset_name)
+        epochs = 10
+
+        export_model_variant = model_variant
+        if fine_tune_enabled:
+            data_yaml_path = self._prepare_finetune_dataset(
+                dataset_name=dataset_name,
+                temp_dir=temp_dir,
+            )
+            print(
+                f"[YOLO Pose] Fine-tuning model '{model_variant}' on dataset "
+                f"'{dataset_name}' with minimal train call (epochs={epochs})."
+            )
+            export_model_variant = self._fine_tune_model(
+                model_variant=model_variant,
+                data_yaml_path=data_yaml_path,
+                epochs=epochs,
+            )
 
         print(
-            f"[YOLO Pose] Loading model '{model_variant}' and exporting to ONNX "
+            f"[YOLO Pose] Loading model '{export_model_variant}' and exporting to ONNX "
             f"(imgsz={imgsz}, opset={opset}, device={device})"
         )
 
         export_dir = os.path.join(temp_dir, "export")
         os.makedirs(export_dir, exist_ok=True)
-        exported_path = self._export_onnx(model_variant, imgsz, opset, device, export_dir)
+        exported_path = self._export_onnx(export_model_variant, imgsz, opset, device, export_dir)
 
         onnx_model = onnx.load(exported_path)
 
@@ -148,14 +171,24 @@ class YoloPosePlugin(BasePlugin):
 
         hyperparameters = {
             "model_variant": model_variant,
+            "export_model_variant": export_model_variant,
             "imgsz": imgsz,
             "opset": opset,
             "device": device,
             "task": "pose",
+            "fine_tune_enabled": fine_tune_enabled,
         }
+        if fine_tune_enabled:
+            hyperparameters.update(
+                {
+                    "dataset_name": dataset_name,
+                    "epochs": epochs,
+                }
+            )
         tags = {
             "framework": "ultralytics",
             "task": "pose",
+            "training_mode": "fine_tune" if fine_tune_enabled else "export_only",
         }
 
         stored_run_name, _ = self._connector.store_model(

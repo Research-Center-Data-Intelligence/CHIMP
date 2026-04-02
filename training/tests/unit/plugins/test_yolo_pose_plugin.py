@@ -36,7 +36,7 @@ class TestYoloPosePlugin:
         assert info.name == "YOLO Pose"
         assert info.model_return_type == "onnx"
         assert "experiment_name" in info.arguments
-        assert "model_variant" in info.arguments
+        assert "dataset_name" in info.arguments
 
     def test_export_onnx_success_with_relative_path(self, tmp_path: Path, monkeypatch):
         """Tests for successful ONNX export parsing with a relative path."""
@@ -207,16 +207,97 @@ class TestYoloPosePlugin:
             experiment_name="exp",
             run_name="explicit-run",
             temp_dir=str(tmp_path),
-            model_variant="my.pt",
-            imgsz="320",
-            opset="17",
-            device="cuda:0",
         )
 
         assert result == "stored-run"
         call = plugin._connector.calls[0]
         assert call["run_name"] == "explicit-run"
-        assert call["hyperparameters"]["model_variant"] == "my.pt"
-        assert call["hyperparameters"]["imgsz"] == 320
-        assert call["hyperparameters"]["opset"] == 17
-        assert call["hyperparameters"]["device"] == "cuda:0"
+        assert call["hyperparameters"]["model_variant"] == "yolo11n-pose.pt"
+        assert call["hyperparameters"]["imgsz"] == 640
+        assert call["hyperparameters"]["opset"] == 13
+        assert call["hyperparameters"]["device"] == "cpu"
+        assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["tags"]["training_mode"] == "export_only"
+
+    def test_run_without_dataset_uses_export_only_mode(self, tmp_path: Path, monkeypatch):
+        """Tests that missing dataset_name keeps plugin in export-only mode."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        exported_path = tmp_path / "export_only.onnx"
+        exported_path.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+        monkeypatch.setattr(
+            YoloPosePlugin,
+            "_prepare_finetune_dataset",
+            lambda *args, **kwargs: pytest.fail("fine-tune prep should not be called"),
+        )
+        monkeypatch.setattr(
+            YoloPosePlugin,
+            "_fine_tune_model",
+            staticmethod(lambda *args, **kwargs: pytest.fail("fine-tune should not be called")),
+        )
+
+        result = plugin.run(experiment_name="exp", temp_dir=str(tmp_path))
+
+        assert result == "stored-run"
+        call = plugin._connector.calls[0]
+        assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["tags"]["training_mode"] == "export_only"
+
+    def test_run_finetune_branch_uses_trained_checkpoint(self, tmp_path: Path, monkeypatch):
+        """Tests that fine-tune mode prepares data, trains, then exports trained checkpoint."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        export_dir = tmp_path / "export"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        exported_path = export_dir / "trained_export.onnx"
+        exported_path.write_text("onnx")
+
+        captured = {}
+
+        def mocked_prepare(self, dataset_name, temp_dir):
+            captured["dataset_name"] = dataset_name
+            captured["temp_dir"] = temp_dir
+            return str(tmp_path / "data.yaml")
+
+        def mocked_fine_tune(**kwargs):
+            captured["fine_tune_kwargs"] = kwargs
+            return "trained-best.pt"
+
+        def mocked_export(model_variant, imgsz, opset, device, export_dir):
+            captured["export_args"] = {
+                "model_variant": model_variant,
+                "imgsz": imgsz,
+                "opset": opset,
+                "device": device,
+                "export_dir": export_dir,
+            }
+            return str(exported_path)
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", mocked_prepare)
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mocked_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(mocked_export))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+
+        result = plugin.run(
+            experiment_name="exp",
+            run_name="r1",
+            temp_dir=str(tmp_path),
+            dataset_name="hpe_one_image_20260331",
+        )
+
+        assert result == "stored-run"
+        assert captured["dataset_name"] == "hpe_one_image_20260331"
+        assert captured["fine_tune_kwargs"]["model_variant"] == "yolo11n-pose.pt"
+        assert captured["fine_tune_kwargs"]["epochs"] == 10
+        assert captured["export_args"]["model_variant"] == "trained-best.pt"
+
+        call = plugin._connector.calls[0]
+        assert call["run_name"] == "r1"
+        assert call["hyperparameters"]["fine_tune_enabled"] is True
+        assert call["hyperparameters"]["dataset_name"] == "hpe_one_image_20260331"
+        assert call["tags"]["training_mode"] == "fine_tune"
