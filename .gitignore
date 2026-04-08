@@ -1,6 +1,7 @@
 ### Custom ignores
 logs/*
 !logs/.gitkeep
+docker-data/cvat/*
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 docker-data/datastore/*

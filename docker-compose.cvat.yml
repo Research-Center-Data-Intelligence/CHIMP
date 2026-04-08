@@ -1,0 +1,371 @@
+services:
+  cvat_db:
+    image: postgres:15-alpine
+    container_name: cvat_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./docker-data/cvat/db:/var/lib/postgresql/data
+    networks:
+      cvat:
+
+  cvat_redis_inmem:
+    image: redis:7.2-alpine
+    container_name: cvat_redis_inmem
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "100"
+      - --appendonly
+      - "yes"
+    volumes:
+      - ./docker-data/cvat/redis-inmem:/data
+    networks:
+      cvat:
+
+  cvat_redis_ondisk:
+    image: apache/kvrocks:2.12.1
+    container_name: cvat_redis_ondisk
+    restart: unless-stopped
+    init: true
+    command:
+      - --compact-cron
+      - 0 3 * * *
+    volumes:
+      - cvat_cache_db:/var/lib/kvrocks
+    networks:
+      cvat:
+
+  cvat_server:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_server
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_opa
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      ALLOWED_HOSTS: "*"
+      CVAT_BASE_URL: http://${CVAT_HOST:-localhost}:${CVAT_PORT:-8088}
+      CVAT_ANALYTICS: "0"
+      SMOKESCREEN_OPTS: ""
+      DJANGO_MODWSGI_EXTRA_ARGS: ""
+    command: init run server
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.cvat.loadbalancer.server.port: "8080"
+      traefik.http.routers.cvat.rule: "Host(`${CVAT_HOST:-localhost}`) && (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`) || PathPrefix(`/django-rq`))"
+      traefik.http.routers.cvat.entrypoints: web
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+        aliases:
+          - cvat-server
+
+  cvat_worker_import:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_import
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 2
+    command: run worker import
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_export:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_export
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 2
+    command: run worker export
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_annotation:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_annotation
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 1
+    command: run worker annotation
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_webhooks:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_webhooks
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 1
+    command: run worker webhooks
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_quality_reports:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_quality_reports
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 1
+    command: run worker quality_reports
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_chunks:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_chunks
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 2
+    command: run worker chunks
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_worker_consensus:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_worker_consensus
+    restart: unless-stopped
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      SMOKESCREEN_OPTS: ""
+      NUMPROCS: 1
+    command: run worker consensus
+    volumes:
+      - ./docker-data/cvat/data:/home/django/data
+      - ./docker-data/cvat/keys:/home/django/keys
+      - ./docker-data/cvat/logs:/home/django/logs
+    networks:
+      cvat:
+
+  cvat_ui:
+    image: cvat/ui:${CVAT_VERSION:-latest}
+    container_name: cvat_ui
+    restart: unless-stopped
+    depends_on:
+      - cvat_server
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.cvat-ui.loadbalancer.server.port: "8000"
+      traefik.http.routers.cvat-ui.rule: "Host(`${CVAT_HOST:-localhost}`)"
+      traefik.http.routers.cvat-ui.entrypoints: web
+    networks:
+      cvat:
+
+  cvat_auth_bootstrap:
+    image: cvat/server:${CVAT_VERSION:-latest}
+    container_name: cvat_auth_bootstrap
+    restart: "no"
+    depends_on:
+      - cvat_db
+      - cvat_redis_inmem
+      - cvat_redis_ondisk
+      - cvat_server
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+      CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+      CVAT_REDIS_INMEM_PORT: 6379
+      CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+      CVAT_REDIS_ONDISK_PORT: 6666
+      CVAT_BOOTSTRAP_USERNAME: admin
+      CVAT_BOOTSTRAP_EMAIL: admin@example.com
+      CVAT_BOOTSTRAP_PASSWORD: admin123
+      CVAT_BOOTSTRAP_TOKEN: qMWmKIthXdxd4fljYSTLNJIL9MRjK6AN9qnnf7Vm
+    command:
+      - bash
+      - -lc
+      - |
+        set -eu
+        wait-for-it "cvat_db:5432" -t 0
+        wait-for-it "cvat_redis_inmem:6379" -t 0
+        while ! ~/manage.py migrate --check; do
+          sleep 5
+        done
+        while ! ~/manage.py migrateredis --check; do
+          sleep 5
+        done
+        python3 ~/manage.py shell <<'PY'
+        import os
+        from django.contrib.auth import get_user_model
+        from rest_framework.authtoken.models import Token
+
+        username = os.environ['CVAT_BOOTSTRAP_USERNAME']
+        email = os.environ.get('CVAT_BOOTSTRAP_EMAIL', '')
+        password = os.environ['CVAT_BOOTSTRAP_PASSWORD']
+        token_value = os.environ['CVAT_BOOTSTRAP_TOKEN']
+
+        User = get_user_model()
+        user, _ = User.objects.get_or_create(username=username, defaults={'email': email})
+        user.email = email
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
+        user.set_password(password)
+        user.save()
+
+        existing = Token.objects.filter(key=token_value).first()
+        if existing and existing.user_id != user.id:
+          existing.delete()
+
+        Token.objects.update_or_create(user=user, defaults={'key': token_value})
+        print(f'Bootstrap user ready: {username}')
+        print(f'Bootstrap token ready: {token_value}')
+        PY
+    networks:
+      cvat:
+
+  traefik:
+    image: traefik:v3.6
+    container_name: cvat_traefik
+    restart: unless-stopped
+    ports:
+      - "${CVAT_PORT:-8088}:8080"
+    environment:
+      CVAT_HOST: ${CVAT_HOST:-localhost}
+      TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: chimp-cvat
+      TRAEFIK_LOG_FORMAT: json
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      cvat:
+
+  cvat_opa:
+    image: openpolicyagent/opa:1.12.2
+    container_name: cvat_opa
+    restart: unless-stopped
+    command:
+      - run
+      - --server
+      - --addr=:8181
+      - --log-level=error
+      - --set=services.cvat.url=http://cvat-server:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
+    networks:
+      cvat:
+        aliases:
+          - opa
+
+networks:
+  cvat:
+    name: chimp-cvat
+
+volumes:
+  cvat_cache_db:
