@@ -217,6 +217,7 @@ class TestYoloPosePlugin:
         assert call["hyperparameters"]["opset"] == 13
         assert call["hyperparameters"]["device"] == "cpu"
         assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["metrics"] == {}
         assert call["tags"]["training_mode"] == "export_only"
 
     def test_run_without_dataset_uses_export_only_mode(self, tmp_path: Path, monkeypatch):
@@ -245,6 +246,7 @@ class TestYoloPosePlugin:
         assert result == "stored-run"
         call = plugin._connector.calls[0]
         assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["metrics"] == {}
         assert call["tags"]["training_mode"] == "export_only"
 
     def test_run_finetune_branch_uses_trained_checkpoint(self, tmp_path: Path, monkeypatch):
@@ -266,7 +268,7 @@ class TestYoloPosePlugin:
 
         def mocked_fine_tune(**kwargs):
             captured["fine_tune_kwargs"] = kwargs
-            return "trained-best.pt"
+            return "trained-best.pt", {"metrics/mAP50_P": 0.42}
 
         def mocked_export(model_variant, imgsz, opset, device, export_dir):
             captured["export_args"] = {
@@ -300,4 +302,5 @@ class TestYoloPosePlugin:
         assert call["run_name"] == "r1"
         assert call["hyperparameters"]["fine_tune_enabled"] is True
         assert call["hyperparameters"]["dataset_name"] == "hpe_one_image_20260331"
+        assert call["metrics"]["metrics/mAP50_P"] == 0.42
         assert call["tags"]["training_mode"] == "fine_tune"

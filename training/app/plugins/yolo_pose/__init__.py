@@ -137,6 +137,7 @@ class YoloPosePlugin(BasePlugin):
         epochs = 10
 
         export_model_variant = model_variant
+        metrics = {}
         if fine_tune_enabled:
             data_yaml_path = self._prepare_finetune_dataset(
                 dataset_name=dataset_name,
@@ -146,7 +147,7 @@ class YoloPosePlugin(BasePlugin):
                 f"[YOLO Pose] Fine-tuning model '{model_variant}' on dataset "
                 f"'{dataset_name}' with minimal train call (epochs={epochs})."
             )
-            export_model_variant = self._fine_tune_model(
+            export_model_variant, metrics = self._fine_tune_model(
                 model_variant=model_variant,
                 data_yaml_path=data_yaml_path,
                 epochs=epochs,
@@ -199,6 +200,7 @@ class YoloPosePlugin(BasePlugin):
             model_type="onnx",
             hyperparameters=hyperparameters,
             tags=tags,
+            metrics=metrics,
             artifacts={"onnx_export": artifact_dir},
         )
 
