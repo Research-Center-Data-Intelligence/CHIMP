@@ -9,7 +9,6 @@ import onnx
 
 from app.plugin import BasePlugin, PluginInfo
 from .dataset import prepare_finetune_dataset
-from .model import fine_tune_model
 
 
 class YoloPosePlugin(BasePlugin):
@@ -116,6 +115,8 @@ class YoloPosePlugin(BasePlugin):
         data_yaml_path: str,
         epochs: int,
     ) -> str:
+        from .model import fine_tune_model
+
         return fine_tune_model(
             model_variant=model_variant,
             data_yaml_path=data_yaml_path,

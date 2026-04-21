@@ -3,8 +3,6 @@ import math
 import re
 from typing import Any, Dict, Optional, Tuple
 
-from ultralytics import YOLO
-
 
 def _to_float(value: Any) -> Optional[float]:
     try:
@@ -80,6 +78,10 @@ def fine_tune_model(
     data_yaml_path: str,
     epochs: int,
 ) -> Tuple[str, Dict[str, float]]:
+    # Import lazily so non-GPU services can still boot even when torch CUDA libs
+    # are unavailable in those containers.
+    from ultralytics import YOLO
+
     model = YOLO(model_variant)
     train_results = model.train(
         data=data_yaml_path,
