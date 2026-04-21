@@ -35,6 +35,7 @@ training/app/plugins/*
 !training/app/plugins/emotion_recognition
 !training/app/plugins/active_learning
 training/datasets/*
+training/runs/*
 
 ### Generic ignores
 
