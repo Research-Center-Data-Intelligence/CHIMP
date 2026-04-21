@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YOLO Webcam</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <h1>YOLO Webcam Server</h1>
+      <p>Standalone frontend service.</p>
+    </header>
+
+    <main class="card">
+      <div class="video-frame">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="overlay" width="640" height="640"></canvas>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" type="button">Start Camera</button>
+        <button id="stopBtn" type="button" disabled>Stop Camera</button>
+        <button id="startInferBtn" type="button" disabled>Start Pose Inference</button>
+        <button id="stopInferBtn" type="button" disabled>Stop Pose Inference</button>
+      </div>
+
+      <p id="status" class="status">Camera is stopped.</p>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

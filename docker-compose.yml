@@ -30,6 +30,27 @@ services:
             - 'gpu'
             - 'external-worker'
 
+    # YOLO Frontend
+    # : standalone frontend that serves webcam feed for the YOLO plugin
+    yolo-frontend:
+        restart: unless-stopped
+        build: ./yolo-frontend
+        image: chimp-yolo-frontend:demonstrator-v1.0.0
+        container_name: yolo-frontend
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5260:5260"
+        environment:
+            - SERVING_API_URL=http://serving-api:8000
+            - YOLO_MODEL_NAME=yolo_pose_demo
+            - YOLO_MODEL_STAGE=production
+        profiles:
+            - ''
+            - 'gpu'
+            - 'external-worker'
+
     # Training API
     # : provides the API endpoints for starting training
     training-api:
@@ -39,7 +60,7 @@ services:
             context: ./training
             dockerfile: Dockerfile.web
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            test: ["CMD-SHELL", "wget -nv -t1 --spider http://localhost:8000/health || exit 1"]
             start_period: 30s
             interval: 60s
             retries: 5
@@ -167,7 +188,7 @@ services:
             context: ./serving_api
             dockerfile: Dockerfile
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            test: ["CMD-SHELL", "wget -nv -t1 --spider http://localhost:8000/health || exit 1"]
             start_period: 30s
             interval: 60s
             retries: 5
