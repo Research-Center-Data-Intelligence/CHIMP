@@ -1,5 +1,6 @@
 const webcam = document.getElementById("webcam");
 const overlay = document.getElementById("overlay");
+const countdownOverlay = document.getElementById("countdownOverlay");
 const recordVideoBtn = document.getElementById("recordVideoBtn");
 const recordingPanel = document.getElementById("recordingPanel");
 const recordedVideo = document.getElementById("recordedVideo");
@@ -312,9 +313,43 @@ recordVideoBtn.addEventListener("click", () => {
   if (recordingActive) {
     stopRecording();
   } else {
-    startRecording();
+    // Show a 3-second countdown overlay, then start recording
+    showCountdownThenStart(3);
   }
 });
+
+function showCountdownThenStart(seconds) {
+  if (!countdownOverlay) {
+    startRecording();
+    return;
+  }
+
+  let remaining = Math.max(1, Math.floor(seconds));
+  // Disable the button during countdown to prevent double clicks
+  recordVideoBtn.disabled = true;
+
+  countdownOverlay.classList.remove("hidden");
+  countdownOverlay.textContent = remaining.toString();
+
+  const tick = () => {
+    remaining -= 1;
+    if (remaining > 0) {
+      countdownOverlay.textContent = remaining.toString();
+    } else {
+      // end countdown
+      countdownOverlay.classList.add("hidden");
+      countdownOverlay.textContent = "";
+      startRecording();
+      // ensure button state reflects recordingActive
+      setCameraButtonState();
+      return;
+    }
+    countdownTimer = window.setTimeout(tick, 1000);
+  };
+
+  // Start ticking after 1s to show the initial number for one second
+  let countdownTimer = window.setTimeout(tick, 1000);
+}
 
 sendToQueueBtn.addEventListener("click", () => {
   if (!lastRecordingBlob || !lastRecordingBlob.size) {
