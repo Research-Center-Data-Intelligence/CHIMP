@@ -19,6 +19,8 @@ let mediaRecorder = null;
 let recordingChunks = [];
 let recordingPreviewUrl = "";
 let recordingActive = false;
+let lastRecordingBlob = null;
+let lastRecordingMimeType = "video/webm";
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -48,6 +50,8 @@ function clearRecordingTimers() {
 function finalizeRecording(blob, mimeType) {
   console.log("[finalizeRecording] blob:", blob, "size:", blob?.size, "mimeType:", mimeType);
   revokeRecordingPreviewUrl();
+  lastRecordingBlob = blob;
+  lastRecordingMimeType = mimeType || "video/webm";
 
   if (!blob || !blob.size) {
     console.log("[finalizeRecording] ERROR: no blob or empty blob");
@@ -313,10 +317,44 @@ recordVideoBtn.addEventListener("click", () => {
 });
 
 sendToQueueBtn.addEventListener("click", () => {
-  console.log("send button clicked");
+  if (!lastRecordingBlob || !lastRecordingBlob.size) {
+    setStatus("Record a video before sending it for frame extraction.", true);
+    return;
+  }
+
   sendToQueueBtn.disabled = true;
-  sendToQueueBtn.textContent = "Sent to Queue";
-  setStatus("Video sent to labeling queue.");
+  sendToQueueBtn.textContent = "Extracting Frames...";
+  setStatus("Uploading recording for frame extraction...");
+
+  const formData = new FormData();
+  const videoFileName = `recording.${lastRecordingMimeType.includes("mp4") ? "mp4" : "webm"}`;
+  formData.append("video", lastRecordingBlob, videoFileName);
+  formData.append("frame_count", "10");
+
+  fetch("/api/video-to-png-frames", {
+    method: "POST",
+    body: formData
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Frame extraction failed");
+      }
+
+      return response.blob();
+    })
+    .then((zipBlob) => {
+      console.log("[sendToQueueBtn] Received extracted frames zip:", zipBlob.size, "bytes");
+      setStatus("Extracted 10 frames successfully.");
+      sendToQueueBtn.textContent = "Frames Extracted";
+      sendToQueueBtn.disabled = true;
+    })
+    .catch((error) => {
+      console.error("[sendToQueueBtn] Frame extraction failed:", error);
+      setStatus(`Frame extraction failed: ${error.message}`, true);
+      sendToQueueBtn.disabled = false;
+      sendToQueueBtn.textContent = "Send to Labeling Queue";
+    });
 });
 window.addEventListener("beforeunload", stopCamera);
 

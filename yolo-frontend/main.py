@@ -1,10 +1,12 @@
 import base64
 import os
+import tempfile
 from io import BytesIO
 
 import numpy as np
+import cv2
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 from PIL import Image
 
 
@@ -14,9 +16,110 @@ MODEL_STAGE = os.environ.get("YOLO_MODEL_STAGE", "production")
 MODEL_SESSION_ID = os.environ.get("YOLO_MODEL_SESSION_ID", "")
 IMAGE_SIZE = 640
 REQUEST_TIMEOUT_SECONDS = 30
+DEFAULT_FRAME_COUNT = 10
 
 
 app = Flask(__name__)
+
+
+def _sample_evenly_spaced_indices(total_frames: int, frame_count: int) -> list[int]:
+    if total_frames <= 0 or frame_count <= 0:
+        return []
+    if total_frames <= frame_count:
+        return list(range(total_frames))
+
+    raw_indices = np.linspace(0, total_frames - 1, num=frame_count)
+    indices = []
+    seen = set()
+    for value in raw_indices:
+        index = int(round(float(value)))
+        index = max(0, min(total_frames - 1, index))
+        if index not in seen:
+            seen.add(index)
+            indices.append(index)
+
+    if len(indices) < frame_count:
+        for index in range(total_frames):
+            if index not in seen:
+                seen.add(index)
+                indices.append(index)
+                if len(indices) == frame_count:
+                    break
+
+    indices.sort()
+    return indices[:frame_count]
+
+
+def _extract_png_frames_from_video(video_bytes: bytes, frame_count: int = DEFAULT_FRAME_COUNT) -> list[tuple[str, bytes]]:
+    if frame_count <= 0:
+        raise ValueError("frame_count must be greater than zero")
+
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as temp_file:
+        temp_file.write(video_bytes)
+        temp_file.flush()
+
+        capture = cv2.VideoCapture(temp_file.name)
+        if not capture.isOpened():
+            raise ValueError("Could not open uploaded video")
+
+        try:
+            total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+            if total_frames > 0:
+                frame_indices = _sample_evenly_spaced_indices(total_frames, frame_count)
+
+                if not frame_indices:
+                    raise ValueError("Uploaded video did not contain any readable frames")
+
+                extracted_frames: list[tuple[str, bytes]] = []
+                current_index = 0
+                target_positions = {index: position for position, index in enumerate(frame_indices)}
+
+                while True:
+                    success, frame = capture.read()
+                    if not success:
+                        break
+
+                    if current_index in target_positions:
+                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        image = Image.fromarray(rgb_frame)
+                        buffer = BytesIO()
+                        image.save(buffer, format="PNG")
+                        frame_name = f"frame_{target_positions[current_index]:02d}_{current_index:06d}.png"
+                        extracted_frames.append((frame_name, buffer.getvalue()))
+
+                        if len(extracted_frames) == len(frame_indices):
+                            break
+
+                    current_index += 1
+
+                if not extracted_frames:
+                    raise ValueError("No frames could be extracted from the uploaded video")
+
+                return extracted_frames
+
+            all_frames: list[np.ndarray] = []
+            while True:
+                success, frame = capture.read()
+                if not success:
+                    break
+                all_frames.append(frame)
+
+            if not all_frames:
+                raise ValueError("Uploaded video did not contain any readable frames")
+
+            frame_indices = _sample_evenly_spaced_indices(len(all_frames), frame_count)
+            extracted_frames = []
+            for output_position, frame_index in enumerate(frame_indices):
+                rgb_frame = cv2.cvtColor(all_frames[frame_index], cv2.COLOR_BGR2RGB)
+                image = Image.fromarray(rgb_frame)
+                buffer = BytesIO()
+                image.save(buffer, format="PNG")
+                frame_name = f"frame_{output_position:02d}_{frame_index:06d}.png"
+                extracted_frames.append((frame_name, buffer.getvalue()))
+
+            return extracted_frames
+        finally:
+            capture.release()
 
 
 def _xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
@@ -205,6 +308,40 @@ def pose_infer():
         )
     except Exception as ex:  # noqa: BLE001
         return jsonify({"error": "Inference failed", "details": str(ex)}), 500
+
+
+@app.route("/api/video-to-png-frames", methods=["POST"])
+def video_to_png_frames():
+    video_file = request.files.get("video")
+    if video_file is None:
+        return jsonify({"error": "Missing video file in 'video' field"}), 400
+
+    frame_count = request.form.get("frame_count", default=DEFAULT_FRAME_COUNT, type=int)
+    if frame_count is None or frame_count <= 0:
+        return jsonify({"error": "frame_count must be a positive integer"}), 400
+
+    try:
+        video_bytes = video_file.read()
+        extracted_frames = _extract_png_frames_from_video(video_bytes, frame_count=frame_count)
+
+        output_zip = BytesIO()
+        import zipfile
+
+        with zipfile.ZipFile(output_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for frame_name, frame_bytes in extracted_frames:
+                archive.writestr(frame_name, frame_bytes)
+
+        output_zip.seek(0)
+        return send_file(
+            output_zip,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="video_frames.zip",
+        )
+    except ValueError as ex:
+        return jsonify({"error": str(ex)}), 400
+    except Exception as ex:  # noqa: BLE001
+        return jsonify({"error": "Video frame extraction failed", "details": str(ex)}), 500
 
 
 if __name__ == "__main__":
