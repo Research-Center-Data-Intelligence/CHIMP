@@ -20,10 +20,13 @@
       </div>
 
       <div class="controls">
-        <button id="startBtn" type="button">Start Camera</button>
-        <button id="stopBtn" type="button" disabled>Stop Camera</button>
-        <button id="startInferBtn" type="button" disabled>Start Pose Inference</button>
-        <button id="stopInferBtn" type="button" disabled>Stop Pose Inference</button>
+        <button id="recordVideoBtn" type="button" disabled>Start Recording</button>
+      </div>
+
+      <div id="recordingPanel" class="recording-panel hidden">
+        <p class="recording-panel__title">Last recording</p>
+        <video id="recordedVideo" controls playsinline></video>
+        <button id="sendToQueueBtn" type="button" class="send-button">Send to Labeling Queue</button>
       </div>
 
       <p id="status" class="status">Camera is stopped.</p>
