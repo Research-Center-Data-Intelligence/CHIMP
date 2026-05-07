@@ -37,6 +37,8 @@ services:
         build: ./yolo-frontend
         image: chimp-yolo-frontend:demonstrator-v1.0.0
         container_name: yolo-frontend
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - public-network
             - backend-network
@@ -46,6 +48,10 @@ services:
             - SERVING_API_URL=http://serving-api:8000
             - YOLO_MODEL_NAME=yolo_pose_demo
             - YOLO_MODEL_STAGE=production
+            - CVAT_BASE_URL=${CVAT_BASE_URL:-http://host.docker.internal:8088}
+            - CVAT_HOST_HEADER=${CVAT_HOST_HEADER:-localhost}
+            - CVAT_API_TOKEN=${CVAT_API_TOKEN:-qMWmKIthXdxd4fljYSTLNJIL9MRjK6AN9qnnf7Vm}
+            - CVAT_TASK_NAME_PREFIX=${CVAT_TASK_NAME_PREFIX:-yolo-webcam}
         profiles:
             - ''
             - 'gpu'
@@ -351,6 +357,4 @@ services:
 
 networks:
     public-network:
-        name: 'chimp-public-network'
     backend-network:
-        name: 'chimp-backend-network'

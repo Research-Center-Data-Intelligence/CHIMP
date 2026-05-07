@@ -353,42 +353,51 @@ function showCountdownThenStart(seconds) {
 
 sendToQueueBtn.addEventListener("click", () => {
   if (!lastRecordingBlob || !lastRecordingBlob.size) {
-    setStatus("Record a video before sending it for frame extraction.", true);
+    setStatus("Record a video before sending it to CVAT.", true);
     return;
   }
 
   sendToQueueBtn.disabled = true;
-  sendToQueueBtn.textContent = "Extracting Frames...";
-  setStatus("Uploading recording for frame extraction...");
+  sendToQueueBtn.textContent = "Sending to CVAT...";
+  setStatus("Extracting frames, generating pre-labels, and creating CVAT task...");
 
   const formData = new FormData();
   const videoFileName = `recording.${lastRecordingMimeType.includes("mp4") ? "mp4" : "webm"}`;
   formData.append("video", lastRecordingBlob, videoFileName);
   formData.append("frame_count", "10");
 
-  fetch("/api/video-to-png-frames", {
+  fetch("/api/video-to-cvat-task", {
     method: "POST",
     body: formData
   })
     .then(async (response) => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Frame extraction failed");
+        throw new Error(errorData.error || "CVAT upload failed");
       }
 
-      return response.blob();
+      return response.json();
     })
-    .then((zipBlob) => {
-      console.log("[sendToQueueBtn] Received extracted frames zip:", zipBlob.size, "bytes");
-      setStatus("Extracted 10 frames successfully.");
-      sendToQueueBtn.textContent = "Frames Extracted";
+    .then((result) => {
+      console.log("[sendToQueueBtn] CVAT task created:", result);
+      const taskId = result.task_id;
+      const frameCount = result.frame_count;
+      const annotationCount = result.annotation_count || 0;
+      const taskUrl = result.task_url;
+      const baseMessage = `Sent ${frameCount} frames and ${annotationCount} pre-labels to CVAT task #${taskId}.`;
+      setStatus(
+        taskUrl
+          ? `${baseMessage} Open: ${taskUrl}`
+          : baseMessage
+      );
+      sendToQueueBtn.textContent = "Sent to CVAT";
       sendToQueueBtn.disabled = true;
     })
     .catch((error) => {
-      console.error("[sendToQueueBtn] Frame extraction failed:", error);
-      setStatus(`Frame extraction failed: ${error.message}`, true);
+      console.error("[sendToQueueBtn] CVAT upload failed:", error);
+      setStatus(`CVAT upload failed: ${error.message}`, true);
       sendToQueueBtn.disabled = false;
-      sendToQueueBtn.textContent = "Send to Labeling Queue";
+      sendToQueueBtn.textContent = "Send to CVAT";
     });
 });
 window.addEventListener("beforeunload", stopCamera);

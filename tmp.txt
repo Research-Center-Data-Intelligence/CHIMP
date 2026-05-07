@@ -1,0 +1,133 @@
+https://1rvs4wb3-5260.euw.devtunnels.ms/
+
+[
+  {
+    "name": "person",
+    "id": 247,
+    "color": "#c06060",
+    "type": "skeleton",
+    "sublabels": [
+      {
+        "name": "nose",
+        "attributes": [],
+        "type": "points",
+        "color": "#d12345",
+        "id": 248
+      },
+      {
+        "name": "left_eye",
+        "attributes": [],
+        "type": "points",
+        "color": "#350dea",
+        "id": 249
+      },
+      {
+        "name": "right_eye",
+        "attributes": [],
+        "type": "points",
+        "color": "#479ffe",
+        "id": 250
+      },
+      {
+        "name": "left_ear",
+        "attributes": [],
+        "type": "points",
+        "color": "#4a649f",
+        "id": 251
+      },
+      {
+        "name": "right_ear",
+        "attributes": [],
+        "type": "points",
+        "color": "#478144",
+        "id": 252
+      },
+      {
+        "name": "left_shoulder",
+        "attributes": [],
+        "type": "points",
+        "color": "#57236b",
+        "id": 253
+      },
+      {
+        "name": "right_shoulder",
+        "attributes": [],
+        "type": "points",
+        "color": "#1cdda5",
+        "id": 254
+      },
+      {
+        "name": "left_elbow",
+        "attributes": [],
+        "type": "points",
+        "color": "#e2bc6e",
+        "id": 255
+      },
+      {
+        "name": "right_elbow",
+        "attributes": [],
+        "type": "points",
+        "color": "#f067db",
+        "id": 256
+      },
+      {
+        "name": "left_wrist",
+        "attributes": [],
+        "type": "points",
+        "color": "#63bbfa",
+        "id": 257
+      },
+      {
+        "name": "right_wrist",
+        "attributes": [],
+        "type": "points",
+        "color": "#22b16f",
+        "id": 258
+      },
+      {
+        "name": "left_hip",
+        "attributes": [],
+        "type": "points",
+        "color": "#daddec",
+        "id": 259
+      },
+      {
+        "name": "right_hip",
+        "attributes": [],
+        "type": "points",
+        "color": "#2ac791",
+        "id": 260
+      },
+      {
+        "name": "left_knee",
+        "attributes": [],
+        "type": "points",
+        "color": "#de22a0",
+        "id": 261
+      },
+      {
+        "name": "right_knee",
+        "attributes": [],
+        "type": "points",
+        "color": "#a7a570",
+        "id": 262
+      },
+      {
+        "name": "left_ankle",
+        "attributes": [],
+        "type": "points",
+        "color": "#74db1b",
+        "id": 263
+      },
+      {
+        "name": "right_ankle",
+        "attributes": [],
+        "type": "points",
+        "color": "#aaa246",
+        "id": 264
+      }
+    ],
+    "svg": "<line data-node-from=\"1\" data-node-to=\"2\"></line><line data-node-from=\"1\" data-node-to=\"3\"></line><line data-node-from=\"2\" data-node-to=\"4\"></line><line data-node-from=\"3\" data-node-to=\"5\"></line><line data-node-from=\"6\" data-node-to=\"7\"></line><line data-node-from=\"6\" data-node-to=\"8\"></line><line data-node-from=\"8\" data-node-to=\"10\"></line><line data-node-from=\"7\" data-node-to=\"9\"></line><line data-node-from=\"9\" data-node-to=\"11\"></line><line data-node-from=\"6\" data-node-to=\"12\"></line><line data-node-from=\"7\" data-node-to=\"13\"></line><line data-node-from=\"12\" data-node-to=\"13\"></line><line data-node-from=\"12\" data-node-to=\"14\"></line><line data-node-from=\"14\" data-node-to=\"16\"></line><line data-node-from=\"13\" data-node-to=\"15\"></line><line data-node-from=\"15\" data-node-to=\"17\"></line><circle r=\"0.75\" cx=\"43.812705993652344\" cy=\"16.55518341064453\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"248\"></circle><circle r=\"0.75\" cx=\"42.140464782714844\" cy=\"14.715719223022461\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"249\"></circle><circle r=\"0.75\" cx=\"45.31772232055664\" cy=\"14.548495292663574\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"250\"></circle><circle r=\"0.75\" cx=\"39.13043212890625\" cy=\"16.55518341064453\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"251\"></circle><circle r=\"0.75\" cx=\"47.65886306762695\" cy=\"16.053512573242188\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"252\"></circle><circle r=\"0.75\" cx=\"35.45150375366211\" cy=\"25.75250816345215\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"253\"></circle><circle r=\"0.75\" cx=\"53.1772575378418\" cy=\"24.24749183654785\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"254\"></circle><circle r=\"0.75\" cx=\"35.284278869628906\" cy=\"40.1337776184082\" data-type=\"element node\" data-element-id=\"8\" data-node-id=\"8\" data-label-id=\"255\"></circle><circle r=\"0.75\" cx=\"39.63210678100586\" cy=\"87.62541961669922\" data-type=\"element node\" data-element-id=\"9\" data-node-id=\"9\" data-label-id=\"256\"></circle><circle r=\"0.75\" cx=\"54.84949493408203\" cy=\"38.294315338134766\" data-type=\"element node\" data-element-id=\"10\" data-node-id=\"10\" data-label-id=\"257\"></circle><circle r=\"0.75\" cx=\"50.83612060546875\" cy=\"48.662208557128906\" data-type=\"element node\" data-element-id=\"11\" data-node-id=\"11\" data-label-id=\"258\"></circle><circle r=\"0.75\" cx=\"33.94648742675781\" cy=\"51.6722412109375\" data-type=\"element node\" data-element-id=\"12\" data-node-id=\"12\" data-label-id=\"259\"></circle><circle r=\"0.75\" cx=\"40.80267333984375\" cy=\"48.99665451049805\" data-type=\"element node\" data-element-id=\"13\" data-node-id=\"13\" data-label-id=\"260\"></circle><circle r=\"0.75\" cx=\"57.525081634521484\" cy=\"50.501670837402344\" data-type=\"element node\" data-element-id=\"14\" data-node-id=\"14\" data-label-id=\"261\"></circle><circle r=\"0.75\" cx=\"41.30434799194336\" cy=\"67.89297485351562\" data-type=\"element node\" data-element-id=\"15\" data-node-id=\"15\" data-label-id=\"262\"></circle><circle r=\"0.75\" cx=\"50.66889572143555\" cy=\"69.06354522705078\" data-type=\"element node\" data-element-id=\"16\" data-node-id=\"16\" data-label-id=\"263\"></circle><circle r=\"0.75\" cx=\"51.672237396240234\" cy=\"87.12374877929688\" data-type=\"element node\" data-element-id=\"17\" data-node-id=\"17\" data-label-id=\"264\"></circle>",
+    "attributes": []
+  }
+]
