@@ -1,0 +1,189 @@
+:root {
+  --bg: #f3f6f9;
+  --card: #ffffff;
+  --line: #d9e2ec;
+  --text: #152231;
+  --accent: #1f6feb;
+  --accent-hover: #1859bb;
+  --accent-alt: #0f8b5f;
+  --accent-alt-hover: #0c6f4b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 85% 0%, #d6e6ff 0%, var(--bg) 35%, #ebf1f7 100%);
+}
+
+.page {
+  width: min(1000px, 95vw);
+  margin: 1.5rem auto;
+}
+
+.topbar {
+  margin-bottom: 1rem;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.topbar p {
+  margin: 0.35rem 0 0;
+  color: #526579;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 28px rgba(15, 41, 74, 0.08);
+}
+
+.video-frame {
+  position: relative;
+  background: #0f1a29;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+#webcam {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #091019;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0.5rem;
+  width: calc(100% - 1rem);
+  height: calc(100% - 1rem);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Countdown overlay shown before recording starts */
+.countdown-overlay {
+  position: absolute;
+  inset: 0.5rem;
+  width: calc(100% - 1rem);
+  height: calc(100% - 1rem);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  font-size: 6rem;
+  font-weight: 800;
+  text-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  user-select: none;
+}
+
+.countdown-overlay.hidden {
+  display: none;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent);
+}
+
+#recordVideoBtn {
+  background: var(--accent-alt);
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+#recordVideoBtn:hover:not(:disabled) {
+  background: var(--accent-alt-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status {
+  margin: 0.8rem 0 0;
+  color: #41566b;
+}
+
+.status.error {
+  color: #a61b1b;
+}
+
+.recording-panel {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.recording-panel.hidden {
+  display: none;
+}
+
+.recording-panel__title {
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+
+#recordedVideo {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+  background: #091019;
+}
+
+.download-link {
+  display: inline-block;
+  margin-top: 0.65rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.download-link:hover {
+  text-decoration: underline;
+}
+
+.send-button {
+  display: block;
+  margin-top: 0.65rem;
+  background: var(--accent-alt);
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--accent-alt-hover);
+}

@@ -6,7 +6,7 @@ This document explains the implementation details of the YOLO Human Pose Estimat
 
 CHIMP splits YOLO HPE responsibilities into two layers:
 
-- Training plugin layer: exports Ultralytics YOLO pose checkpoints to ONNX and registers artifacts and metadata in MLflow.
+- Training plugin layer: optionally fine-tunes Ultralytics YOLO pose checkpoints from managed datasets, then exports to ONNX and registers artifacts and metadata in MLflow.
 - Serving layer: loads registered ONNX models, selects a YOLO-specific runtime wrapper, and decodes raw ONNX outputs into pose detections.
 
 The plugin does not perform online inference decode. Decode belongs to serving.
@@ -16,6 +16,8 @@ The plugin does not perform online inference decode. Decode belongs to serving.
 Training side:
 
 - training/app/plugins/yolo_pose/__init__.py
+- training/app/plugins/yolo_pose/dataset.py
+- training/app/plugins/yolo_pose/model.py
 - training/app/plugin.py
 - training/app/worker.py
 - training/app/endpoints/training_endpoints.py
@@ -59,12 +61,19 @@ The plugin exposes these parameters through PluginInfo:
 - imgsz (optional): export image size. Default 640.
 - opset (optional): ONNX opset. Default 13.
 - device (optional): export device. Default cpu.
+- fine_tune_enabled (optional): enable dataset-driven training before export. Default false.
+- dataset_name (optional): managed dataset to fine-tune on. Required when fine_tune_enabled=true.
+
+Fine-tune hyperparameters are intentionally not exposed in the public plugin request contract.
+For this proof of concept they are hardcoded in plugin code to keep the run API minimal.
 
 Model return type is declared as onnx.
 
 ### 4.2 Request parsing behavior
 
-The training endpoint reads values from form data first, then query parameters. All values arrive as strings from HTTP and are cast by plugin code for integer fields.
+The training endpoint reads values from form data first, then query parameters. All values arrive as strings from HTTP and are cast by plugin code for integer fields and fine_tune_enabled boolean coercion.
+
+Fine-tuning defaults are currently hardcoded in training/app/plugins/yolo_pose/__init__.py.
 
 Implication:
 
@@ -87,7 +96,7 @@ Returns self._info. This is lightweight and does not perform runtime initializat
 
 ### 5.3 YoloPosePlugin._export_onnx
 
-This is the core export primitive.
+This is the core export primitive and is reused in both export-only and fine-tune flows.
 
 Input contract:
 
@@ -125,9 +134,23 @@ Failure surface:
 - Empty stdout: RuntimeError, no path emitted.
 - Path does not exist: RuntimeError, stale or invalid output path.
 
-### 5.4 YoloPosePlugin.run
+### 5.4 Dataset and model helpers
 
-This method orchestrates export and registry operations.
+Dataset conversion and fine-tuning internals are split from the plugin entrypoint:
+
+- training/app/plugins/yolo_pose/dataset.py
+  - Downloads managed dataset files from MinIO
+  - Resolves COCO keypoints annotations from datapoints table
+  - Builds YOLO pose train/val layout and data.yaml
+- training/app/plugins/yolo_pose/model.py
+  - Runs Ultralytics YOLO.train
+  - Resolves best/last checkpoint path for subsequent ONNX export
+
+The plugin still exposes compatibility wrapper methods (`_prepare_finetune_dataset`, `_fine_tune_model`) so existing tests and call sites remain stable.
+
+### 5.5 YoloPosePlugin.run
+
+This method orchestrates training (optional), export, and registry operations.
 
 Step-by-step:
 
@@ -139,18 +162,26 @@ Step-by-step:
   - imgsz default 640
   - opset default 13
   - device default cpu
-3. Create temp_dir/export.
-4. Call _export_onnx().
-5. Load ONNX graph via onnx.load() for connector logging.
-6. Create temp_dir/yolo_pose artifact folder.
-7. Copy ONNX file to artifact folder if source and target differ.
-8. Build hyperparameters payload:
-  - model_variant, imgsz, opset, device, task=pose
-9. Build tags payload:
+3. If fine_tune_enabled=true:
+  - validate dataset_name
+  - download managed dataset files to temp workspace
+  - load matching COCO keypoints annotations from datapoints table
+  - convert data to YOLO pose directory layout plus data.yaml
+  - run YOLO.train() using hardcoded defaults and resolve trained checkpoint path
+4. Create temp_dir/export.
+5. Call _export_onnx() using either the trained checkpoint (fine-tune mode) or model_variant (export-only mode).
+6. Load ONNX graph via onnx.load() for connector logging.
+7. Create temp_dir/yolo_pose artifact folder.
+8. Copy ONNX file to artifact folder if source and target differ.
+9. Build hyperparameters payload:
+  - model_variant, export_model_variant, imgsz, opset, device, task=pose
+  - fine_tune_enabled, and fine-tune metadata when enabled (dataset_name, epochs, train_batch_size, train_patience, sample_count, split_mode)
+10. Build tags payload:
   - framework=ultralytics
   - task=pose
-10. Store model with connector.store_model(..., model_type='onnx').
-11. Return stored run name.
+  - training_mode=export_only|fine_tune
+11. Store model with connector.store_model(..., model_type='onnx').
+12. Return stored run name.
 
 Design note:
 

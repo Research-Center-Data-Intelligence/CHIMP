@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YOLO Webcam</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <h1>YOLO Webcam Server</h1>
+      <p>Standalone frontend service.</p>
+    </header>
+
+    <main class="card">
+      <div class="video-frame">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="overlay" width="640" height="640"></canvas>
+        <div id="countdownOverlay" class="countdown-overlay hidden"></div>
+      </div>
+
+      <div class="controls">
+        <button id="recordVideoBtn" type="button" disabled>Start Recording</button>
+      </div>
+
+      <div id="recordingPanel" class="recording-panel hidden">
+        <p class="recording-panel__title">Last recording</p>
+        <video id="recordedVideo" controls playsinline></video>
+        <button id="sendToQueueBtn" type="button" class="send-button">Send to CVAT</button>
+      </div>
+
+      <p id="status" class="status">Camera is stopped.</p>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

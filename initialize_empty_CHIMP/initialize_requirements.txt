@@ -6,6 +6,6 @@ mlflow
 tensorflow
 keras
 tf2onnx
-psycopg2
+psycopg2-binary
 gdown
 onnxruntime

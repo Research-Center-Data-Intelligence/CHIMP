@@ -145,6 +145,9 @@ class MLFlowConnector(BaseConnector):
         artifacts: Optional[Dict[str, str]] = {},
         datasets: Optional[Dict[str, str]] = {},
     ) -> str:
+        # Ultralytics autologging can mutate MLflow global state during training.
+        # Re-apply the configured URI so model persistence always targets CHIMP tracking.
+        mlflow.set_tracking_uri(self._tracking_uri)
         mlflow.set_experiment(experiment_name)
         if not run_name:
             run_name = uuid4().hex
