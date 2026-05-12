@@ -2,9 +2,8 @@ import base64
 import json
 import os
 import tempfile
-import time
+import uuid
 import zipfile
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any
@@ -17,27 +16,15 @@ from PIL import Image
 
 
 SERVING_API_URL = os.environ.get("SERVING_API_URL", "http://localhost:5254")
+TRAINING_API_URL = os.environ.get("TRAINING_API_URL", "http://localhost:5253")
 MODEL_NAME = os.environ.get("YOLO_MODEL_NAME", "yolo_pose_demo")
 MODEL_STAGE = os.environ.get("YOLO_MODEL_STAGE", "production")
 MODEL_SESSION_ID = os.environ.get("YOLO_MODEL_SESSION_ID", "")
 IMAGE_SIZE = 640
 REQUEST_TIMEOUT_SECONDS = 30
-DEFAULT_FRAME_COUNT = 10
-CVAT_BASE_URL = os.environ.get("CVAT_BASE_URL", "http://localhost:8088").rstrip("/")
-CVAT_HOST_HEADER = os.environ.get("CVAT_HOST_HEADER", "").strip()
-CVAT_API_TOKEN = os.environ.get("CVAT_API_TOKEN", "")
-CVAT_PROJECT_ID = os.environ.get("CVAT_PROJECT_ID", "").strip()
-CVAT_TASK_NAME_PREFIX = os.environ.get("CVAT_TASK_NAME_PREFIX", "yolo-webcam").strip() or "yolo-webcam"
-CVAT_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("CVAT_REQUEST_TIMEOUT_SECONDS", "120"))
-
+DEFAULT_FRAME_COUNT = 5
 
 app = Flask(__name__)
-
-
-@dataclass
-class CVATContext:
-    base_url: str
-    session: requests.Session
 
 
 def _sample_evenly_spaced_indices(total_frames: int, frame_count: int) -> list[int]:
@@ -138,159 +125,6 @@ def _extract_png_frames_from_video(video_bytes: bytes, frame_count: int = DEFAUL
             return extracted_frames
         finally:
             capture.release()
-
-
-def _cvat_parse_error(response: requests.Response) -> str:
-    try:
-        payload = response.json()
-        return str(payload)
-    except Exception:  # noqa: BLE001
-        return response.text[:600] or "Unknown CVAT error"
-
-
-def _cvat_request(
-    session: requests.Session,
-    method: str,
-    path: str,
-    *,
-    headers: dict[str, str] | None = None,
-    **kwargs: Any,
-) -> requests.Response:
-    merged_headers = dict(headers or {})
-    if CVAT_HOST_HEADER:
-        merged_headers.setdefault("Host", CVAT_HOST_HEADER)
-    return session.request(
-        method=method.upper(),
-        url=f"{CVAT_BASE_URL}{path}",
-        headers=merged_headers,
-        timeout=CVAT_REQUEST_TIMEOUT_SECONDS,
-        **kwargs,
-    )
-
-
-def _create_cvat_task(session: requests.Session, task_name: str, project_id: int | None = None) -> int:
-    payload: dict[str, Any] = {
-        "name": task_name,
-        "labels": [
-            {"name": "person", "color": "#FF0000", "attributes": []}
-        ],
-    }
-    if project_id is not None:
-        payload["project_id"] = int(project_id)
-
-    response = _cvat_request(session, "POST", "/api/tasks", json=payload)
-    if response.status_code >= 400:
-        raise RuntimeError(
-            f"Failed to create CVAT task (status={response.status_code}): {_cvat_parse_error(response)}"
-        )
-
-    data = response.json()
-    task_id = data.get("id")
-    if task_id is None:
-        raise RuntimeError("CVAT task creation response did not include task id")
-    return int(task_id)
-
-
-
-
-def _upload_frames_to_cvat_task(
-    session: requests.Session,
-    task_id: int,
-    frames: list[tuple[str, bytes]],
-) -> str | None:
-    endpoint = f"/api/tasks/{task_id}/data/"
-
-    start_response = _cvat_request(session, "POST", endpoint, headers={"Upload-Start": "1"})
-    if start_response.status_code not in (200, 202):
-        raise RuntimeError(
-            f"CVAT upload start failed (status={start_response.status_code}): {_cvat_parse_error(start_response)}"
-        )
-
-    opened_buffers: list[BytesIO] = []
-    files = []
-    try:
-        for index, (frame_name, frame_bytes) in enumerate(frames):
-            frame_buffer = BytesIO(frame_bytes)
-            opened_buffers.append(frame_buffer)
-            files.append((f"client_files[{index}]", (frame_name, frame_buffer, "image/png")))
-
-        multiple_response = _cvat_request(
-            session,
-            "POST",
-            endpoint,
-            headers={"Upload-Multiple": "1"},
-            data={"image_quality": "100"},
-            files=files,
-        )
-        if multiple_response.status_code not in (200, 201, 202):
-            raise RuntimeError(
-                f"CVAT upload failed (status={multiple_response.status_code}): {_cvat_parse_error(multiple_response)}"
-            )
-    finally:
-        for frame_buffer in opened_buffers:
-            frame_buffer.close()
-
-    finish_response = _cvat_request(
-        session,
-        "POST",
-        endpoint,
-        headers={"Upload-Finish": "1"},
-        json={"image_quality": 100, "sorting_method": "lexicographical"},
-    )
-    if finish_response.status_code >= 400:
-        raise RuntimeError(
-            f"CVAT upload finalize failed (status={finish_response.status_code}): {_cvat_parse_error(finish_response)}"
-        )
-
-    payload = finish_response.json() if finish_response.content else {}
-    return payload.get("rq_id")
-
-
-def _send_frames_to_cvat(
-    extracted_frames: list[tuple[str, bytes]],
-    *,
-    task_name: str,
-    project_id: int | None,
-) -> dict[str, Any]:
-    if not CVAT_API_TOKEN:
-        raise RuntimeError("CVAT_API_TOKEN is not configured")
-
-    session = requests.Session()
-    session.headers.update({"Authorization": f"Token {CVAT_API_TOKEN}"})
-
-    user_response = _cvat_request(session, "GET", "/api/users/self")
-    if user_response.status_code >= 400:
-        raise RuntimeError(
-            f"CVAT authentication failed (status={user_response.status_code}): {_cvat_parse_error(user_response)}"
-        )
-
-    task_id = _create_cvat_task(session, task_name=task_name, project_id=project_id)
-    rq_id = _upload_frames_to_cvat_task(session, task_id=task_id, frames=extracted_frames)
-
-    return {
-        "task_id": task_id,
-        "task_url": f"{CVAT_BASE_URL}/tasks/{task_id}",
-        "rq_id": rq_id,
-        "frame_count": len(extracted_frames),
-    }
-
-
-def wait_for_request(ctx: CVATContext, request_id: str, poll_seconds: int = 5) -> dict[str, Any]:
-    while True:
-        response = _cvat_request(ctx.session, "GET", f"/api/requests/{request_id}")
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Failed to poll CVAT request {request_id} (status={response.status_code}): {_cvat_parse_error(response)}"
-            )
-
-        payload = response.json() if response.content else {}
-        status = str(payload.get("status", "")).lower()
-        if status == "finished":
-            return payload
-        if status in {"failed", "canceled", "cancelled"}:
-            raise RuntimeError(f"CVAT request {request_id} did not complete: {payload}")
-
-        time.sleep(poll_seconds)
 
 
 def _xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
@@ -578,64 +412,10 @@ def _build_coco_keypoints_predictions_from_frames(
     }
 
 
-def _import_coco_predictions_to_cvat_task(
-    session: requests.Session,
-    task_id: int,
-    coco_predictions: dict[str, Any],
-    format_name: str = "COCO Keypoints 1.0",
-) -> str | None:
-    annotation_bytes = json.dumps(coco_predictions).encode("utf-8")
-    annotation_file = BytesIO(annotation_bytes)
-
-    response = _cvat_request(
-        session,
-        "POST",
-        f"/api/tasks/{task_id}/annotations/",
-        params={"format": format_name},
-        files={"annotation_file": ("prelabels_coco_keypoints.json", annotation_file, "application/json")},
-    )
-
-    if response.status_code not in (200, 201, 202):
-        raise RuntimeError(
-            f"Failed to import pre-annotations (status={response.status_code}): {_cvat_parse_error(response)}"
-        )
-
-    payload = response.json() if response.content else {}
-    return payload.get("rq_id")
-
-
-def _download_annotations_as_coco(
-    session: requests.Session,
-    task_id: int,
-    format_name: str = "COCO Keypoints 1.0",
-) -> dict | None:
-    """Attempt to download task annotations in COCO Keypoints format.
-
-    Returns parsed JSON on success, None otherwise.
-    """
-    try:
-        resp = _cvat_request(
-            session,
-            "GET",
-            f"/api/tasks/{task_id}/annotations/",
-            params={"format": format_name, "action": "download"},
-        )
-        if resp.status_code >= 400:
-            print(f"[_download_annotations_as_coco] download failed: {resp.status_code} {_cvat_parse_error(resp)}")
-            return None
-
-        # CVAT may return JSON directly or bytes representing JSON
-        try:
-            return resp.json()
-        except Exception:
-            try:
-                return json.loads(resp.content.decode("utf-8"))
-            except Exception as ex:  # noqa: BLE001
-                print(f"[_download_annotations_as_coco] failed to parse content: {ex}")
-                return None
-    except Exception as ex:  # noqa: BLE001
-        print(f"[_download_annotations_as_coco] exception: {ex}")
-        return None
+def _generate_managed_dataset_name(prefix: str = "yolo_pose_frames") -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    suffix = uuid.uuid4().hex[:8]
+    return f"{prefix}_{timestamp}_{suffix}"
 
 
 @app.route("/")
@@ -718,8 +498,8 @@ def video_to_png_frames():
         return jsonify({"error": "Video frame extraction failed", "details": str(ex)}), 500
 
 
-@app.route("/api/video-to-cvat-task", methods=["POST"])
-def video_to_cvat_task():
+@app.route("/api/video-to-managed-dataset", methods=["POST"])
+def video_to_managed_dataset():
     video_file = request.files.get("video")
     if video_file is None:
         return jsonify({"error": "Missing video file in 'video' field"}), 400
@@ -728,89 +508,92 @@ def video_to_cvat_task():
     if frame_count is None or frame_count <= 0:
         return jsonify({"error": "frame_count must be a positive integer"}), 400
 
-    requested_project_id = request.form.get("project_id", default=None, type=int)
-    configured_project_id = int(CVAT_PROJECT_ID) if CVAT_PROJECT_ID.isdigit() else None
-    project_id = requested_project_id if requested_project_id is not None else configured_project_id
-
-    requested_task_name = (request.form.get("task_name") or "").strip()
-    auto_task_name = f"{CVAT_TASK_NAME_PREFIX}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
-    task_name = requested_task_name or auto_task_name
+    dataset_name = request.form.get("dataset_name", type=str)
+    dataset_prefix = request.form.get("dataset_prefix", default="yolo_pose_frames", type=str)
+    if not dataset_name:
+        dataset_name = _generate_managed_dataset_name(prefix=dataset_prefix or "yolo_pose_frames")
 
     try:
-        if not CVAT_API_TOKEN:
-            return jsonify({"error": "CVAT_API_TOKEN is not configured"}), 500
-
         video_bytes = video_file.read()
         extracted_frames = _extract_png_frames_from_video(video_bytes, frame_count=frame_count)
 
-        session = requests.Session()
-        session.headers.update({"Authorization": f"Token {CVAT_API_TOKEN}"})
-        ctx = CVATContext(base_url=CVAT_BASE_URL, session=session)
+        output_zip = BytesIO()
+        with zipfile.ZipFile(output_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for frame_name, frame_bytes in extracted_frames:
+                archive.writestr(frame_name, frame_bytes)
+        output_zip.seek(0)
 
-        user_response = _cvat_request(session, "GET", "/api/users/self")
-        if user_response.status_code >= 400:
-            return jsonify({"error": f"CVAT authentication failed (status={user_response.status_code}): {_cvat_parse_error(user_response)}"}), 502
+        labels = ["unlabeled" for _ in extracted_frames]
+        metadata = [
+            {
+                "source": "yolo-frontend",
+                "label_status": "unlabeled",
+                "dataset_name": dataset_name,
+                "object_path": f"{dataset_name}/{frame_name}",
+                "content_type": "image/png",
+                "frame_name": frame_name,
+                "frame_index": index,
+            }
+            for index, (frame_name, _frame_bytes) in enumerate(extracted_frames)
+        ]
 
-        task_id = _create_cvat_task(session, task_name=task_name, project_id=project_id)
-        upload_rq_id = _upload_frames_to_cvat_task(session, task_id=task_id, frames=extracted_frames)
-        if upload_rq_id:
-            wait_for_request(ctx, upload_rq_id, poll_seconds=2)
+        # Frame inference/pre-annotation is intentionally disabled for now.
+        # If/when we re-enable it, we can compute predictions here and attach them
+        # to metadata (or upload a sidecar JSON). Keeping this commented makes the
+        # "upload only" behavior explicit.
+        # coco_predictions = _build_coco_keypoints_predictions_from_frames(extracted_frames)
 
-        coco_predictions = _build_coco_keypoints_predictions_from_frames(
-            extracted_frames,
-            model_input_size=IMAGE_SIZE,
-            det_conf_threshold=0.10,
-            kp_conf_threshold=0.20,
+        training_url = f"{TRAINING_API_URL.rstrip('/')}/managed_datasets"
+        response = requests.post(
+            training_url,
+            data={
+                "dataset_name": dataset_name,
+                "labels": json.dumps(labels),
+                "metadata": json.dumps(metadata),
+            },
+            files={
+                "file": (
+                    "video_frames.zip",
+                    output_zip.getvalue(),
+                    "application/zip",
+                )
+            },
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        annotation_count = len(coco_predictions.get("annotations", []))
-        import_rq_id = None
-        prelabels_imported = False
-        annotations_in_task = 0
-        if annotation_count > 0:
+
+        if not response.ok:
+            details = None
             try:
-                import_rq_id = _import_coco_predictions_to_cvat_task(session, task_id, coco_predictions)
-                if import_rq_id:
-                    import_request_payload = wait_for_request(ctx, import_rq_id, poll_seconds=2)
-                    print(f"[video_to_cvat_task] import request payload: {import_request_payload}")
-                    prelabels_imported = True
-                    # verify imported annotations by attempting to download them
-                    downloaded = _download_annotations_as_coco(session, task_id)
-                    if isinstance(downloaded, dict):
-                        found_annotations = downloaded.get("annotations") or downloaded.get("annotations", [])
-                        try:
-                            annotations_in_task = len(found_annotations) if isinstance(found_annotations, list) else 0
-                        except Exception:
-                            annotations_in_task = 0
-                    else:
-                        annotations_in_task = 0
-            except RuntimeError as ex:
-                print(f"[video_to_cvat_task] Pre-annotation import failed: {ex}")
-                prelabels_imported = False
-                annotations_in_task = 0
-                import_request_payload = None
+                details = response.json()
+            except Exception:  # noqa: BLE001
+                details = response.text
+            return (
+                jsonify(
+                    {
+                        "error": "Training API upload failed",
+                        "status_code": response.status_code,
+                        "details": details,
+                    }
+                ),
+                502,
+            )
 
         return jsonify(
             {
-                "message": "Frames and pre-annotations uploaded to CVAT task",
-                "task_id": task_id,
-                "task_url": f"{CVAT_BASE_URL}/tasks/{task_id}",
-                "upload_rq_id": upload_rq_id,
-                "import_rq_id": import_rq_id,
-                "import_request_payload": import_request_payload,
+                "status": "uploaded",
+                "dataset_name": dataset_name,
                 "frame_count": len(extracted_frames),
-                "annotation_count": annotation_count,
-                "prelabels_imported": prelabels_imported,
-                "annotations_in_task": annotations_in_task,
-                "task_name": task_name,
-                "project_id": project_id,
             }
         )
     except ValueError as ex:
         return jsonify({"error": str(ex)}), 400
-    except RuntimeError as ex:
-        return jsonify({"error": str(ex)}), 502
+    except requests.RequestException as ex:
+        return (
+            jsonify({"error": "Could not reach training API", "details": str(ex)}),
+            502,
+        )
     except Exception as ex:  # noqa: BLE001
-        return jsonify({"error": "Failed to create CVAT task", "details": str(ex)}), 500
+        return jsonify({"error": "Upload to managed dataset failed", "details": str(ex)}), 500
 
 
 if __name__ == "__main__":

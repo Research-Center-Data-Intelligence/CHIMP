@@ -49,30 +49,6 @@ further commands, such as `up -d`. On some setups, to use the default profile (d
 
 To monitor and work with the Redis message queue during development, a tool like "Another Redis Desktop Manager" can be used.
 
-### Optional: CVAT setup for keypoint labeling
-
-This repository contains a dedicated CVAT Docker Compose stack in [docker-compose.cvat.yml](docker-compose.cvat.yml).
-
-- Start CVAT:
-  - `docker-compose -f docker-compose.cvat.yml --project-name chimp-cvat up -d`
-- Stop CVAT:
-  - `docker-compose -f docker-compose.cvat.yml --project-name chimp-cvat down`
-- Open CVAT UI:
-  - `http://localhost:8088`
-
-First-time setup requires creating a superuser account:
-
-`docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'`
-
-All CVAT data is persisted under `docker-data/cvat/`:
-- `docker-data/cvat/db`
-- `docker-data/cvat/data`
-- `docker-data/cvat/keys`
-- `docker-data/cvat/logs`
-
-The on-disk cache service (`cvat_redis_ondisk`) uses a Docker named volume (`cvat_cache_db`) to avoid overriding container config files.
-
-
 ### Remote setup (Remote Linux host on Docker)
 1. Create an Ubuntu server (or another Linux distribution).
 2. Log in using a terminal client such as PuTTY. Define and save your session.

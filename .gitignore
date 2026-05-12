@@ -7,6 +7,8 @@ docker-data/monitoring/mlflow.db
 docker-data/datastore/*
 docker-data/postgres/*
 docker-data/files/*
+docker-data/cvat/*
+docker-data/cvat/
 experimentation/
 ml-frontend/logs
 serving/mlruns

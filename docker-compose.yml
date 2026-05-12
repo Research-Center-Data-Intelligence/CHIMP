@@ -46,12 +46,36 @@ services:
             - "5260:5260"
         environment:
             - SERVING_API_URL=http://serving-api:8000
+            - TRAINING_API_URL=http://training-api:8000
             - YOLO_MODEL_NAME=yolo_pose_demo
             - YOLO_MODEL_STAGE=production
-            - CVAT_BASE_URL=${CVAT_BASE_URL:-http://host.docker.internal:8088}
-            - CVAT_HOST_HEADER=${CVAT_HOST_HEADER:-localhost}
-            - CVAT_API_TOKEN=${CVAT_API_TOKEN:-qMWmKIthXdxd4fljYSTLNJIL9MRjK6AN9qnnf7Vm}
-            - CVAT_TASK_NAME_PREFIX=${CVAT_TASK_NAME_PREFIX:-yolo-webcam}
+        profiles:
+            - ''
+            - 'gpu'
+            - 'external-worker'
+
+    # Labeling Frontend
+    # : decoupled web UI for HPE/YOLO pose labeling
+    labeling-frontend:
+        restart: unless-stopped
+        build: ./labeling-frontend
+        image: chimp-labeling-frontend:dev
+        container_name: labeling-frontend
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5261:5261"
+        environment:
+            - PORT=5261
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
+            - DATASTORE_URI=datastore:9000
+            - DATASTORE_BUCKET=manageddataset
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
         profiles:
             - ''
             - 'gpu'

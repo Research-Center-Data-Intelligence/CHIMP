@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPE / YOLO Pose Labeling</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    .row { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+    .card img { width: 100%; height: auto; display: block; border-radius: 6px; background: #f5f5f5; }
+    .meta { font-size: 12px; color: #444; margin-top: 8px; word-break: break-word; }
+    .status { font-size: 14px; color: #444; }
+    .error { color: #b42318; }
+  </style>
+</head>
+<body>
+  <h1>HPE / YOLO Pose Labeling</h1>
+  <div class="row">
+    <button id="refreshBtn" type="button">Refresh</button>
+    <span id="status" class="status">Loading…</span>
+  </div>
+  <div id="grid" class="grid"></div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const gridEl = document.getElementById("grid");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.classList.toggle("error", isError);
+    }
+
+    function clearGrid() {
+      while (gridEl.firstChild) {
+        gridEl.removeChild(gridEl.firstChild);
+      }
+    }
+
+    async function loadUnlabeled() {
+      setStatus("Loading unlabeled images…");
+      clearGrid();
+
+      const response = await fetch("/api/unlabeled?limit=50");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || "Request failed");
+      }
+
+      const datapoints = Array.isArray(data.datapoints) ? data.datapoints : [];
+      setStatus(`Found ${datapoints.length} unlabeled images.`);
+
+      for (const dp of datapoints) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.alt = dp.filename || `datapoint ${dp.id}`;
+        img.src = `/api/datapoints/${dp.id}/image`;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = `id=${dp.id}  dataset=${dp.dataset_name || "?"}  file=${dp.filename || "?"}`;
+
+        card.appendChild(img);
+        card.appendChild(meta);
+        gridEl.appendChild(card);
+      }
+    }
+
+    refreshBtn.addEventListener("click", () => {
+      loadUnlabeled().catch((err) => setStatus(`Error: ${err.message}`, true));
+    });
+
+    loadUnlabeled().catch((err) => setStatus(`Error: ${err.message}`, true));
+  </script>
+</body>
+</html>

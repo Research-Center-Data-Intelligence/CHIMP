@@ -2,9 +2,9 @@ const webcam = document.getElementById("webcam");
 const overlay = document.getElementById("overlay");
 const countdownOverlay = document.getElementById("countdownOverlay");
 const recordVideoBtn = document.getElementById("recordVideoBtn");
+const uploadFramesBtn = document.getElementById("uploadFramesBtn");
 const recordingPanel = document.getElementById("recordingPanel");
 const recordedVideo = document.getElementById("recordedVideo");
-const sendToQueueBtn = document.getElementById("sendToQueueBtn");
 const statusEl = document.getElementById("status");
 
 const drawCtx = overlay.getContext("2d");
@@ -22,6 +22,7 @@ let recordingPreviewUrl = "";
 let recordingActive = false;
 let lastRecordingBlob = null;
 let lastRecordingMimeType = "video/webm";
+let uploadInFlight = false;
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -36,6 +37,10 @@ function setCameraButtonState() {
   const isRunning = Boolean(activeStream);
   recordVideoBtn.disabled = !isRunning;
   recordVideoBtn.textContent = recordingActive ? "Stop Recording" : "Start Recording";
+
+  if (uploadFramesBtn) {
+    uploadFramesBtn.disabled = !lastRecordingBlob || uploadInFlight || recordingActive;
+  }
 }
 
 function revokeRecordingPreviewUrl() {
@@ -68,6 +73,44 @@ function finalizeRecording(blob, mimeType) {
   setRecordingPanelVisible(true);
   console.log("[finalizeRecording] Recording panel visible property:", !recordingPanel.classList.contains("hidden"));
   setStatus("Recording complete.");
+  setCameraButtonState();
+}
+
+async function uploadLastRecordingFrames() {
+  if (!lastRecordingBlob || !lastRecordingBlob.size) {
+    setStatus("Record a video first.", true);
+    return;
+  }
+
+  uploadInFlight = true;
+  setCameraButtonState();
+  setStatus("Extracting 5 frames and uploading to training API...");
+
+  try {
+    const formData = new FormData();
+    formData.append("video", lastRecordingBlob, "recording.webm");
+    formData.append("frame_count", "5");
+
+    const response = await fetch("/api/video-to-managed-dataset", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const msg = data?.error || "Upload failed";
+      throw new Error(msg);
+    }
+
+    const datasetName = data?.dataset_name || "(unknown)";
+    const frameCount = data?.frame_count ?? 0;
+    setStatus(`Uploaded ${frameCount} frames to dataset '${datasetName}'.`);
+  } catch (error) {
+    setStatus(`Upload failed: ${error.message}`, true);
+  } finally {
+    uploadInFlight = false;
+    setCameraButtonState();
+  }
 }
 
 function stopRecording() {
@@ -318,6 +361,12 @@ recordVideoBtn.addEventListener("click", () => {
   }
 });
 
+if (uploadFramesBtn) {
+  uploadFramesBtn.addEventListener("click", () => {
+    uploadLastRecordingFrames();
+  });
+}
+
 function showCountdownThenStart(seconds) {
   if (!countdownOverlay) {
     startRecording();
@@ -350,56 +399,6 @@ function showCountdownThenStart(seconds) {
   // Start ticking after 1s to show the initial number for one second
   let countdownTimer = window.setTimeout(tick, 1000);
 }
-
-sendToQueueBtn.addEventListener("click", () => {
-  if (!lastRecordingBlob || !lastRecordingBlob.size) {
-    setStatus("Record a video before sending it to CVAT.", true);
-    return;
-  }
-
-  sendToQueueBtn.disabled = true;
-  sendToQueueBtn.textContent = "Sending to CVAT...";
-  setStatus("Extracting frames, generating pre-labels, and creating CVAT task...");
-
-  const formData = new FormData();
-  const videoFileName = `recording.${lastRecordingMimeType.includes("mp4") ? "mp4" : "webm"}`;
-  formData.append("video", lastRecordingBlob, videoFileName);
-  formData.append("frame_count", "10");
-
-  fetch("/api/video-to-cvat-task", {
-    method: "POST",
-    body: formData
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "CVAT upload failed");
-      }
-
-      return response.json();
-    })
-    .then((result) => {
-      console.log("[sendToQueueBtn] CVAT task created:", result);
-      const taskId = result.task_id;
-      const frameCount = result.frame_count;
-      const annotationCount = result.annotation_count || 0;
-      const taskUrl = result.task_url;
-      const baseMessage = `Sent ${frameCount} frames and ${annotationCount} pre-labels to CVAT task #${taskId}.`;
-      setStatus(
-        taskUrl
-          ? `${baseMessage} Open: ${taskUrl}`
-          : baseMessage
-      );
-      sendToQueueBtn.textContent = "Sent to CVAT";
-      sendToQueueBtn.disabled = true;
-    })
-    .catch((error) => {
-      console.error("[sendToQueueBtn] CVAT upload failed:", error);
-      setStatus(`CVAT upload failed: ${error.message}`, true);
-      sendToQueueBtn.disabled = false;
-      sendToQueueBtn.textContent = "Send to CVAT";
-    });
-});
 window.addEventListener("beforeunload", stopCamera);
 
 setCameraButtonState();
