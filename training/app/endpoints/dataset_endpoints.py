@@ -159,10 +159,6 @@ def upload_managed_dataset(passed_request: Request = None):
             "Dataset name ('dataset_name') should only contain characters allowed in path strings"
         )
     datastore = current_app.extensions["datastore"]
-    if dataset_name in [
-        ds.replace("/", "") for ds in datastore.list_from_datastore("", recursive=False)
-    ]:
-        raise BadRequest(f"Dataset with name '{dataset_name}' already exists")
 
     file_data = file.read()
     zip_buffer = io.BytesIO(file_data)
@@ -198,7 +194,7 @@ def upload_managed_dataset(passed_request: Request = None):
                 file_stream.seek(0)  # Ensure pointer is at the start
                 datastore.store_object(dataset_name, file_stream, labels[i], metadata[i], object_name)
 
-    return {"status": "successfully uploaded dataset"}
+    return {"status": "successfully uploaded dataset", "mode": "append"}
 
 
 

@@ -20,6 +20,7 @@ TRAINING_API_URL = os.environ.get("TRAINING_API_URL", "http://localhost:5253")
 MODEL_NAME = os.environ.get("YOLO_MODEL_NAME", "yolo_pose_demo")
 MODEL_STAGE = os.environ.get("YOLO_MODEL_STAGE", "production")
 MODEL_SESSION_ID = os.environ.get("YOLO_MODEL_SESSION_ID", "")
+DATASET_NAME = os.environ.get("YOLO_DATASET_NAME", "yolo_pose_demo")
 IMAGE_SIZE = 640
 REQUEST_TIMEOUT_SECONDS = 30
 DEFAULT_FRAME_COUNT = 5
@@ -508,23 +509,26 @@ def video_to_managed_dataset():
     if frame_count is None or frame_count <= 0:
         return jsonify({"error": "frame_count must be a positive integer"}), 400
 
-    dataset_name = request.form.get("dataset_name", type=str)
-    dataset_prefix = request.form.get("dataset_prefix", default="yolo_pose_frames", type=str)
-    if not dataset_name:
-        dataset_name = _generate_managed_dataset_name(prefix=dataset_prefix or "yolo_pose_frames")
+    dataset_name = request.form.get("dataset_name", type=str) or DATASET_NAME
 
     try:
         video_bytes = video_file.read()
         extracted_frames = _extract_png_frames_from_video(video_bytes, frame_count=frame_count)
 
+        upload_batch_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+        unique_extracted_frames = [
+            (f"{upload_batch_id}_{frame_name}", frame_bytes)
+            for frame_name, frame_bytes in extracted_frames
+        ]
+
         output_zip = BytesIO()
         with zipfile.ZipFile(output_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for frame_name, frame_bytes in extracted_frames:
+            for frame_name, frame_bytes in unique_extracted_frames:
                 archive.writestr(frame_name, frame_bytes)
         output_zip.seek(0)
 
-        labels = build_labels(extracted_frames)
-        metadata = build_metadata(extracted_frames, dataset_name)
+        labels = build_labels(unique_extracted_frames)
+        metadata = build_metadata(unique_extracted_frames, dataset_name)
 
         # Frame inference/pre-annotation is intentionally disabled for now.
         # If/when we re-enable it, we can compute predictions here and attach them
@@ -555,7 +559,7 @@ def video_to_managed_dataset():
             {
                 "status": "uploaded",
                 "dataset_name": dataset_name,
-                "frame_count": len(extracted_frames),
+                "frame_count": len(unique_extracted_frames),
             }
         )
     except ValueError as ex:

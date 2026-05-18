@@ -10,6 +10,8 @@ from datastore_access import (
     label_datapoint,
     list_unlabeled_datapoints,
 )
+import requests
+from datetime import datetime
 
 
 PORT = int(os.environ.get("PORT", "5261"))
@@ -82,6 +84,42 @@ def api_datapoint_label(datapoint_id: int):
         return jsonify({"error": str(ex)}), 400
     except Exception as ex:  # noqa: BLE001
         return jsonify({"error": "Failed to label image", "details": str(ex)}), 500
+
+
+@app.post("/api/retrain")
+def api_retrain():
+    """Trigger a retrain run on the training server for YOLO Pose.
+
+    Expects JSON: { "dataset_name": "..." }
+    """
+    payload = request.get_json(silent=True) or {}
+    dataset_name = payload.get("dataset_name")
+
+    training_url = os.environ.get("TRAINING_SERVER_URL", "http://training-api:8000")
+    plugin_path = "/tasks/run/YOLO+Pose"
+
+    # Use fixed experiment name for aggregation, generate a unique run_name
+    experiment_name = payload.get("experiment_name") or "yolo_pose_demo"
+    run_name = payload.get("run_name") or f"{dataset_name or 'all'}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+
+    form = {
+        "experiment_name": experiment_name,
+        "run_name": run_name,
+    }
+    if dataset_name:
+        form["dataset_name"] = dataset_name
+
+    try:
+        r = requests.post(training_url + plugin_path, data=form, timeout=120)
+    except Exception as ex:  # noqa: BLE001
+        return jsonify({"error": "Failed to contact training server", "details": str(ex)}), 500
+
+    try:
+        data = r.json()
+    except Exception:
+        data = {"status_code": r.status_code, "text": r.text}
+
+    return jsonify({"status": "triggered", "training_response": data}), (200 if r.status_code == 200 else 500)
 
 
 if __name__ == "__main__":

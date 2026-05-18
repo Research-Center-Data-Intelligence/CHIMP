@@ -68,6 +68,8 @@ services:
             - "5261:5261"
         environment:
             - PORT=5261
+            - TRAINING_SERVER_URL=http://training-api:8000
+            # bad bad hardcoded database access
             - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
             - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
             - DATASTORE_URI=datastore:9000

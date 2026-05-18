@@ -1,6 +1,8 @@
 const statusEl = document.getElementById("status");
 const gridEl = document.getElementById("grid");
 const refreshBtn = document.getElementById("refreshBtn");
+const retrainBtn = document.getElementById("retrainBtn");
+const datasetNameInput = document.getElementById("datasetNameInput");
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -57,6 +59,11 @@ async function loadUnlabeled() {
   for (const dp of datapoints) {
     gridEl.appendChild(createCard(dp));
   }
+
+  // If dataset input is empty, prefill with the first datapoint's dataset_name
+  if (datapoints.length && datasetNameInput && !datasetNameInput.value) {
+    datasetNameInput.value = datapoints[0].dataset_name || "";
+  }
 }
 
 refreshBtn.addEventListener("click", () => {
@@ -64,3 +71,34 @@ refreshBtn.addEventListener("click", () => {
 });
 
 loadUnlabeled().catch((err) => setStatus(`Error: ${err.message}`, true));
+
+if (retrainBtn) {
+  retrainBtn.addEventListener("click", async () => {
+    const datasetName = datasetNameInput ? datasetNameInput.value.trim() : "";
+    if (!confirm(`Trigger retrain on dataset '${datasetName || 'yolo_pose_demo'}'?`)) {
+      return;
+    }
+
+    retrainBtn.disabled = true;
+    setStatus("Triggering retrain…");
+
+    try {
+      const runName = `${datasetName || 'all'}_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+      const response = await fetch("/api/retrain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataset_name: datasetName, experiment_name: "yolo_pose_demo", run_name: runName }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || JSON.stringify(data));
+      }
+      setStatus("Retrain triggered.");
+      console.info("Retrain response:", data);
+    } catch (err) {
+      setStatus(`Retrain failed: ${err.message}`, true);
+    } finally {
+      retrainBtn.disabled = false;
+    }
+  });
+}
