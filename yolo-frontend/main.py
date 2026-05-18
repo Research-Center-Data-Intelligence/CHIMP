@@ -7,11 +7,11 @@ import zipfile
 from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any
-
 import numpy as np
 import cv2
 import requests
 from flask import Flask, jsonify, render_template, request, send_file
+from managed_dataset import build_labels, build_metadata, upload_managed_dataset
 from PIL import Image
 
 
@@ -523,19 +523,8 @@ def video_to_managed_dataset():
                 archive.writestr(frame_name, frame_bytes)
         output_zip.seek(0)
 
-        labels = ["unlabeled" for _ in extracted_frames]
-        metadata = [
-            {
-                "source": "yolo-frontend",
-                "label_status": "unlabeled",
-                "dataset_name": dataset_name,
-                "object_path": f"{dataset_name}/{frame_name}",
-                "content_type": "image/png",
-                "frame_name": frame_name,
-                "frame_index": index,
-            }
-            for index, (frame_name, _frame_bytes) in enumerate(extracted_frames)
-        ]
+        labels = build_labels(extracted_frames)
+        metadata = build_metadata(extracted_frames, dataset_name)
 
         # Frame inference/pre-annotation is intentionally disabled for now.
         # If/when we re-enable it, we can compute predictions here and attach them
@@ -543,23 +532,7 @@ def video_to_managed_dataset():
         # "upload only" behavior explicit.
         # coco_predictions = _build_coco_keypoints_predictions_from_frames(extracted_frames)
 
-        training_url = f"{TRAINING_API_URL.rstrip('/')}/managed_datasets"
-        response = requests.post(
-            training_url,
-            data={
-                "dataset_name": dataset_name,
-                "labels": json.dumps(labels),
-                "metadata": json.dumps(metadata),
-            },
-            files={
-                "file": (
-                    "video_frames.zip",
-                    output_zip.getvalue(),
-                    "application/zip",
-                )
-            },
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
+        response = upload_managed_dataset(TRAINING_API_URL, dataset_name, labels, metadata, output_zip.getvalue(), timeout=REQUEST_TIMEOUT_SECONDS)
 
         if not response.ok:
             details = None
