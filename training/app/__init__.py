@@ -80,4 +80,6 @@ def create_celery_app(app: Flask):
 
     return celery_app
 
-celery = create_celery_app(create_app())
+import os as _os
+if not _os.environ.get("TESTING"):
+    celery = create_celery_app(create_app())
