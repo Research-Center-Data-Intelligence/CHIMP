@@ -3,6 +3,7 @@ import subprocess
 import shutil
 import sys
 import json
+from pathlib import Path
 from typing import Optional
 
 import onnx
@@ -136,6 +137,27 @@ class YoloPosePlugin(BasePlugin):
         dataset_name = kwargs.get("dataset_name")
         fine_tune_enabled = bool(dataset_name)
         epochs = 10
+
+        if fine_tune_enabled:
+            # Stap 2: probeer het productiemodel op te halen uit MLflow.
+            # Val terug op het basismodel als er nog geen productiemodel bestaat.
+            pt_download_dir = os.path.join(temp_dir, "production_pt")
+            os.makedirs(pt_download_dir, exist_ok=True)
+            try:
+                downloaded = self._connector.get_artifact(
+                    save_to=pt_download_dir,
+                    model_name=experiment_name,
+                    experiment_name=experiment_name,
+                    artifact_path="pt_checkpoint",
+                )
+                pt_files = list(Path(downloaded).rglob("*.pt"))
+                if pt_files:
+                    model_variant = str(pt_files[0])
+                    print(f"[YOLO Pose] Using production checkpoint: {model_variant}")
+                else:
+                    print("[YOLO Pose] No .pt found in downloaded artifact, falling back to base model.")
+            except Exception as exc:
+                print(f"[YOLO Pose] Could not retrieve production model ({exc}), falling back to base model.")
 
         export_model_variant = model_variant
         metrics = {}

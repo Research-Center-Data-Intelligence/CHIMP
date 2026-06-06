@@ -323,6 +323,103 @@ class TestYoloPosePlugin:
         assert call["metrics"]["metrics/mAP50_P"] == 0.42
         assert call["tags"]["training_mode"] == "fine_tune"
 
+    def test_run_finetune_uses_production_model(self, tmp_path: Path, monkeypatch):
+        """Fine-tune uses the production .pt from MLflow when available (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Simulate a downloaded production checkpoint in the artifact dir
+        prod_pt_dir = tmp_path / "production_pt" / "pt_checkpoint"
+        prod_pt_dir.mkdir(parents=True)
+        prod_pt = prod_pt_dir / "production.pt"
+        prod_pt.write_bytes(b"pt")
+
+        def mock_get_artifact(save_to, model_name, experiment_name, artifact_path):
+            return str(prod_pt_dir)
+
+        plugin._connector.get_artifact = mock_get_artifact
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == str(prod_pt)
+
+    def test_run_finetune_falls_back_to_base_model(self, tmp_path: Path, monkeypatch):
+        """Fine-tune falls back to yolo11n-pose.pt when get_artifact raises (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        def mock_get_artifact(**kwargs):
+            raise RuntimeError("No production model")
+
+        plugin._connector.get_artifact = mock_get_artifact
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == "yolo11n-pose.pt"
+
+    def test_run_finetune_falls_back_when_no_pt_in_artifact(self, tmp_path: Path, monkeypatch):
+        """Fine-tune falls back to base model when artifact dir contains no .pt (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Artifact dir exists but has no .pt files
+        empty_dir = tmp_path / "empty_artifact"
+        empty_dir.mkdir()
+
+        plugin._connector.get_artifact = lambda **kw: str(empty_dir)
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == "yolo11n-pose.pt"
+
     def test_run_finetune_stores_pt_artifact(self, tmp_path: Path, monkeypatch):
         """Fine-tune mode copies the trained .pt into a dedicated artifact dir (Stap 1)."""
         plugin = YoloPosePlugin()
