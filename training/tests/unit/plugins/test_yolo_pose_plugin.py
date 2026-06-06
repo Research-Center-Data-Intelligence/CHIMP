@@ -159,13 +159,19 @@ class TestYoloPosePlugin:
         exported_path = export_dir / "exported.onnx"
         exported_path.write_text("onnx")
 
-        copied = {}
+        # Base model must exist so the .pt artifact copy succeeds in export-only mode.
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
+
+        onnx_copies = {}
 
         def mocked_copy2(src, dst):
-            # Keep this test filesystem-only while still validating copy behavior.
-            copied["src"] = src
-            copied["dst"] = dst
-            Path(dst).write_text(Path(src).read_text())
+            # Track ONNX copies; silently handle the .pt copy.
+            Path(dst).parent.mkdir(parents=True, exist_ok=True)
+            Path(dst).write_bytes(Path(src).read_bytes())
+            if str(src) == str(exported_path):
+                onnx_copies["src"] = src
+                onnx_copies["dst"] = dst
 
         monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
         monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
@@ -182,25 +188,34 @@ class TestYoloPosePlugin:
         assert call["hyperparameters"]["task"] == "pose"
         assert call["tags"]["framework"] == "ultralytics"
         assert "onnx_export" in call["artifacts"]
-        assert copied["src"] == str(exported_path)
+        assert "pt_checkpoint" in call["artifacts"]
+        assert onnx_copies["src"] == str(exported_path)
 
     def test_run_skips_copy_when_export_already_in_artifact_dir(self, tmp_path: Path, monkeypatch):
         """Tests for run flow that avoids copying when export already targets artifact dir."""
         plugin = YoloPosePlugin()
         plugin._connector = _MockConnector()
 
-        artifact_dir = tmp_path / "yolo_pose"
+        artifact_dir = tmp_path / "yolo_pose_onnx"
         artifact_dir.mkdir(parents=True, exist_ok=True)
         exported_path = artifact_dir / "kept.onnx"
         exported_path.write_text("onnx")
+
+        # Base model must exist so the .pt artifact copy succeeds.
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
 
         monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
         monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
         monkeypatch.setattr(
             yolo_pose_module.shutil,
             "copy2",
-            # If source equals destination target, run() should avoid redundant copying.
-            lambda *args, **kwargs: pytest.fail("copy2 should not be called"),
+            # ONNX copy should be skipped (already in artifact dir); .pt copy is allowed.
+            lambda src, dst: (
+                pytest.fail(f"ONNX copy2 should not be called (src={src})")
+                if str(src) == str(exported_path)
+                else Path(dst).write_bytes(Path(src).read_bytes())
+            ),
         )
 
         result = plugin.run(
@@ -266,9 +281,12 @@ class TestYoloPosePlugin:
             captured["temp_dir"] = temp_dir
             return str(tmp_path / "data.yaml")
 
+        trained_pt = tmp_path / "trained-best.pt"
+        trained_pt.write_text("pt")
+
         def mocked_fine_tune(**kwargs):
             captured["fine_tune_kwargs"] = kwargs
-            return "trained-best.pt", {"metrics/mAP50_P": 0.42}
+            return str(trained_pt), {"metrics/mAP50_P": 0.42}
 
         def mocked_export(model_variant, imgsz, opset, device, export_dir):
             captured["export_args"] = {
@@ -296,7 +314,7 @@ class TestYoloPosePlugin:
         assert captured["dataset_name"] == "hpe_one_image_20260331"
         assert captured["fine_tune_kwargs"]["model_variant"] == "yolo11n-pose.pt"
         assert captured["fine_tune_kwargs"]["epochs"] == 10
-        assert captured["export_args"]["model_variant"] == "trained-best.pt"
+        assert Path(captured["export_args"]["model_variant"]).name == "trained-best.pt"
 
         call = plugin._connector.calls[0]
         assert call["run_name"] == "r1"
@@ -304,3 +322,60 @@ class TestYoloPosePlugin:
         assert call["hyperparameters"]["dataset_name"] == "hpe_one_image_20260331"
         assert call["metrics"]["metrics/mAP50_P"] == 0.42
         assert call["tags"]["training_mode"] == "fine_tune"
+
+    def test_run_finetune_stores_pt_artifact(self, tmp_path: Path, monkeypatch):
+        """Fine-tune mode copies the trained .pt into a dedicated artifact dir (Stap 1)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        trained_pt = tmp_path / "best.pt"
+        trained_pt.write_text("pt")
+        exported_onnx = tmp_path / "export" / "model.onnx"
+        exported_onnx.parent.mkdir(parents=True)
+        exported_onnx.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(lambda **kw: (str(trained_pt), {})))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        call = plugin._connector.calls[0]
+        assert "pt_checkpoint" in call["artifacts"], "artifacts must contain pt_checkpoint key"
+        assert "onnx_export" in call["artifacts"], "artifacts must still contain onnx_export key"
+
+        pt_dir = call["artifacts"]["pt_checkpoint"]
+        pt_files = list(Path(pt_dir).glob("*.pt"))
+        assert len(pt_files) == 1, f"expected 1 .pt file in artifact dir, got {pt_files}"
+
+    def test_run_export_only_stores_base_pt_artifact(self, tmp_path: Path, monkeypatch):
+        """Export-only mode stores the base yolo11n-pose.pt as pt_checkpoint artifact."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Simulate the base model being present (normally downloaded by YOLO on first use)
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+        # Redirect copy2 so it finds the base .pt in tmp_path instead of CWD
+        real_copy2 = yolo_pose_module.shutil.copy2
+        def patched_copy2(src, dst):
+            if Path(src).name == "yolo11n-pose.pt":
+                src = str(base_pt)
+            real_copy2(src, dst)
+        monkeypatch.setattr(yolo_pose_module.shutil, "copy2", patched_copy2)
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path))
+
+        call = plugin._connector.calls[0]
+        assert "pt_checkpoint" in call["artifacts"], "export-only must store base pt_checkpoint"
+        assert "onnx_export" in call["artifacts"]
+        pt_files = list(Path(call["artifacts"]["pt_checkpoint"]).glob("*.pt"))
+        assert len(pt_files) == 1
+        assert pt_files[0].name == "yolo11n-pose.pt"

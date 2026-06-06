@@ -165,11 +165,17 @@ class YoloPosePlugin(BasePlugin):
 
         onnx_model = onnx.load(exported_path)
 
-        artifact_dir = os.path.join(temp_dir, "yolo_pose")
-        os.makedirs(artifact_dir, exist_ok=True)
-        artifact_onnx_path = os.path.join(artifact_dir, os.path.basename(exported_path))
+        artifact_onnx_dir = os.path.join(temp_dir, "yolo_pose_onnx")
+        os.makedirs(artifact_onnx_dir, exist_ok=True)
+        artifact_onnx_path = os.path.join(artifact_onnx_dir, os.path.basename(exported_path))
         if os.path.abspath(exported_path) != os.path.abspath(artifact_onnx_path):
             shutil.copy2(exported_path, artifact_onnx_path)
+
+        artifact_pt_dir = os.path.join(temp_dir, "yolo_pose_pt")
+        os.makedirs(artifact_pt_dir, exist_ok=True)
+        pt_artifact_path = os.path.join(artifact_pt_dir, os.path.basename(export_model_variant))
+        shutil.copy2(export_model_variant, pt_artifact_path)
+        artifacts = {"onnx_export": artifact_onnx_dir, "pt_checkpoint": artifact_pt_dir}
 
         hyperparameters = {
             "model_variant": model_variant,
@@ -202,7 +208,7 @@ class YoloPosePlugin(BasePlugin):
             hyperparameters=hyperparameters,
             tags=tags,
             metrics=metrics,
-            artifacts={"onnx_export": artifact_dir},
+            artifacts=artifacts,
         )
 
         return stored_run_name
