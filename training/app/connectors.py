@@ -151,6 +151,9 @@ class MLFlowConnector(BaseConnector):
         mlflow.set_experiment(experiment_name)
         if not run_name:
             run_name = uuid4().hex
+        # Safety net: close any run still open (e.g. if Ultralytics autologging
+        # did not call end_run). Prevents metrics from being logged into a nested run.
+        mlflow.end_run()
         with mlflow.start_run(run_name=run_name):
             run_id = mlflow.active_run().info.run_id
             if not model_name:

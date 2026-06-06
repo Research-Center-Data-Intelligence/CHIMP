@@ -80,6 +80,7 @@ def fine_tune_model(
 ) -> Tuple[str, Dict[str, float]]:
     # Import lazily so non-GPU services can still boot even when torch CUDA libs
     # are unavailable in those containers.
+    import mlflow
     from ultralytics import YOLO
 
     model = YOLO(model_variant)
@@ -88,6 +89,14 @@ def fine_tune_model(
         task="pose",
         epochs=epochs,
     )
+
+    # Ultralytics has built-in MLflow autologging that opens its own
+    # mlflow.start_run() during training and logs per-epoch metrics there.
+    # We close that run here so that store_model can open a clean top-level
+    # CHIMP run without accidentally nesting inside the Ultralytics one.
+    # If Ultralytics already closed it, this is a no-op.
+    mlflow.end_run()
+
     trainer = getattr(model, "trainer", None)
     metrics = collect_training_metrics(train_results, trainer)
 
