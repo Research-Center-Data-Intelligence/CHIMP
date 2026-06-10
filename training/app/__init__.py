@@ -61,6 +61,10 @@ def create_celery_app(app: Flask):
             broker_url=app.config["CELERY_BROKER_URL"],
             result_backend=app.config["CELERY_RESULT_BACKEND"],
             task_ignore_result=True,
+            # Solo pool: YOLO's model.train() spawns its own subprocesses internally.
+            # Celery's default prefork pool daemonizes workers, which forbids having
+            # child processes. Solo runs tasks in the main worker process, avoiding this.
+            worker_pool="solo",
         )
     )
 

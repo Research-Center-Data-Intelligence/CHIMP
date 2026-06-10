@@ -133,6 +133,7 @@ services:
     training-worker:
         container_name: training-worker
         restart: unless-stopped
+        shm_size: '2g'
         build:
             context: ./training
             dockerfile: Dockerfile.worker
@@ -170,6 +171,7 @@ services:
     training-worker-gpu:
         container_name: training-worker-gpu
         restart: unless-stopped
+        shm_size: '2g'
         build:
             context: ./training
             dockerfile: Dockerfile.worker
