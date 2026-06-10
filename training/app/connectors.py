@@ -1,6 +1,7 @@
 import mlflow
 from abc import ABC, abstractmethod
 from flask import Flask
+from mlflow import MlflowClient
 from uuid import uuid4
 from typing import Dict, Optional, Union
 
@@ -184,6 +185,7 @@ class MLFlowConnector(BaseConnector):
                 for dataset_name, dataset_location in datasets.items():
                     mlflow.log_artifact(dataset_location, f"dataset_{dataset_name}")
 
+            model_info = None
             if model_type == ModelType.SKLEARN:
                 model_info = mlflow.sklearn.log_model(
                     sk_model=model,
@@ -219,6 +221,14 @@ class MLFlowConnector(BaseConnector):
                 )
             if model_type == ModelType.OTHER:
                 pass
+
+            if model_info and model_info.registered_model_version:
+                MlflowClient().transition_model_version_stage(
+                    name=model_name,
+                    version=model_info.registered_model_version,
+                    stage="Production",
+                    archive_existing_versions=True,
+                )
         return run_name, run_id
 
     def get_artifact(

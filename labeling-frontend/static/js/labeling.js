@@ -75,7 +75,11 @@ loadUnlabeled().catch((err) => setStatus(`Error: ${err.message}`, true));
 if (retrainBtn) {
   retrainBtn.addEventListener("click", async () => {
     const datasetName = datasetNameInput ? datasetNameInput.value.trim() : "";
-    if (!confirm(`Trigger retrain on dataset '${datasetName || 'yolo_pose_demo'}'?`)) {
+    if (!datasetName) {
+      setStatus("Enter a dataset name before retraining.", true);
+      return;
+    }
+    if (!confirm(`Trigger retrain on dataset '${datasetName}'?`)) {
       return;
     }
 
