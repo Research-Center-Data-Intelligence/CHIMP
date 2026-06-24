@@ -639,6 +639,21 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
 
         return result
 
+    def update_object(self, datapoint_id: int, y: str, metadata: dict) -> Dict:
+        """Update a datapoint's y value and metadata."""
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE datapoints SET y = %s, metadata = %s WHERE id = %s",
+                (y, Json(metadata), datapoint_id),
+            )
+        self._db_conn.commit()
+
+        return {
+            "id": datapoint_id,
+            "y": y,
+            "metadata": metadata,
+        }
+
 
     def load_object_to_memory(self, target_path: str) -> Optional[bytes]:
         try:
@@ -736,9 +751,8 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
 
         return output
 
-    # Nieuwe functies voor labeling-frontend (HPE)
-    def get_unlabeled_datapoints(self, limit: int = 50) -> List[Dict]:
-        """Get unlabeled datapoints from the database."""
+    def get_unlabeled_datapoints(self, source: str, limit: int = 50) -> List[Dict]:
+        """Fetch unlabeled datapoint rows for a given source."""
         limit = max(1, min(limit or 50, 500))
 
         with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -747,62 +761,18 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
                 SELECT id, x, y, metadata
                 FROM datapoints
                 WHERE metadata ->> 'label_status' = 'unlabeled'
-                AND metadata ->> 'source' = 'yolo-frontend'
+                AND metadata ->> 'source' = %s
                 ORDER BY id DESC
                 LIMIT %s
                 """,
-                (limit,),
+                (source, limit),
             )
             rows = cursor.fetchall() or []
 
-        datapoints = []
-        for row in rows:
-            metadata = row.get("metadata") or {}
-            object_path = metadata.get("object_path")
-            dataset_name = metadata.get("dataset_name")
-            filename = metadata.get("frame_name")
+        return [dict(row) for row in rows]
 
-            datapoints.append({
-                "id": row.get("id"),
-                "metadata": metadata,
-                "object_path": object_path,
-                "dataset_name": dataset_name,
-                "filename": filename,
-            })
-
-        return datapoints
-
-    def get_datapoint_image(self, datapoint_id: int) -> tuple:
-        """Get image bytes, content_type, and filename for a datapoint."""
-        with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT id, x, metadata FROM datapoints WHERE id = %s LIMIT 1",
-                (datapoint_id,),
-            )
-            row = cursor.fetchone()
-
-        if not row:
-            raise LookupError("Datapoint not found")
-
-        metadata = row.get("metadata") or {}
-        object_path = metadata.get("object_path")
-        if not object_path:
-            raise ValueError("Datapoint has no resolvable object_path")
-
-        filename = metadata.get("frame_name")
-        content_type = metadata.get("content_type")
-
-        response = self._client.get_object(self._bucketname, object_path)
-        try:
-            image_bytes = response.read()
-        finally:
-            response.close()
-            response.release_conn()
-
-        return image_bytes, content_type, filename
-
-    def get_datapoint_details(self, datapoint_id: int) -> Dict:
-        """Get metadata details for a datapoint."""
+    def get_datapoint(self, datapoint_id: int) -> Dict:
+        """Fetch a single datapoint row by id."""
         with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 "SELECT id, x, y, metadata FROM datapoints WHERE id = %s LIMIT 1",
@@ -813,67 +783,4 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         if not row:
             raise LookupError("Datapoint not found")
 
-        metadata = row.get("metadata") or {}
-        object_path = metadata.get("object_path")
-        dataset_name = metadata.get("dataset_name")
-        filename = metadata.get("frame_name")
-
-        return {
-            "id": row.get("id"),
-            "dataset_name": dataset_name,
-            "filename": filename,
-            "object_path": object_path,
-            "metadata": metadata,
-        }
-
-    def label_datapoint(self, datapoint_id: int, annotation: dict) -> Dict:
-        """Update a datapoint with a label and annotation."""
-        if not isinstance(annotation, dict):
-            raise ValueError("annotation must be a JSON object")
-
-        if annotation.get("format") != "coco_keypoints":
-            raise ValueError("annotation.format must be 'coco_keypoints'")
-
-        keypoints = annotation.get("keypoints")
-        if not isinstance(keypoints, list) or len(keypoints) != 51:
-            raise ValueError("annotation.keypoints must contain 51 values for 17 joints")
-
-        bbox = annotation.get("bbox")
-        if not isinstance(bbox, list) or len(bbox) != 4:
-            raise ValueError("annotation.bbox must contain 4 values [x, y, w, h]")
-
-        with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT id, metadata FROM datapoints WHERE id = %s LIMIT 1",
-                (datapoint_id,),
-            )
-            row = cursor.fetchone()
-
-        if not row:
-            raise LookupError("Datapoint not found")
-
-        metadata = row.get("metadata") or {}
-        updated_metadata = dict(metadata)
-        updated_metadata["label_status"] = "labeled"
-        updated_metadata["annotation_format"] = "coco_keypoints"
-
-        num_labeled = 0
-        for i in range(2, len(keypoints), 3):
-            if isinstance(keypoints[i], (int, float)) and keypoints[i] > 0:
-                num_labeled += 1
-        updated_metadata["num_keypoints"] = num_labeled
-
-        with self._db_conn.cursor() as cursor:
-            cursor.execute(
-                "UPDATE datapoints SET y = %s, metadata = %s WHERE id = %s",
-                (json.dumps(annotation), Json(updated_metadata), datapoint_id),
-            )
-        self._db_conn.commit()
-
-        return {
-            "id": datapoint_id,
-            "annotation": annotation,
-            "metadata": updated_metadata,
-        }
-
-
+        return dict(row)
