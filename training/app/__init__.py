@@ -5,7 +5,7 @@ from celery import Celery, Task
 from flask import Flask
 from typing import Union
 
-from app.endpoints import dataset_endpoints, health_endpoints, training_endpoints
+from app.endpoints import dataset_endpoints, health_endpoints, labeling_endpoints, training_endpoints
 from app.errors import bp as errors_bp
 from app.extensions import connector, cors, datastore, plugin_loader, worker_manager
 from app.plugin import PluginLoader
@@ -27,6 +27,7 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     app.register_blueprint(errors_bp)
     app.register_blueprint(dataset_endpoints.bp)
     app.register_blueprint(health_endpoints.bp)
+    app.register_blueprint(labeling_endpoints.bp)
     app.register_blueprint(training_endpoints.bp)
 
     # Initialize extensions
