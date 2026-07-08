@@ -2,7 +2,7 @@ const statusEl = document.getElementById("status");
 const gridEl = document.getElementById("grid");
 const refreshBtn = document.getElementById("refreshBtn");
 const retrainBtn = document.getElementById("retrainBtn");
-const datasetNameInput = document.getElementById("datasetNameInput");
+const DATASET_NAME = "yolo_pose_demo";
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -59,11 +59,6 @@ async function loadUnlabeled() {
   for (const dp of datapoints) {
     gridEl.appendChild(createCard(dp));
   }
-
-  // If dataset input is empty, prefill with the first datapoint's dataset_name
-  if (datapoints.length && datasetNameInput && !datasetNameInput.value) {
-    datasetNameInput.value = datapoints[0].dataset_name || "";
-  }
 }
 
 refreshBtn.addEventListener("click", () => {
@@ -74,12 +69,7 @@ loadUnlabeled().catch((err) => setStatus(`Error: ${err.message}`, true));
 
 if (retrainBtn) {
   retrainBtn.addEventListener("click", async () => {
-    const datasetName = datasetNameInput ? datasetNameInput.value.trim() : "";
-    if (!datasetName) {
-      setStatus("Enter a dataset name before retraining.", true);
-      return;
-    }
-    if (!confirm(`Trigger retrain on dataset '${datasetName}'?`)) {
+    if (!confirm(`Trigger retrain on dataset '${DATASET_NAME}'?`)) {
       return;
     }
 
@@ -87,11 +77,11 @@ if (retrainBtn) {
     setStatus("Triggering retrain…");
 
     try {
-      const runName = `${datasetName || 'all'}_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+      const runName = `${DATASET_NAME}_${new Date().toISOString().replace(/[:.]/g, "-")}`;
       const response = await fetch("/api/retrain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dataset_name: datasetName, experiment_name: "yolo_pose_demo", run_name: runName }),
+        body: JSON.stringify({ dataset_name: DATASET_NAME, experiment_name: "yolo_pose_demo", run_name: runName }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
