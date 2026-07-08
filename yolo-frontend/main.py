@@ -2,13 +2,16 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from io import BytesIO
+from typing import Any
 
+import numpy as np
 import requests
 from flask import Flask, jsonify, render_template, request, send_file
 from managed_dataset import build_labels, build_metadata, upload_managed_dataset
 from config import (
     DATASET_NAME,
     DEFAULT_FRAME_COUNT,
+    IMAGE_SIZE,
     REQUEST_TIMEOUT_SECONDS,
     TRAINING_API_URL,
 )

@@ -222,13 +222,16 @@ class MLFlowConnector(BaseConnector):
             if model_type == ModelType.OTHER:
                 pass
 
-            if model_info and model_info.registered_model_version:
-                MlflowClient().transition_model_version_stage(
-                    name=model_name,
-                    version=model_info.registered_model_version,
-                    stage="Production",
-                    archive_existing_versions=True,
-                )
+            if model_info and model_name:
+                client = MlflowClient()
+                latest_versions = client.get_latest_versions(model_name, stages=["None"])
+                if latest_versions:
+                    client.transition_model_version_stage(
+                        name=model_name,
+                        version=latest_versions[0].version,
+                        stage="Production",
+                        archive_existing_versions=True,
+                    )
         return run_name, run_id
 
     def get_artifact(
