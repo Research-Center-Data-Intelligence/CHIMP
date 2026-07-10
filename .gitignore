@@ -1,15 +1,19 @@
 ### Custom ignores
 logs/*
 !logs/.gitkeep
+docker-data/cvat/*
 docker-data/monitoring/mlruns/
 docker-data/monitoring/mlflow.db
 docker-data/datastore/*
 docker-data/postgres/*
 docker-data/files/*
+docker-data/cvat/*
+docker-data/cvat/
 experimentation/
 ml-frontend/logs
 serving/mlruns
 .env
+hpe/notebooks/datasets
 
 # Custom venv
 experimentation_venv
@@ -22,15 +26,18 @@ serving_venv
 serving_env
 serving_api_venv
 serving_api_env
+.venvs
 
 # Training module plugins and datasets
 training/app/plugins/*
+!training/app/plugins/yolo_pose
 !training/app/plugins/example
 !training/app/plugins/example2.py
 !training/app/plugins/game_art_style_detector
 !training/app/plugins/emotion_recognition
 !training/app/plugins/active_learning
 training/datasets/*
+training/runs/*
 
 ### Generic ignores
 

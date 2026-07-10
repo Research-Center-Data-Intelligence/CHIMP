@@ -5,7 +5,7 @@ from celery import Celery, Task
 from flask import Flask
 from typing import Union
 
-from app.endpoints import dataset_endpoints, health_endpoints, training_endpoints
+from app.endpoints import dataset_endpoints, health_endpoints, labeling_endpoints, training_endpoints
 from app.errors import bp as errors_bp
 from app.extensions import connector, cors, datastore, plugin_loader, worker_manager
 from app.plugin import PluginLoader
@@ -27,6 +27,7 @@ def create_app(config_obj: Union[str, object] = "app.config") -> Flask:
     app.register_blueprint(errors_bp)
     app.register_blueprint(dataset_endpoints.bp)
     app.register_blueprint(health_endpoints.bp)
+    app.register_blueprint(labeling_endpoints.bp)
     app.register_blueprint(training_endpoints.bp)
 
     # Initialize extensions
@@ -61,6 +62,10 @@ def create_celery_app(app: Flask):
             broker_url=app.config["CELERY_BROKER_URL"],
             result_backend=app.config["CELERY_RESULT_BACKEND"],
             task_ignore_result=True,
+            # Solo pool: YOLO's model.train() spawns its own subprocesses internally.
+            # Celery's default prefork pool daemonizes workers, which forbids having
+            # child processes. Solo runs tasks in the main worker process, avoiding this.
+            worker_pool="solo",
         )
     )
 
@@ -80,4 +85,6 @@ def create_celery_app(app: Flask):
 
     return celery_app
 
-celery = create_celery_app(create_app())
+import os as _os
+if not _os.environ.get("TESTING"):
+    celery = create_celery_app(create_app())

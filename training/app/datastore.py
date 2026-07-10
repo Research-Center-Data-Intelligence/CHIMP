@@ -11,6 +11,7 @@ import zipfile
 from werkzeug.utils import secure_filename
 import json
 import psycopg2
+from psycopg2.extras import RealDictCursor, Json
 import datetime
 
 
@@ -638,6 +639,21 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
 
         return result
 
+    def update_object(self, datapoint_id: int, y: str, metadata: dict) -> Dict:
+        """Update a datapoint's y value and metadata."""
+        with self._db_conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE datapoints SET y = %s, metadata = %s WHERE id = %s",
+                (y, Json(metadata), datapoint_id),
+            )
+        self._db_conn.commit()
+
+        return {
+            "id": datapoint_id,
+            "y": y,
+            "metadata": metadata,
+        }
+
 
     def load_object_to_memory(self, target_path: str) -> Optional[bytes]:
         try:
@@ -728,10 +744,43 @@ class ManagedMinioDatastore(ManagedBaseDatastore):
         for row in results:
             output.append({
                 "id": row[0],
-                "x": row[1],  
-                "y": row[2],  
+                "x": row[1],
+                "y": row[2],
                 "metadata": json.loads(row[3])
             })
 
         return output
 
+    def get_unlabeled_datapoints(self, source: str, limit: int = 50) -> List[Dict]:
+        """Fetch unlabeled datapoint rows for a given source."""
+        limit = max(1, min(limit or 50, 500))
+
+        with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT id, x, y, metadata
+                FROM datapoints
+                WHERE metadata ->> 'label_status' = 'unlabeled'
+                AND metadata ->> 'source' = %s
+                ORDER BY id DESC
+                LIMIT %s
+                """,
+                (source, limit),
+            )
+            rows = cursor.fetchall() or []
+
+        return [dict(row) for row in rows]
+
+    def get_datapoint(self, datapoint_id: int) -> Dict:
+        """Fetch a single datapoint row by id."""
+        with self._db_conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                "SELECT id, x, y, metadata FROM datapoints WHERE id = %s LIMIT 1",
+                (datapoint_id,),
+            )
+            row = cursor.fetchone()
+
+        if not row:
+            raise LookupError("Datapoint not found")
+
+        return dict(row)

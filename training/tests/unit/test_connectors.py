@@ -49,7 +49,10 @@ class TestMlflowConnector:
             metrics={"accuracy": 0},
             tags={"tag1": "value"},
         )
-        assert type(result) is str
+        assert type(result) is tuple
+        assert len(result) == 2
+        assert result[0] == "TestRun"
+        assert type(result[1]) is str
         connector.store_model(
             "TestExperiment",
             "TestRun2",

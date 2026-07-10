@@ -1,6 +1,7 @@
 import mlflow
 from abc import ABC, abstractmethod
 from flask import Flask
+from mlflow import MlflowClient
 from uuid import uuid4
 from typing import Dict, Optional, Union
 
@@ -145,9 +146,15 @@ class MLFlowConnector(BaseConnector):
         artifacts: Optional[Dict[str, str]] = {},
         datasets: Optional[Dict[str, str]] = {},
     ) -> str:
+        # Ultralytics autologging can mutate MLflow global state during training.
+        # Re-apply the configured URI so model persistence always targets CHIMP tracking.
+        mlflow.set_tracking_uri(self._tracking_uri)
         mlflow.set_experiment(experiment_name)
         if not run_name:
             run_name = uuid4().hex
+        # Safety net: close any run still open (e.g. if Ultralytics autologging
+        # did not call end_run). Prevents metrics from being logged into a nested run.
+        mlflow.end_run()
         with mlflow.start_run(run_name=run_name):
             run_id = mlflow.active_run().info.run_id
             if not model_name:
@@ -178,6 +185,7 @@ class MLFlowConnector(BaseConnector):
                 for dataset_name, dataset_location in datasets.items():
                     mlflow.log_artifact(dataset_location, f"dataset_{dataset_name}")
 
+            model_info = None
             if model_type == ModelType.SKLEARN:
                 model_info = mlflow.sklearn.log_model(
                     sk_model=model,
@@ -213,6 +221,17 @@ class MLFlowConnector(BaseConnector):
                 )
             if model_type == ModelType.OTHER:
                 pass
+
+            if model_info and model_name:
+                client = MlflowClient()
+                latest_versions = client.get_latest_versions(model_name, stages=["None"])
+                if latest_versions:
+                    client.transition_model_version_stage(
+                        name=model_name,
+                        version=latest_versions[0].version,
+                        stage="Production",
+                        archive_existing_versions=True,
+                    )
         return run_name, run_id
 
     def get_artifact(

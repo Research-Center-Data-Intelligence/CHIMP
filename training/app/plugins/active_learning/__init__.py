@@ -1,6 +1,11 @@
 import os
 import json
 import numpy as np
+
+# Keep GPU enabled by default; set FORCE_CPU=1 to explicitly disable it.
+if os.getenv("FORCE_CPU", "0").strip().lower() in {"1", "true", "yes"}:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import tensorflow as tf
 import glob
 import datetime
@@ -12,8 +17,6 @@ from .badge import BADGE
 import mlflow
 from mlflow.tracking import MlflowClient
 from redis import Redis
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 ##TODO: MV Make sure the Redis queue credentials work both in docker setup awa local debug
 redis_client = Redis(

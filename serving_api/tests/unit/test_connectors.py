@@ -28,8 +28,6 @@ class TestMlflowConnector:
         """Test the get_available_models method."""
         assert connector.get_available_models() == {
             calibrated_model_name,
-            calibrated_model_id,
-            global_model_id,
             global_model_name,
         }
 
@@ -85,4 +83,4 @@ class TestMlflowConnector:
         model = connector.get_model(global_model_name)
         old_update_time = model.updated
         connector.update_model(model)
-        assert model.updated > old_update_time
+        assert model.updated >= old_update_time

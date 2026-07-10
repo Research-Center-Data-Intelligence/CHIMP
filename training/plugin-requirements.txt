@@ -14,3 +14,7 @@ onnxruntime
 tensorflow
 scikit-learn
 numpy
+
+# YOLO Pose
+ultralytics
+onnx

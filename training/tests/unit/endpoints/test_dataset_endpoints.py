@@ -7,14 +7,14 @@ from io import BytesIO
 from tempfile import mkdtemp
 from zipfile import ZipFile
 
-from app.datastore import BaseDatastore
+from app.datastore import ManagedBaseDatastore
 
 
 class TestDatasetEndpoints:
     """Tests for the dataset endpoints."""
 
     def test_get_datasets(
-        self, app: Flask, client: FlaskClient, datastore: BaseDatastore
+        self, app: Flask, client: FlaskClient, datastore: ManagedBaseDatastore
     ):
         """Test the get datasets endpoint."""
         resp = client.get("/datasets")
@@ -26,13 +26,13 @@ class TestDatasetEndpoints:
 
         os.mkdir(os.path.join(app.config["DATA_DIRECTORY"], "test_dataset"))
         test_data = BytesIO("test".encode())
-        datastore.store_object("test_dataset/test.txt", test_data, "test.txt")
+        datastore.store_object("test_dataset", test_data, "", {}, "test.txt")
         resp = client.get("/datasets")
         data = resp.get_json()
         assert "test_dataset" in data["datasets"]
 
     def test_upload_dataset(
-        self, app: Flask, client: FlaskClient, datastore: BaseDatastore
+        self, app: Flask, client: FlaskClient, datastore: ManagedBaseDatastore
     ):
         """Tests for the upload dataset endpoint."""
         # Test setup

@@ -49,7 +49,6 @@ further commands, such as `up -d`. On some setups, to use the default profile (d
 
 To monitor and work with the Redis message queue during development, a tool like "Another Redis Desktop Manager" can be used.
 
-
 ### Remote setup (Remote Linux host on Docker)
 1. Create an Ubuntu server (or another Linux distribution).
 2. Log in using a terminal client such as PuTTY. Define and save your session.

@@ -67,7 +67,11 @@ def mocked_mlflow(
             if run_id in [calibrated_model_id, global_model_id]:
                 obj = InfoObject()
                 info_object = InfoObject()
-                info_object.run_name = calibrated_model_name
+                if run_id == calibrated_model_id:
+                    info_object.run_name = calibrated_model_name
+                else:
+                    info_object.run_name = global_model_name
+                info_object.lifecycle_stage = "active"
                 obj.info = info_object
                 return obj
 

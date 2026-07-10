@@ -1,0 +1,478 @@
+import json
+from pathlib import Path
+
+import pytest
+
+import app.plugins.yolo_pose as yolo_pose_module
+from app.plugins.yolo_pose import YoloPosePlugin
+
+
+class _MockCompletedProcess:
+    # Minimal subprocess.CompletedProcess-like object used by _export_onnx tests.
+    def __init__(self, returncode: int = 0, stdout: str = "", stderr: str = ""):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+class _MockConnector:
+    def __init__(self):
+        self.calls = []
+
+    def store_model(self, **kwargs):
+        # Capture call args so tests can assert exactly what run() forwards.
+        self.calls.append(kwargs)
+        return "stored-run", "run-id"
+
+
+class TestYoloPosePlugin:
+    """Tests for the YOLO pose plugin."""
+
+    def test_init_returns_plugin_info(self):
+        """Tests for plugin metadata initialization."""
+        plugin = YoloPosePlugin()
+
+        info = plugin.init()
+        assert info.name == "YOLO Pose"
+        assert info.model_return_type == "onnx"
+        assert "experiment_name" in info.arguments
+        assert "dataset_name" in info.arguments
+
+    def test_export_onnx_success_with_relative_path(self, tmp_path: Path, monkeypatch):
+        """Tests for successful ONNX export parsing with a relative path."""
+        exported_path = tmp_path / "model.onnx"
+        exported_path.write_text("onnx")
+
+        def mocked_run(cmd, cwd, capture_output, text):
+            assert "--model-variant" in cmd
+            assert cwd == str(tmp_path)
+            assert capture_output is True
+            assert text is True
+            payload = json.dumps({"exported_path": "model.onnx"})
+            return _MockCompletedProcess(
+                returncode=0,
+                stdout=f"log line\nCHIMP_EXPORT_RESULT:{payload}\n",
+            )
+
+        monkeypatch.setattr(yolo_pose_module.subprocess, "run", mocked_run)
+
+        result = YoloPosePlugin._export_onnx(
+            model_variant="yolo11n-pose.pt",
+            imgsz=640,
+            opset=13,
+            device="cpu",
+            export_dir=str(tmp_path),
+        )
+        assert result == str(exported_path)
+
+    def test_export_onnx_raises_when_worker_fails(self, tmp_path: Path, monkeypatch):
+        """Tests for export failure when the worker process returns non-zero."""
+        monkeypatch.setattr(
+            yolo_pose_module.subprocess,
+            "run",
+            lambda *args, **kwargs: _MockCompletedProcess(
+                returncode=1,
+                stderr="boom",
+            ),
+        )
+
+        with pytest.raises(RuntimeError, match="YOLO export failed"):
+            YoloPosePlugin._export_onnx("model.pt", 640, 13, "cpu", str(tmp_path))
+
+    def test_export_onnx_raises_without_structured_line(self, tmp_path: Path, monkeypatch):
+        """Tests for export failure when the structured result line is missing."""
+        monkeypatch.setattr(
+            yolo_pose_module.subprocess,
+            "run",
+            lambda *args, **kwargs: _MockCompletedProcess(
+                returncode=0,
+                stdout="just plain logs",
+            ),
+        )
+
+        # The plugin expects one machine-parseable output line from the worker.
+        with pytest.raises(RuntimeError, match="did not produce a structured result line"):
+            YoloPosePlugin._export_onnx("model.pt", 640, 13, "cpu", str(tmp_path))
+
+    def test_export_onnx_raises_with_invalid_structured_json(
+        self,
+        tmp_path: Path,
+        monkeypatch,
+    ):
+        """Tests for export failure when the structured result payload is invalid JSON."""
+        monkeypatch.setattr(
+            yolo_pose_module.subprocess,
+            "run",
+            lambda *args, **kwargs: _MockCompletedProcess(
+                returncode=0,
+                stdout="CHIMP_EXPORT_RESULT:not-json",
+            ),
+        )
+
+        with pytest.raises(RuntimeError, match="invalid structured result line"):
+            YoloPosePlugin._export_onnx("model.pt", 640, 13, "cpu", str(tmp_path))
+
+    def test_export_onnx_raises_when_path_missing_in_payload(
+        self,
+        tmp_path: Path,
+        monkeypatch,
+    ):
+        """Tests for export failure when the structured payload has no ONNX path."""
+        monkeypatch.setattr(
+            yolo_pose_module.subprocess,
+            "run",
+            lambda *args, **kwargs: _MockCompletedProcess(
+                returncode=0,
+                stdout="CHIMP_EXPORT_RESULT:{}",
+            ),
+        )
+
+        with pytest.raises(RuntimeError, match="did not produce an ONNX path"):
+            YoloPosePlugin._export_onnx("model.pt", 640, 13, "cpu", str(tmp_path))
+
+    def test_export_onnx_raises_when_exported_file_not_found(
+        self,
+        tmp_path: Path,
+        monkeypatch,
+    ):
+        """Tests for export failure when the reported ONNX file does not exist."""
+        payload = json.dumps({"exported_path": "missing.onnx"})
+        monkeypatch.setattr(
+            yolo_pose_module.subprocess,
+            "run",
+            lambda *args, **kwargs: _MockCompletedProcess(
+                returncode=0,
+                stdout=f"CHIMP_EXPORT_RESULT:{payload}",
+            ),
+        )
+
+        with pytest.raises(RuntimeError, match="Exported ONNX file was not found"):
+            YoloPosePlugin._export_onnx("model.pt", 640, 13, "cpu", str(tmp_path))
+
+    def test_run_stores_model_and_copies_export(self, tmp_path: Path, monkeypatch):
+        """Tests for run flow that copies export and stores model metadata."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        export_dir = tmp_path / "export"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        exported_path = export_dir / "exported.onnx"
+        exported_path.write_text("onnx")
+
+        # Base model must exist so the .pt artifact copy succeeds in export-only mode.
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
+
+        onnx_copies = {}
+
+        def mocked_copy2(src, dst):
+            # Track ONNX copies; silently handle the .pt copy.
+            Path(dst).parent.mkdir(parents=True, exist_ok=True)
+            Path(dst).write_bytes(Path(src).read_bytes())
+            if str(src) == str(exported_path):
+                onnx_copies["src"] = src
+                onnx_copies["dst"] = dst
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+        monkeypatch.setattr(yolo_pose_module.shutil, "copy2", mocked_copy2)
+
+        result = plugin.run(experiment_name="exp", temp_dir=str(tmp_path))
+
+        assert result == "stored-run"
+        assert plugin._connector.calls
+        call = plugin._connector.calls[0]
+        assert call["experiment_name"] == "exp"
+        assert call["model_name"] == "exp"
+        assert call["model_type"] == "onnx"
+        assert call["hyperparameters"]["task"] == "pose"
+        assert call["tags"]["framework"] == "ultralytics"
+        assert "onnx_export" in call["artifacts"]
+        assert "pt_checkpoint" in call["artifacts"]
+        assert onnx_copies["src"] == str(exported_path)
+
+    def test_run_skips_copy_when_export_already_in_artifact_dir(self, tmp_path: Path, monkeypatch):
+        """Tests for run flow that avoids copying when export already targets artifact dir."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        artifact_dir = tmp_path / "yolo_pose_onnx"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        exported_path = artifact_dir / "kept.onnx"
+        exported_path.write_text("onnx")
+
+        # Base model must exist so the .pt artifact copy succeeds.
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+        monkeypatch.setattr(
+            yolo_pose_module.shutil,
+            "copy2",
+            # ONNX copy should be skipped (already in artifact dir); .pt copy is allowed.
+            lambda src, dst: (
+                pytest.fail(f"ONNX copy2 should not be called (src={src})")
+                if str(src) == str(exported_path)
+                else Path(dst).write_bytes(Path(src).read_bytes())
+            ),
+        )
+
+        result = plugin.run(
+            experiment_name="exp",
+            run_name="explicit-run",
+            temp_dir=str(tmp_path),
+        )
+
+        assert result == "stored-run"
+        call = plugin._connector.calls[0]
+        assert call["run_name"] == "explicit-run"
+        assert call["hyperparameters"]["model_variant"] == "yolo11n-pose.pt"
+        assert call["hyperparameters"]["imgsz"] == 640
+        assert call["hyperparameters"]["opset"] == 13
+        assert call["hyperparameters"]["device"] == "cpu"
+        assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["metrics"] == {}
+        assert call["tags"]["training_mode"] == "export_only"
+
+    def test_run_without_dataset_uses_export_only_mode(self, tmp_path: Path, monkeypatch):
+        """Tests that missing dataset_name keeps plugin in export-only mode."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        exported_path = tmp_path / "export_only.onnx"
+        exported_path.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", lambda *args, **kwargs: str(exported_path))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+        monkeypatch.setattr(
+            YoloPosePlugin,
+            "_prepare_finetune_dataset",
+            lambda *args, **kwargs: pytest.fail("fine-tune prep should not be called"),
+        )
+        monkeypatch.setattr(
+            YoloPosePlugin,
+            "_fine_tune_model",
+            staticmethod(lambda *args, **kwargs: pytest.fail("fine-tune should not be called")),
+        )
+
+        result = plugin.run(experiment_name="exp", temp_dir=str(tmp_path))
+
+        assert result == "stored-run"
+        call = plugin._connector.calls[0]
+        assert call["hyperparameters"]["fine_tune_enabled"] is False
+        assert call["metrics"] == {}
+        assert call["tags"]["training_mode"] == "export_only"
+
+    def test_run_finetune_branch_uses_trained_checkpoint(self, tmp_path: Path, monkeypatch):
+        """Tests that fine-tune mode prepares data, trains, then exports trained checkpoint."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        export_dir = tmp_path / "export"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        exported_path = export_dir / "trained_export.onnx"
+        exported_path.write_text("onnx")
+
+        captured = {}
+
+        def mocked_prepare(self, dataset_name, temp_dir):
+            captured["dataset_name"] = dataset_name
+            captured["temp_dir"] = temp_dir
+            return str(tmp_path / "data.yaml")
+
+        trained_pt = tmp_path / "trained-best.pt"
+        trained_pt.write_text("pt")
+
+        def mocked_fine_tune(**kwargs):
+            captured["fine_tune_kwargs"] = kwargs
+            return str(trained_pt), {"metrics/mAP50_P": 0.42}
+
+        def mocked_export(model_variant, imgsz, opset, device, export_dir):
+            captured["export_args"] = {
+                "model_variant": model_variant,
+                "imgsz": imgsz,
+                "opset": opset,
+                "device": device,
+                "export_dir": export_dir,
+            }
+            return str(exported_path)
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", mocked_prepare)
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mocked_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(mocked_export))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda path: {"loaded": path})
+
+        result = plugin.run(
+            experiment_name="exp",
+            run_name="r1",
+            temp_dir=str(tmp_path),
+            dataset_name="hpe_one_image_20260331",
+        )
+
+        assert result == "stored-run"
+        assert captured["dataset_name"] == "hpe_one_image_20260331"
+        assert captured["fine_tune_kwargs"]["model_variant"] == "yolo11n-pose.pt"
+        assert captured["fine_tune_kwargs"]["epochs"] == 10
+        assert Path(captured["export_args"]["model_variant"]).name == "trained-best.pt"
+
+        call = plugin._connector.calls[0]
+        assert call["run_name"] == "r1"
+        assert call["hyperparameters"]["fine_tune_enabled"] is True
+        assert call["hyperparameters"]["dataset_name"] == "hpe_one_image_20260331"
+        assert call["metrics"]["metrics/mAP50_P"] == 0.42
+        assert call["tags"]["training_mode"] == "fine_tune"
+
+    def test_run_finetune_uses_production_model(self, tmp_path: Path, monkeypatch):
+        """Fine-tune uses the production .pt from MLflow when available (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Simulate a downloaded production checkpoint in the artifact dir
+        prod_pt_dir = tmp_path / "production_pt" / "pt_checkpoint"
+        prod_pt_dir.mkdir(parents=True)
+        prod_pt = prod_pt_dir / "production.pt"
+        prod_pt.write_bytes(b"pt")
+
+        def mock_get_artifact(save_to, model_name, experiment_name, artifact_path):
+            return str(prod_pt_dir)
+
+        plugin._connector.get_artifact = mock_get_artifact
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == str(prod_pt)
+
+    def test_run_finetune_falls_back_to_base_model(self, tmp_path: Path, monkeypatch):
+        """Fine-tune falls back to yolo11n-pose.pt when get_artifact raises (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        def mock_get_artifact(**kwargs):
+            raise RuntimeError("No production model")
+
+        plugin._connector.get_artifact = mock_get_artifact
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == "yolo11n-pose.pt"
+
+    def test_run_finetune_falls_back_when_no_pt_in_artifact(self, tmp_path: Path, monkeypatch):
+        """Fine-tune falls back to base model when artifact dir contains no .pt (Stap 2)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Artifact dir exists but has no .pt files
+        empty_dir = tmp_path / "empty_artifact"
+        empty_dir.mkdir()
+
+        plugin._connector.get_artifact = lambda **kw: str(empty_dir)
+
+        captured = {}
+
+        def mock_fine_tune(**kwargs):
+            captured["model_variant"] = kwargs["model_variant"]
+            trained = tmp_path / "trained.pt"
+            trained.write_bytes(b"pt")
+            return str(trained), {}
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_bytes(b"onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(mock_fine_tune))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        assert captured["model_variant"] == "yolo11n-pose.pt"
+
+    def test_run_finetune_stores_pt_artifact(self, tmp_path: Path, monkeypatch):
+        """Fine-tune mode copies the trained .pt into a dedicated artifact dir (Stap 1)."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        trained_pt = tmp_path / "best.pt"
+        trained_pt.write_text("pt")
+        exported_onnx = tmp_path / "export" / "model.onnx"
+        exported_onnx.parent.mkdir(parents=True)
+        exported_onnx.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_prepare_finetune_dataset", lambda *a, **kw: str(tmp_path / "data.yaml"))
+        monkeypatch.setattr(YoloPosePlugin, "_fine_tune_model", staticmethod(lambda **kw: (str(trained_pt), {})))
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path), dataset_name="ds")
+
+        call = plugin._connector.calls[0]
+        assert "pt_checkpoint" in call["artifacts"], "artifacts must contain pt_checkpoint key"
+        assert "onnx_export" in call["artifacts"], "artifacts must still contain onnx_export key"
+
+        pt_dir = call["artifacts"]["pt_checkpoint"]
+        pt_files = list(Path(pt_dir).glob("*.pt"))
+        assert len(pt_files) == 1, f"expected 1 .pt file in artifact dir, got {pt_files}"
+
+    def test_run_export_only_stores_base_pt_artifact(self, tmp_path: Path, monkeypatch):
+        """Export-only mode stores the base yolo11n-pose.pt as pt_checkpoint artifact."""
+        plugin = YoloPosePlugin()
+        plugin._connector = _MockConnector()
+
+        # Simulate the base model being present (normally downloaded by YOLO on first use)
+        base_pt = tmp_path / "yolo11n-pose.pt"
+        base_pt.write_text("pt")
+
+        exported_onnx = tmp_path / "model.onnx"
+        exported_onnx.write_text("onnx")
+
+        monkeypatch.setattr(YoloPosePlugin, "_export_onnx", staticmethod(lambda *a, **kw: str(exported_onnx)))
+        monkeypatch.setattr(yolo_pose_module.onnx, "load", lambda p: {})
+        # Redirect copy2 so it finds the base .pt in tmp_path instead of CWD
+        real_copy2 = yolo_pose_module.shutil.copy2
+        def patched_copy2(src, dst):
+            if Path(src).name == "yolo11n-pose.pt":
+                src = str(base_pt)
+            real_copy2(src, dst)
+        monkeypatch.setattr(yolo_pose_module.shutil, "copy2", patched_copy2)
+
+        plugin.run(experiment_name="exp", temp_dir=str(tmp_path))
+
+        call = plugin._connector.calls[0]
+        assert "pt_checkpoint" in call["artifacts"], "export-only must store base pt_checkpoint"
+        assert "onnx_export" in call["artifacts"]
+        pt_files = list(Path(call["artifacts"]["pt_checkpoint"]).glob("*.pt"))
+        assert len(pt_files) == 1
+        assert pt_files[0].name == "yolo11n-pose.pt"

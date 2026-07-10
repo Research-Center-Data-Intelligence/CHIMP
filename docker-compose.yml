@@ -30,6 +30,59 @@ services:
             - 'gpu'
             - 'external-worker'
 
+    # YOLO Frontend
+    # : standalone frontend that serves webcam feed for the YOLO plugin
+    yolo-frontend:
+        restart: unless-stopped
+        build: ./yolo-frontend
+        image: chimp-yolo-frontend:demonstrator-v1.0.0
+        container_name: yolo-frontend
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5260:5260"
+        environment:
+            - SERVING_API_URL=http://serving-api:8000
+            - TRAINING_API_URL=http://training-api:8000
+            - YOLO_MODEL_NAME=yolo_pose_demo
+            - YOLO_MODEL_STAGE=production
+        profiles:
+            - ''
+            - 'gpu'
+            - 'external-worker'
+
+    # Labeling Frontend
+    # : decoupled web UI for HPE/YOLO pose labeling
+    labeling-frontend:
+        restart: unless-stopped
+        build: ./labeling-frontend
+        image: chimp-labeling-frontend:dev
+        container_name: labeling-frontend
+        networks:
+            - public-network
+            - backend-network
+        ports:
+            - "5261:5261"
+        environment:
+            - PORT=5261
+            - TRAINING_SERVER_URL=http://training-api:8000
+            # bad bad hardcoded database access
+            - DATASTORE_ACCESS_KEY=yZmhrURuUhaeVSUagMRa
+            - DATASTORE_SECRET_KEY=cnk0OxGuIgVx4La0prNaWUv7JpriCnxZfq2417ba
+            - DATASTORE_URI=datastore:9000
+            - DATASTORE_BUCKET=manageddataset
+            - DATABASE_URI=postgres-db
+            - DATABASE_USER=chimp_user
+            - DATABASE_PASSWORD=chimp_password
+            - DATABASE_NAME=chimp_database
+        profiles:
+            - ''
+            - 'gpu'
+            - 'external-worker'
+
     # Training API
     # : provides the API endpoints for starting training
     training-api:
@@ -39,7 +92,7 @@ services:
             context: ./training
             dockerfile: Dockerfile.web
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            test: ["CMD-SHELL", "wget -nv -t1 --spider http://localhost:8000/health || exit 1"]
             start_period: 30s
             interval: 60s
             retries: 5
@@ -73,12 +126,14 @@ services:
             - ''
             - 'gpu'
             - 'external-worker'
+            - 'hpe-dev'
 
     # Training Worker
     # : worker for the training service that does the actual training.
     training-worker:
         container_name: training-worker
         restart: unless-stopped
+        shm_size: '2g'
         build:
             context: ./training
             dockerfile: Dockerfile.worker
@@ -109,15 +164,18 @@ services:
         profiles:
             - ''
             - 'worker-only'
+            - 'hpe-dev'
 
     # Training Worker - GPU
     # : worker for the training service that does the actual training with GPU.
     training-worker-gpu:
-        container_name: training-worker
+        container_name: training-worker-gpu
         restart: unless-stopped
+        shm_size: '2g'
         build:
             context: ./training
             dockerfile: Dockerfile.worker
+        gpus: all
         deploy:
             resources:
                 reservations:
@@ -143,6 +201,8 @@ services:
             - DATABASE_USER=chimp_user
             - DATABASE_PASSWORD=chimp_password
             - TRAINING_SERVER_URL=http://training-api:8000
+            - NVIDIA_VISIBLE_DEVICES=all
+            - NVIDIA_DRIVER_CAPABILITIES=compute,utility
         volumes:
             - ${DATASETS_FOLDER:-./training/datasets}:/usr/src/app/datasets
             - ./training:/usr/src/app
@@ -162,7 +222,7 @@ services:
             context: ./serving_api
             dockerfile: Dockerfile
         healthcheck:
-            test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8000/health || exit 1"]
+            test: ["CMD-SHELL", "wget -nv -t1 --spider http://localhost:8000/health || exit 1"]
             start_period: 30s
             interval: 60s
             retries: 5
@@ -180,6 +240,7 @@ services:
             - ''
             - 'gpu'
             - 'external-worker'
+            - 'hpe-dev'
 
     # monitoring
     # : runs mlflow tracking server with a web-interface, makes use of sqlite database (rdbms/data store) and local
@@ -213,6 +274,7 @@ services:
             - 'gpu'
             - 'services'
             - 'external-worker'
+            - 'hpe-dev'
 
     # message queue
     # : serves as a message broker for the CHIMP system.
@@ -230,6 +292,7 @@ services:
             - 'gpu'
             - 'services'
             - 'external-worker'
+            - 'hpe-dev'
 
     # datastore
     # : storage for datasets and MLFlow
@@ -255,6 +318,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'hpe-dev'
 
     # postgresql
     # : database for managed datasets        
@@ -276,6 +340,7 @@ services:
             - ''
             - 'gpu'
             - 'services'
+            - 'hpe-dev'
         
         
     training-beat:
@@ -320,6 +385,4 @@ services:
 
 networks:
     public-network:
-        name: 'chimp-public-network'
     backend-network:
-        name: 'chimp-backend-network'

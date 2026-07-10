@@ -54,35 +54,16 @@ class TestTrainingEndpoints:
         assert resp.status_code == 400
         assert resp.get_json()["message"] == "Missing required argument 'start_value'"
 
-        # No dataset
-        resp = client.post("/tasks/run/Example+2+Plugin")
-        assert resp.status_code == 400
-        assert resp.get_json()["message"] == "Must specify the required datasets"
+        # Dataset is no longer validated by this endpoint
+        resp = client.post("/tasks/run/Example+2+Plugin", data={"start_value": 42})
+        assert resp.status_code == 200
 
-        # Missing dataset
+        # Malformed datasets payload is ignored by this endpoint
         resp = client.post(
             "/tasks/run/Example+2+Plugin",
-            data={"datasets": '{"optional_ds": "TestingDataset"}'},
+            data={"datasets": "{wrong: format: json}", "start_value": 42},
         )
-        assert resp.status_code == 400
-        assert resp.get_json()["message"] == "Missing required dataset 'dataset'"
-
-        # Non existing dataset
-        resp = client.post(
-            "/tasks/run/Example+2+Plugin",
-            data={"datasets": '{"dataset": "DoesNotExist"}'},
-        )
-        assert resp.status_code == 400
-        assert resp.get_json()["message"] == "Dataset DoesNotExist not found"
-
-        # Wrong formatted dataset JSON
-        resp = client.post(
-            "/tasks/run/Example+2+Plugin", data={"datasets": "{wrong: format: json}"}
-        )
-        assert resp.status_code == 400
-        assert resp.get_json()["message"].startswith(
-            "Could not decode the datasets dictionary:"
-        )
+        assert resp.status_code == 200
 
     def test_poll_task(self, client: FlaskClient, mocker):
         """Test the poll task endpoint."""
